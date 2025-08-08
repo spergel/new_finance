@@ -87,6 +87,22 @@ class CorporateActionsExtractor:
 - [ ] No duplicates or noise
 - [ ] Easy to read and analyze
 
+## 🔮 LLM-Native Enhancements (Planned)
+- [ ] Evidence-linked extraction: quote snippets + file and char ranges per field
+- [ ] Uncertainty/conflict detection across documents with confidence scores
+- [ ] Clause reconciliation (base prospectus vs pricing supplements vs amendments)
+- [ ] Ambiguity surfacing and auto-generated follow-up questions
+- [ ] Semantic de-duplication and issuance clustering by template family
+- [ ] Natural-language payoff explainer (initial version added)
+- [ ] Edge-case enumerator for path-dependent features (autocall/KO/memory)
+- [ ] Table normalization for schedules and calendars
+- [ ] Anti-dilution/adjustment logic canonicalization
+- [ ] Taxonomy classification with rationale and confidence
+- [ ] Self-consistency voting across multiple extractions
+- [ ] Auto test generation for payoff boundary conditions
+- [ ] Change tracking of term drift across issuances
+- [ ] Risk factor mapping linked to mechanics
+
 ## 🚫 **What We DON'T Want**
 - [ ] ❌ Thousands of test files
 - [ ] ❌ Random number pattern matching

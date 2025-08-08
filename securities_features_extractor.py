@@ -2011,7 +2011,8 @@ VALIDATION RULES:
                     "share_cap_calculation": security.conversion_terms.share_cap_calculation,
                     
                     # Evaluable model for frontend/backend computation
-                    "payoff_model": security.conversion_terms.payoff_model
+                    "payoff_model": security.conversion_terms.payoff_model,
+                    "payoff_explainer": security.conversion_terms.payoff_explainer
                 }
             
             # Extract liquidation terms
@@ -2268,6 +2269,14 @@ VALIDATION RULES:
                     "constraints": {"min": 0, "max": None},
                     "display": {"name": "Dual-directional buffered payout", "primaryUnit": "USD"}
                 }
+                # Build payoff explainer
+                buf_pct_text = f"{int(round(((buffer_pct if (buffer_pct and buffer_pct > 1) else (buffer_pct or 0.30)*100))))}%"
+                lev_text = f"{leverage or 1.95}x"
+                explainer = (
+                    f"If the index rises, you receive principal plus {lev_text} of the upside. "
+                    f"If it is flat or down but within the {buf_pct_text} buffer, you receive principal plus the absolute return. "
+                    f"If it falls more than the buffer, losses are reduced by the buffer before applying to principal."
+                )
 
             return ConversionTerms(
                 conversion_price=None,
@@ -2285,7 +2294,8 @@ VALIDATION RULES:
                 has_share_cap=False,
                 share_cap_maximum=None,
                 share_cap_calculation=None,
-                payoff_model=payoff_model
+                payoff_model=payoff_model,
+                payoff_explainer=explainer if payoff_model else None
             )
         except Exception as e:
             logger.error(f"Error creating conversion terms: {e}")

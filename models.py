@@ -393,6 +393,9 @@ class ConversionTerms(BaseModelWithConfig):
     #   "display": {"name":"Dual-directional buffered payout", "primaryUnit":"USD"}
     # }
     payoff_model: Optional[dict] = None
+    
+    # Natural-language explanation of payoff given key parameters and inputs
+    payoff_explainer: Optional[str] = None
 
 class HedgingInstrument(BaseModelWithConfig):
     """Hedging instrument associated with the security"""
