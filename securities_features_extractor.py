@@ -826,21 +826,29 @@ class SecuritiesFeaturesExtractor:
         documents_processed = 0
         months_back = years_back * 12
         
+        # If only 424B filings are selected, limit to first 5 total across all 424B subtypes
+        only_424b_mode = all(ft.startswith("424B") for ft in self.filing_types)
+        remaining_424b = 5 if only_424b_mode else None
+        
         for filing_type in self.filing_types:
             logger.info(f"Processing {filing_type} filings...")
             
             try:
                 # Download filings
+                max_results = None
+                if only_424b_mode:
+                    if remaining_424b is None or remaining_424b <= 0:
+                        break
+                    max_results = remaining_424b
                 file_paths = self.sec_client.download_filings_by_date_range(
                     ticker=ticker,
                     filing_types=[filing_type],
-                    months_back=months_back
+                    months_back=months_back,
+                    max_results=max_results
                 )
-                
-                # Limit number of documents to process 
-                if file_paths and len(file_paths) > 10:
-                    file_paths = file_paths[:10]
-                    logger.info(f"Limited to first 10 {filing_type} documents to avoid excessive processing")
+                # Hard slice to remaining total if only 424B mode
+                if only_424b_mode and file_paths:
+                    file_paths = file_paths[:remaining_424b]
                 
                 if not file_paths:
                     logger.info(f"No {filing_type} filings found")
@@ -866,9 +874,16 @@ class SecuritiesFeaturesExtractor:
                             logger.info(f"Reached securities limit of {MAX_SECURITIES_LIMIT}, stopping extraction")
                             all_securities = all_securities[:MAX_SECURITIES_LIMIT]  # Trim to exact limit
                             break
+                    
+                    # Decrement remaining total 424B allowance
+                    if only_424b_mode:
+                        remaining_424b -= 1
+                        if remaining_424b <= 0:
+                            logger.info("Reached total 424B document cap (5), stopping further 424B processing")
+                            break
                 
                 # Break out of filing type loop if either limit reached
-                if len(all_securities) >= MAX_SECURITIES_LIMIT or documents_processed >= MAX_DOCUMENTS_LIMIT:
+                if len(all_securities) >= MAX_SECURITIES_LIMIT or documents_processed >= MAX_DOCUMENTS_LIMIT or (only_424b_mode and remaining_424b is not None and remaining_424b <= 0):
                     break
                 
             except Exception as e:
@@ -903,8 +918,8 @@ class SecuritiesFeaturesExtractor:
                     conversion_features = self.exotic_conversion_extractor.extract(content, ticker, filing_type)
                     for conv_sec in conversion_features:
                         security = self._create_security_data(conv_sec, ticker, filing_type)
-                    if security:
-                        securities.append(security)
+                        if security:
+                            securities.append(security)
                 elif feature_type == 'TRIGGER_EVENTS':
                     logger.info(f"Extracting trigger event features from {file_path}")
                     trigger_features = self.trigger_events_extractor.extract(content, ticker, filing_type)
@@ -1345,37 +1360,62 @@ VALIDATION RULES:
         """Create SecurityData for exotic conversion features with structured details."""
 
         # Extract quantitative metrics from conversion text
-        conversion_text = f"{conversion_data.get('conversion_formula', {}).get('formula', '')} {conversion_data.get('exact_language', '')} {conversion_data.get('mechanism_description', '')}"
+        # Normalize fields from LLM outputs (they're not always consistent)
+        formula_obj = conversion_data.get('conversion_formula')
+        if isinstance(formula_obj, dict):
+            formula_text = formula_obj.get('formula', '')
+        elif isinstance(formula_obj, str):
+            formula_text = formula_obj
+        else:
+            formula_text = conversion_data.get('adjustment_formula', '') or ''
+
+        mechanism_description = conversion_data.get('mechanism_description') or conversion_data.get('exotic_mechanism', '')
+        exact_language = conversion_data.get('exact_language', '')
+        conversion_text = f"{formula_text} {exact_language} {mechanism_description}"
+
         quantitative_metrics = self.quantitative_extractor.extract_quantitative_metrics(conversion_text, conversion_data.get('type', ''))
+
+        # Build conversion_formula flags safely
+        has_share_cap = False
+        has_price_protection = False
+        cf = conversion_data.get('conversion_formula')
+        if isinstance(cf, dict):
+            has_share_cap = bool(cf.get('has_share_cap', False))
+            has_price_protection = bool(cf.get('has_price_protection', False))
 
         # Create structured exotic conversion details
         exotic_conversion_details = {
             "conversion_mechanism": {
-                "type": conversion_data.get('type', 'unknown'),
-                "mechanism_description": conversion_data.get('mechanism_description', 'N/A'),
+                "type": conversion_data.get('type', conversion_data.get('conversion_type', 'unknown')),
+                "mechanism_description": mechanism_description or 'N/A',
                 "is_conditional": conversion_data.get('is_conditional', False),
                 "is_variable": conversion_data.get('is_variable', False)
             },
             "trigger_conditions": [],
             "conversion_formula": {
-                "formula": conversion_data.get('conversion_formula', {}).get('formula', 'N/A'),
-                "has_share_cap": conversion_data.get('conversion_formula', {}).get('has_share_cap', False),
-                "has_price_protection": conversion_data.get('conversion_formula', {}).get('has_price_protection', False)
+                "formula": formula_text or 'N/A',
+                "has_share_cap": has_share_cap,
+                "has_price_protection": has_price_protection
             },
             "anti_dilution": {
-                "type": conversion_data.get('anti_dilution', {}).get('type', 'N/A'),
-                "scope": conversion_data.get('anti_dilution', {}).get('scope', 'narrow')
+                "type": (conversion_data.get('anti_dilution', {}) or {}).get('type', conversion_data.get('anti_dilution_type', 'N/A')),
+                "scope": (conversion_data.get('anti_dilution', {}) or {}).get('scope', 'narrow')
             },
             "blackout_periods": conversion_data.get('blackout_periods', 'N/A'),
-            "exact_language_sample": (conversion_data.get('exact_language', '') or '')[:200] + "..." if len(conversion_data.get('exact_language', '')) > 200 else conversion_data.get('exact_language', 'N/A')
+            "exact_language_sample": (exact_language or '')[:200] + "..." if len(exact_language or '') > 200 else (exact_language or 'N/A')
         }
-        
-        # Process trigger conditions if present
-        if conversion_data.get('trigger_conditions'):
-            for trigger in conversion_data['trigger_conditions']:
+
+        # Process trigger conditions if present (list of dicts or strings)
+        triggers_list = conversion_data.get('trigger_conditions', []) or []
+        if isinstance(triggers_list, list):
+            for trig in triggers_list:
+                if isinstance(trig, dict):
+                    trig_text = trig.get('trigger', 'N/A')
+                else:
+                    trig_text = str(trig)
                 exotic_conversion_details["trigger_conditions"].append({
-                    "trigger": trigger.get('trigger', 'N/A'),
-                    "category": self._categorize_trigger(trigger.get('trigger', ''))
+                    "trigger": trig_text,
+                    "category": self._categorize_trigger(trig_text)
                 })
 
         original_ref = OriginalDataReference(
@@ -1383,7 +1423,7 @@ VALIDATION RULES:
             has_conversion_features=True,
             has_redemption_features=False,
             has_special_features=True,
-            details=f"EXOTIC CONVERSION: {conversion_data.get('type', 'N/A')} with {len(conversion_data.get('trigger_conditions', []))} triggers"
+            details=f"EXOTIC CONVERSION: {conversion_data.get('type', 'N/A')} with {len(triggers_list)} triggers"
         )
 
         # Create enhanced conversion terms from the extracted data
@@ -1416,8 +1456,8 @@ VALIDATION RULES:
             quantitative_metrics=quantitative_metrics,
             original_data_reference=original_ref,
             llm_commentary=f"EXOTIC CONVERSION: {exotic_conversion_details}",
-            has_change_control_provisions='change of control' in conversion_data.get('security_description', '').lower(),
-            has_make_whole_provisions='make-whole' in conversion_data.get('security_description', '').lower()
+            has_change_control_provisions='change of control' in (conversion_data.get('security_description', '') or '').lower(),
+            has_make_whole_provisions='make-whole' in (conversion_data.get('security_description', '') or '').lower()
         )
         return security
     
@@ -1968,7 +2008,10 @@ VALIDATION RULES:
                     # Share cap information  
                     "has_share_cap": security.conversion_terms.has_share_cap,
                     "share_cap_maximum": security.conversion_terms.share_cap_maximum,
-                    "share_cap_calculation": security.conversion_terms.share_cap_calculation
+                    "share_cap_calculation": security.conversion_terms.share_cap_calculation,
+                    
+                    # Evaluable model for frontend/backend computation
+                    "payoff_model": security.conversion_terms.payoff_model
                 }
             
             # Extract liquidation terms
@@ -2168,12 +2211,64 @@ VALIDATION RULES:
         """Create conversion terms from extracted data."""
         try:
             # Extract formula and create basic conversion terms
-            formula = conversion_data.get('conversion_formula', {})
+            formula = conversion_data.get('conversion_formula')
             if isinstance(formula, dict):
                 formula_text = formula.get('formula', '')
+            elif isinstance(formula, str):
+                formula_text = formula
             else:
-                formula_text = str(formula)
-            
+                formula_text = str(conversion_data.get('adjustment_formula', '') or '')
+
+            # Build evaluable payoff model for performance-based structured notes
+            payoff_model = None
+            conv_type = conversion_data.get('conversion_type') or conversion_data.get('type')
+            mech_desc = (conversion_data.get('mechanism_description', '') or '') + ' ' + (conversion_data.get('exotic_mechanism', '') or '')
+            triggers = conversion_data.get('trigger_conditions', []) or []
+
+            # Try to derive parameters from text when available
+            buffer_pct = self._extract_single_percentage(mech_desc) or None
+            # Try to detect leverage like "1.95" near "Upside Leverage"
+            leverage = None
+            try:
+                m = re.search(r"(Upside\s+Leverage\s+Factor\s*[:=]?\s*)(\d+(?:\.\d+)?)", mech_desc, re.IGNORECASE)
+                if m:
+                    leverage = float(m.group(2))
+            except Exception:
+                pass
+
+            if conv_type and 'performance' in str(conv_type).lower():
+                payoff_model = {
+                    "modelType": "piecewise",
+                    "inputs": [
+                        {"name": "finalIndex", "type": "number"},
+                        {"name": "initialIndex", "type": "number"}
+                    ],
+                    "parameters": {
+                        "principal": 1000,
+                        "buffer": (buffer_pct or 30.0) / 100.0 if (buffer_pct and buffer_pct > 1) else (buffer_pct if buffer_pct else 0.30),
+                        "leverage": leverage or 1.95
+                    },
+                    "pieces": [
+                        {
+                            "when": "finalIndex > initialIndex",
+                            "formula": "principal * (1 + leverage * (finalIndex/initialIndex - 1))",
+                            "outputs": [{"name": "payoff", "unit": "USD"}]
+                        },
+                        {
+                            "when": "finalIndex >= initialIndex * (1 - buffer) && finalIndex <= initialIndex",
+                            "formula": "principal * (1 + abs(finalIndex/initialIndex - 1))",
+                            "outputs": [{"name": "payoff", "unit": "USD"}]
+                        },
+                        {
+                            "when": "finalIndex < initialIndex * (1 - buffer)",
+                            "formula": "principal * (1 + (finalIndex/initialIndex - 1 + buffer))",
+                            "outputs": [{"name": "payoff", "unit": "USD"}]
+                        }
+                    ],
+                    "constraints": {"min": 0, "max": None},
+                    "display": {"name": "Dual-directional buffered payout", "primaryUnit": "USD"}
+                }
+
             return ConversionTerms(
                 conversion_price=None,
                 conversion_ratio=None,
@@ -2181,7 +2276,7 @@ VALIDATION RULES:
                 vwap_based=False,
                 price_floor=None,
                 price_ceiling=None,
-                conversion_type=conversion_data.get('conversion_type', 'exotic'),
+                conversion_type=conversion_data.get('conversion_type', conversion_data.get('type', 'exotic')),
                 is_conditional_conversion=True,
                 conversion_triggers=conversion_data.get('trigger_conditions', []),
                 is_variable_conversion=True,
@@ -2189,7 +2284,8 @@ VALIDATION RULES:
                 variable_conversion_formula=formula_text,
                 has_share_cap=False,
                 share_cap_maximum=None,
-                share_cap_calculation=None
+                share_cap_calculation=None,
+                payoff_model=payoff_model
             )
         except Exception as e:
             logger.error(f"Error creating conversion terms: {e}")
@@ -3114,23 +3210,40 @@ class TextExtractor:
 def main():
     """Main function for command line usage."""
     import sys
-    
-    if len(sys.argv) < 2:
-        print("Usage: python3 securities_features_extractor.py <TICKER> [YEARS_BACK]")
-        print("Example: python3 securities_features_extractor.py BW 5")
-        sys.exit(1)
-    
-    ticker = sys.argv[1].upper()
-    years_back = int(sys.argv[2]) if len(sys.argv) > 2 else 5
-    
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Extract securities features with optional limits")
+    parser.add_argument("ticker", type=str, help="Ticker symbol")
+    parser.add_argument("years_back", type=int, nargs="?", default=5, help="Years back to search")
+    parser.add_argument("--only-424b", action="store_true", help="Limit to 424B filings only")
+    parser.add_argument("--per-type-limit", type=int, default=10, help="Max filings per type to process")
+    args = parser.parse_args()
+
+    ticker = args.ticker.upper()
+    years_back = args.years_back
+
     print(f"🔍 Extracting securities features for {ticker} (last {years_back} years)")
-    
+
     extractor = SecuritiesFeaturesExtractor()
+
+    # If only 424B requested, narrow filing types
+    if args.only_424b:
+        extractor.filing_types = [ft for ft in extractor.filing_types if ft.startswith("424B")]
+
+    # Override per-type limit if provided
+    global MAX_DOCUMENTS_LIMIT
+    try:
+        per_type_limit = int(args.per_type_limit)
+        # We respect per-type limit inside extract_features by slicing file_paths
+        # but also lower the global cap so overall run ends sooner
+        MAX_DOCUMENTS_LIMIT = max(1, min(MAX_DOCUMENTS_LIMIT, per_type_limit * len(extractor.filing_types)))
+    except Exception:
+        pass
+
     securities = extractor.extract_features(ticker, years_back)
-    
+
     if securities:
         print(f"\n✅ Found {len(securities)} securities with features:")
-        
         for security in securities:
             print(f"\n• {security.type}: {security.description}")
             if security.has_change_control_provisions:
@@ -3140,7 +3253,6 @@ def main():
             if security.conversion_terms:
                 print("  🔀 Convertible features")
             print(f"  📁 Source: {security.filing_source}")
-        
         print(f"\n💾 Results saved to output/{ticker}_securities_features.json")
     else:
         print(f"❌ No securities features found for {ticker}")

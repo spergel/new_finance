@@ -76,6 +76,8 @@ class StructuredProductMetrics(BaseModelWithConfig):
     
     # Payoff structure
     payoff_formula: Optional[FormulaComponents] = None
+    # Add evaluable spec for programmatic computation
+    payoff_model_spec: Optional[dict] = None  # Evaluatable piecewise model (see ConversionTerms.payoff_model)
     
     # Barrier structures
     knock_in_barrier: Optional[float] = None
@@ -374,6 +376,23 @@ class ConversionTerms(BaseModelWithConfig):
     bonus_period_start: Optional[date] = None
     bonus_period_end: Optional[date] = None
     has_auto_conversion: Optional[bool] = False
+    
+    # Evaluable payoff model for dynamic computation in frontend/backend
+    # This lightweight spec is intentionally a dict to remain flexible and API-friendly.
+    # Structure example:
+    # {
+    #   "modelType": "piecewise",
+    #   "inputs": [{"name":"indexReturn","type":"number","unit":"frac"}],
+    #   "parameters": {"principal":1000, "leverage":1.95, "buffer":0.30},
+    #   "pieces": [
+    #     {"when": "indexReturn > 0", "formula": "principal * (1 + leverage * indexReturn)", "outputs": [{"name":"payoff","unit":"USD"}]},
+    #     {"when": "indexReturn >= -buffer && indexReturn <= 0", "formula": "principal * (1 + abs(indexReturn))", "outputs": [{"name":"payoff","unit":"USD"}]},
+    #     {"when": "indexReturn < -buffer", "formula": "principal * (1 + (indexReturn + buffer))", "outputs": [{"name":"payoff","unit":"USD"}]}
+    #   ],
+    #   "constraints": {"min":0, "max": null},
+    #   "display": {"name":"Dual-directional buffered payout", "primaryUnit":"USD"}
+    # }
+    payoff_model: Optional[dict] = None
 
 class HedgingInstrument(BaseModelWithConfig):
     """Hedging instrument associated with the security"""

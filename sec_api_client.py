@@ -552,7 +552,8 @@ class SECAPIClient:
         return results
 
     def download_filings_by_date_range(self, ticker: str, filing_types: List[str],
-                                     months_back: int = 3) -> List[str]:
+                                     months_back: int = 3,
+                                     max_results: Optional[int] = None) -> List[str]:
         """
         Download all filings of specified types for a ticker from the last N months.
         
@@ -560,6 +561,7 @@ class SECAPIClient:
             ticker: Company ticker symbol
             filing_types: List of filing types to download
             months_back: Number of months to look back
+            max_results: Optional cap on number of filings to download (per call)
         
         Returns:
             List of file paths for downloaded filings
@@ -584,6 +586,8 @@ class SECAPIClient:
             # Calculate cutoff date
             cutoff_date = datetime.now() - timedelta(days=months_back * 30)
             downloaded_files = []
+            seen_accessions = set()
+            count = 0
             
             for i, form in enumerate(forms):
                 if form not in filing_types:
@@ -593,16 +597,86 @@ class SECAPIClient:
                 if filing_date < cutoff_date:
                     continue
                     
-                # Fetch the filing
-                result = self.fetch_filing(ticker, form, cik=cik)
-                if result and result.file_path:
-                    downloaded_files.append(result.file_path)
+                accession_number = accession_numbers[i]
+                if accession_number in seen_accessions:
+                    continue
+                seen_accessions.add(accession_number)
+                
+                # Build index URL and fetch this specific filing
+                try:
+                    accession_folder = accession_number.replace('-', '')
+                    index_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_folder}/{accession_number}-index.html"
+                    result = self.fetch_filing_by_index_url(index_url=index_url, ticker=ticker, filing_type=form, save_to_file=True)
+                    if result and result.file_path:
+                        downloaded_files.append(result.file_path)
+                        count += 1
+                        if max_results is not None and count >= max_results:
+                            break
+                except Exception as e:
+                    logger.warning(f"Failed to fetch filing by accession {accession_number}: {e}")
                     
             return downloaded_files
             
         except Exception as e:
             logger.error(f"Error downloading filings for {ticker}: {e}")
             return [] 
+
+    def fetch_filing_by_index_url(self, index_url: str, ticker: str, filing_type: str,
+                                  save_to_file: bool = True) -> Optional[FilingResult]:
+        """Fetch a filing given a specific index URL, avoiding extra lookups."""
+        try:
+            documents = self.get_documents_from_index(index_url)
+            if not documents:
+                logger.warning(f"No documents found for filing {index_url}")
+                return None
+            full_text = ""
+            for doc in documents:
+                try:
+                    logger.info(f"Fetching document: {doc.filename}")
+                    response = requests.get(doc.url, headers=self.headers)
+                    response.raise_for_status()
+                    label = doc.filename
+                    if doc.exhibit_type:
+                        label = f"{doc.exhibit_type} ({doc.filename})"
+                    full_text += f"\n\n--- DOCUMENT: {label} ---\n\n"
+                    content_type = response.headers.get('content-type', '').lower()
+                    if 'xml' in content_type or doc.filename.endswith('.xml'):
+                        continue
+                    elif 'image' in content_type or any(doc.filename.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                        continue
+                    else:
+                        if response.encoding is None:
+                            response.encoding = 'utf-8'
+                        text_content = response.text
+                        soup = BeautifulSoup(text_content, 'html.parser')
+                        cleaned_text = self.clean_text(soup.get_text())
+                        full_text += cleaned_text
+                except Exception as e:
+                    logger.warning(f"Failed to download document {doc.url}: {e}")
+                    continue
+            if not full_text.strip():
+                logger.error(f"Failed to extract any text from filing {index_url}")
+                return None
+            accession_number = index_url.split('/')[-1].replace('-index.html', '')
+            file_path = None
+            if save_to_file:
+                safe_filing_type = filing_type.replace("/", "_")
+                file_path = os.path.join(self.data_dir, f"{ticker}_{safe_filing_type}_{accession_number}.txt")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(full_text)
+            return FilingResult(
+                ticker=ticker,
+                filing_type=filing_type,
+                filing_date=date.today().isoformat(),
+                accession_number=accession_number,
+                text=full_text,
+                file_path=file_path,
+                documents=documents,
+                metadata={'index_url': index_url}
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during filing fetch by URL for {ticker}: {e}")
+            return None
 
     def search_filings_for_text(self, ticker: str, search_text: str,
                                filing_types: List[str] = None) -> Optional[FilingResult]:
