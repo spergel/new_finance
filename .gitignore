@@ -1,4 +1,10 @@
 __pycache__/
 *.pyc
 temp_filings/
-output/ 
+output/
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local 
