@@ -1,0 +1,125 @@
+{
+  "request": {
+    "ticker": "LCID",
+    "extraction_date": "2025-01-27T13:45:00Z",
+    "api_version": "1.0"
+  },
+  
+  "summary": {
+    "total_securities": 3,
+    "total_formulas": 12,
+    "complexity_distribution": {
+      "low": 1,
+      "medium": 2,
+      "high": 0
+    },
+    "formula_categories": ["vwap", "min_max", "anti_dilution", "floating_rate"],
+    "risk_indicators": {
+      "securities_with_triggers": 3,
+      "securities_with_variable_pricing": 2,
+      "securities_with_conversion_features": 3
+    }
+  },
+  
+  "securities": [
+    {
+      "security_id": "LCID_preferred_series_a",
+      "security_name": "Series A Convertible Preferred Stock",
+      "security_type": "convertible_preferred",
+      "principal_amount": null,
+      "interest_rate": 9.0,
+      "formulas": [
+        {
+          "formula_category": "vwap",
+          "formula_type": "threshold_trigger",
+          "display_name": "200% VWAP Trigger",
+          "description": "Stock price must exceed 200% of conversion price for 20 trading days",
+          "primary_value": 200.0,
+          "primary_unit": "percent",
+          "secondary_value": 20.0,
+          "secondary_unit": "trading_days",
+          "tags": ["trigger", "conversion", "vwap"]
+        },
+        {
+          "formula_category": "min_max",
+          "formula_type": "greater_of",
+          "display_name": "Greater Of Payment Calculation",
+          "description": "Payment as greater of Minimum Consideration vs conversion value",
+          "tags": ["pricing", "calculation"]
+        }
+      ],
+      "total_formulas": 2,
+      "complexity_score": "medium",
+      "has_trigger_conditions": true
+    },
+    
+    {
+      "security_id": "XOM_floating_notes",
+      "security_name": "Floating Rate Notes due 2075",
+      "security_type": "note",
+      "principal_amount": 1000.0,
+      "interest_rate": null,
+      "formulas": [
+        {
+          "formula_category": "floating_rate",
+          "formula_type": "interest_calculation",
+          "display_name": "SOFR Rate -0.45%",
+          "description": "Interest rate based on Compounded SOFR minus 0.450%",
+          "primary_value": -0.45,
+          "primary_unit": "percent",
+          "tags": ["interest", "floating_rate", "sofr"]
+        }
+      ],
+      "total_formulas": 1,
+      "complexity_score": "low",
+      "has_variable_pricing": true
+    }
+  ],
+  
+  "frontend_helpers": {
+    "filter_options": {
+      "formula_categories": [
+        {"value": "vwap", "label": "VWAP Calculations", "count": 6},
+        {"value": "min_max", "label": "Min/Max Formulas", "count": 3},
+        {"value": "anti_dilution", "label": "Anti-Dilution", "count": 2},
+        {"value": "floating_rate", "label": "Floating Rates", "count": 1}
+      ],
+      "security_types": [
+        {"value": "convertible_preferred", "label": "Convertible Preferred", "count": 2},
+        {"value": "note", "label": "Notes", "count": 1}
+      ],
+      "complexity_levels": [
+        {"value": "low", "label": "Simple (1-2 formulas)", "count": 1},
+        {"value": "medium", "label": "Medium (3-5 formulas)", "count": 2},
+        {"value": "high", "label": "Complex (6+ formulas)", "count": 0}
+      ]
+    },
+    
+    "chart_data": {
+      "formula_distribution": [
+        {"category": "VWAP", "count": 6, "percentage": 50},
+        {"category": "Min/Max", "count": 3, "percentage": 25},
+        {"category": "Anti-Dilution", "count": 2, "percentage": 17},
+        {"category": "Floating Rate", "count": 1, "percentage": 8}
+      ],
+      "risk_metrics": {
+        "trigger_conditions": 75,
+        "variable_pricing": 67,
+        "conversion_features": 100
+      }
+    },
+    
+    "display_suggestions": {
+      "highlight_securities": ["LCID_preferred_series_a"],
+      "warning_indicators": ["high_complexity", "multiple_triggers"],
+      "summary_text": "3 securities with medium complexity. Primary risks: VWAP-based triggers, variable conversion pricing."
+    }
+  },
+  
+  "metadata": {
+    "extraction_quality": 0.93,
+    "processing_time_ms": 1250,
+    "data_freshness": "24h",
+    "schema_version": "1.0"
+  }
+} 

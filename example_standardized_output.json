@@ -1,0 +1,84 @@
+{
+  "security_id": "LCID_convertible_preferred",
+  "security_name": "Series A Convertible Preferred Stock",
+  "security_type": "convertible_preferred",
+  "principal_amount": null,
+  "interest_rate": 9.0,
+  "maturity_date": null,
+  
+  "formulas": [
+    {
+      "formula_category": "vwap",
+      "formula_type": "threshold_trigger",
+      "display_name": "200% VWAP Trigger",
+      "description": "Stock price must exceed 200% of conversion price for 20 trading days",
+      "primary_value": 200.0,
+      "primary_unit": "percent",
+      "secondary_value": 20.0,
+      "secondary_unit": "trading_days",
+      "time_period_days": 20,
+      "time_period_type": "trading_days",
+      "mathematical_operator": "greater_than",
+      "comparison_values": [200.0],
+      "source_text": "daily VWAP has been at least 200% of the conversion price for at least twenty (20) trading days",
+      "confidence_score": 0.95,
+      "is_threshold": true,
+      "is_pricing": false,
+      "is_timing": true,
+      "tags": ["trigger", "conversion", "vwap", "threshold"]
+    },
+    {
+      "formula_category": "vwap",
+      "formula_type": "averaging_period",
+      "display_name": "5-Day VWAP Pricing",
+      "description": "Pricing based on 5-day volume weighted average price",
+      "primary_value": 5.0,
+      "primary_unit": "days",
+      "time_period_days": 5,
+      "time_period_type": "trading_days",
+      "mathematical_operator": null,
+      "source_text": "shares valued based on a five-day average daily VWAP",
+      "confidence_score": 0.98,
+      "is_threshold": false,
+      "is_pricing": true,
+      "is_timing": false,
+      "tags": ["pricing", "vwap", "averaging"]
+    },
+    {
+      "formula_category": "min_max",
+      "formula_type": "greater_of",
+      "display_name": "Greater Of Calculation",
+      "description": "Payment calculated as greater_of of multiple components",
+      "mathematical_operator": "greater_of",
+      "source_text": "equal to the greater of (x) the difference between (i) the Minimum Consideration and (ii) the value of the shares",
+      "confidence_score": 0.92,
+      "is_threshold": false,
+      "is_pricing": true,
+      "is_timing": false,
+      "tags": ["pricing", "calculation", "greater_of"]
+    },
+    {
+      "formula_category": "anti_dilution",
+      "formula_type": "weighted_average_broad",
+      "display_name": "Weighted Average Broad Protection",
+      "description": "Conversion terms adjust using weighted_average_broad method with broad scope",
+      "confidence_score": 0.88,
+      "is_threshold": true,
+      "is_pricing": false,
+      "is_timing": false,
+      "tags": ["protection", "anti_dilution", "conversion"]
+    }
+  ],
+  
+  "total_formulas": 4,
+  "formula_categories": ["vwap", "min_max", "anti_dilution"],
+  "complexity_score": "medium",
+  
+  "has_trigger_conditions": true,
+  "has_variable_pricing": true,
+  "has_conversion_features": true,
+  
+  "last_updated": "2025-01-27T13:45:00",
+  "data_quality_score": 0.93,
+  "schema_version": "1.0"
+} 
