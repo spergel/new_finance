@@ -14,6 +14,7 @@ from datetime import date
 
 from core.securities_features_extractor import extract_securities_features, SecuritiesFeaturesResult
 from core.corporate_actions_extractor import extract_corporate_actions, CorporateActionsResult
+from core.xbrl_preferred_shares_extractor import extract_xbrl_preferred_shares
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -54,6 +55,7 @@ async def root():
         "endpoints": {
             "securities": "/extract/securities/{ticker}",
             "actions": "/extract/actions/{ticker}",
+            "xbrl": "/extract/xbrl/{ticker}",
             "health": "/health"
         }
     }
@@ -70,6 +72,11 @@ async def extract_securities(request: ExtractionRequest, background_tasks: Backg
         logger.info(f"Extracting securities features for {request.ticker}")
 
         result = extract_securities_features(request.ticker, request.api_key)
+
+        # Save LLM data to organized directory
+        from core.securities_features_extractor import SecuritiesFeaturesExtractor
+        extractor = SecuritiesFeaturesExtractor(request.api_key)
+        extractor.save_results(result)
 
         return ExtractionResponse(
             success=True,
@@ -88,6 +95,11 @@ async def extract_actions(request: ExtractionRequest, background_tasks: Backgrou
         logger.info(f"Extracting corporate actions for {request.ticker}")
 
         result = extract_corporate_actions(request.ticker, request.api_key)
+
+        # Save LLM data to organized directory
+        from core.corporate_actions_extractor import CorporateActionsExtractor
+        extractor = CorporateActionsExtractor(request.api_key)
+        extractor.save_results(result)
 
         return ExtractionResponse(
             success=True,
@@ -155,6 +167,54 @@ async def get_corporate_actions(ticker: str, api_key: Optional[str] = None):
 
     except Exception as e:
         logger.error(f"Error getting actions for {ticker}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract/xbrl")
+async def extract_xbrl_data(request: ExtractionRequest):
+    """Extract XBRL preferred shares data for a ticker"""
+    try:
+        logger.info(f"Extracting XBRL data for {request.ticker}")
+
+        result = extract_xbrl_preferred_shares(request.ticker)
+
+        return ExtractionResponse(
+            success=True,
+            message=f"Successfully extracted XBRL data with {result.get('xbrl_tags_found', 0)} tags found",
+            result=result
+        )
+
+    except Exception as e:
+        logger.error(f"Error extracting XBRL data for {request.ticker}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/extract/xbrl/{ticker}")
+async def get_xbrl_data(ticker: str):
+    """Get XBRL preferred shares data for a ticker (GET endpoint)"""
+    try:
+        result = extract_xbrl_preferred_shares(ticker)
+
+        if "error" in result:
+            raise HTTPException(status_code=404, detail=result["error"])
+
+        return {
+            "ticker": result["ticker"],
+            "filing_type": result.get("filing_type", "10-Q"),
+            "extraction_date": result.get("extraction_date"),
+            "xbrl_available": result.get("xbrl_available", False),
+            "summary": {
+                "has_preferred_shares": result.get("has_preferred_shares", False),
+                "xbrl_tags_found": result.get("xbrl_tags_found", 0),
+                "series_identified": result.get("series_identified", []),
+                "cusips_identified": result.get("cusips_identified", []),
+                "data_quality_score": result.get("data_quality_score", 0.0),
+                "total_mentioned": result.get("total_mentioned", 0)
+            },
+            "tag_distribution": result.get("tag_distribution", {}),
+            "numeric_values_found": result.get("numeric_values_found", [])
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting XBRL data for {ticker}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

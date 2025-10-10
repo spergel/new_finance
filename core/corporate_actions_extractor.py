@@ -19,7 +19,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv('.env.local')
 except ImportError:
-    pass
+        pass
 
 import google.generativeai as genai
 
@@ -41,12 +41,12 @@ class CorporateActionsExtractor:
         else:
             logger.warning("No Google API key provided - running in demo mode")
             self.model = None
-
+    
     def extract_corporate_actions(self, ticker: str) -> CorporateActionsResult:
         """Extract corporate actions for a given ticker."""
 
         logger.info(f"Extracting corporate actions for {ticker}")
-
+        
         # Get filings for the ticker
         filings = self._get_relevant_filings(ticker)
 
@@ -63,7 +63,7 @@ class CorporateActionsExtractor:
                 actions.extend(extracted_actions)
 
         return CorporateActionsResult(
-            ticker=ticker,
+                    ticker=ticker,
             extraction_date=date.today(),
             corporate_actions=actions,
             total_actions=len(actions)
@@ -120,7 +120,7 @@ class CorporateActionsExtractor:
                     {'formType': '10-Q', 'filingDate': date.today().isoformat()}
                 ]
             return filings_data[:5]  # Limit to 5 filings
-
+            
         except Exception as e:
             logger.error(f"Error getting filings for {ticker}: {e}")
             # Return mock filings on error for demo
@@ -207,9 +207,9 @@ class CorporateActionsExtractor:
                         actions.append(action)
                 except Exception as e:
                     logger.warning(f"Error parsing action data: {e}")
-
+            
             return actions
-
+            
         except Exception as e:
             logger.error(f"Error extracting from filing: {e}")
             return self._extract_mock_actions(ticker, filing)
@@ -237,7 +237,7 @@ class CorporateActionsExtractor:
         except Exception as e:
             logger.error(f"Error parsing action data: {e}")
             return None
-
+        
     def _parse_action_type(self, type_str: str) -> CorporateActionType:
         """Parse string to CorporateActionType enum."""
         type_map = {
@@ -292,7 +292,7 @@ class CorporateActionsExtractor:
 
         return actions
 
-    def save_results(self, result: CorporateActionsResult, output_dir: str = "output"):
+    def save_results(self, result: CorporateActionsResult, output_dir: str = "output/llm"):
         """Save extraction results to JSON file."""
         os.makedirs(output_dir, exist_ok=True)
 
@@ -313,11 +313,11 @@ def extract_corporate_actions(ticker: str, api_key: str = None) -> CorporateActi
 
 if __name__ == "__main__":
     import sys
-
+    
     if len(sys.argv) < 2:
         print("Usage: python corporate_actions_extractor.py <TICKER> [API_KEY]")
         sys.exit(1)
-
+    
     ticker = sys.argv[1]
     api_key = sys.argv[2] if len(sys.argv) > 2 else None
 

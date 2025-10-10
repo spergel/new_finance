@@ -1,124 +1,119 @@
-# TODO: SEC Securities Analysis Tool
+# 🚀 Preferred Shares Data Extraction Project - TODO
 
-## 🎯 **Immediate Goals**
+## 🎯 **Current Status: Implementing XBRL + LLM Hybrid Approach**
 
-### **Phase 1: Clean Up & Foundation**
-- [ ] **Delete unnecessary files** 
-  - [ ] Remove all the test files and failed experiments
-  - [ ] Keep only: `sec_api_client.py`, `models.py`, core extractors
-  - [ ] Clean up output directory of old failed attempts
+### **Phase 1: ✅ Repository Setup & Core Functionality** *(COMPLETED)*
+- [x] **Repository Cleanup** - Removed 20+ unnecessary files, organized structure
+- [x] **Models Simplified** - Reduced models.py from 1,012 to 147 lines (85% reduction)
+- [x] **Core Extractors** - Clean securities_features_extractor.py and corporate_actions_extractor.py
+- [x] **FastAPI Backend** - REST API endpoints for both extractors
+- [x] **Duplicate Prevention** - Smart deduplication logic implemented
+- [x] **Real API Testing** - Working with Google Gemini API for LLM analysis
+- [x] **File Cleanup** - Removed redundant test and analysis files (8 files removed)
 
-- [ ] **Simplify models.py**
-  - [ ] Review SecurityData model for our specific needs
-  - [ ] Ensure it supports both securities features and corporate actions
-  - [ ] Add clear fields for change-of-control provisions
+### **Phase 2: 🔄 XBRL + LLM Hybrid Implementation** *(IN PROGRESS)*
 
-### **Phase 2: Securities Features Extractor**
-- [ ] **Create `securities_features_extractor.py`**
-  - [ ] Search 424B and S-1 filings only
-  - [ ] Use LLM to extract bond/preferred features
-  - [ ] Focus on: conversion terms, redemption terms, special features
-  - [ ] Output clean JSON using SecurityData models
+#### **Current Task: XBRL Analysis & Series Identification**
+- [x] **XBRL Schema Analysis** - Documented available XBRL elements for preferred shares
+- [x] **XBRL Parser Created** - `xbrl_preferred_shares_extractor.py` for extracting from 10-Q filings
+- [ ] **Series Identification** - Extract specific preferred share series from XBRL data
+- [ ] **Filing Mapping** - Map series to their corresponding 424B/424B5 filings
+- [ ] **Enhanced LLM Prompts** - Target specific series found in XBRL
+- [ ] **Data Fusion Logic** - Combine XBRL structured data with LLM contextual analysis
 
-- [ ] **Target Features for BW Example:**
-  - [ ] 8.125% Senior Notes due 2026: Extract change-of-control provisions
-  - [ ] 6.50% Senior Notes due 2026: Extract change-of-control provisions  
-  - [ ] 7.75% Preferred Stock: Extract redemption/conversion terms
-  - [ ] Any warrants or convertible features
+#### **🎯 XBRL Data Analysis Results**
+**From 10-Q Filings:**
+- **✅ BAC**: 191 PreferredStock occurrences, multiple XBRL tags found
+- **✅ JPM**: 703 PreferredStock occurrences, series-specific data available
+- **✅ JXN**: 125 PreferredStock occurrences in balance sheet
 
-### **Phase 3: Corporate Actions Extractor**
-- [ ] **Create `corporate_actions_extractor.py`**
-  - [ ] Search 8-K, 10-K, 10-Q filings only
-  - [ ] Use LLM to extract corporate actions
-  - [ ] Focus on: tenders, redemptions, conversions, M&A events
-  - [ ] Output clean JSON with action timeline
+**Available XBRL Elements:**
+- `PreferredStock` (general)
+- `ConvertiblePreferredStock`, `NonredeemablePreferredStock`, `RedeemablePreferredStock`
+- `EmployeeBenefitPlanEmployerPreferredStock` (institutional holdings)
+- Balance sheet classifications and monetary values
 
-- [ ] **Target Actions for BW Example:**
-  - [ ] Recent asset sales (BWRS, SPIG/GMAB)
-  - [ ] Credit facility amendments
-  - [ ] Any tender offers or redemptions
-  - [ ] Spin-off activities
+### **Phase 3: 🏗️ Enhanced Data Pipeline** *(PLANNED)*
 
-## 🛠️ **Technical Implementation**
-
-### **Extractor Structure**
-```python
-class SecuritiesFeaturesExtractor:
-    def __init__(self):
-        self.sec_client = SECAPIClient()
-        self.llm = GeminiModel()
-    
-    def extract_features(self, ticker: str) -> List[SecurityData]:
-        # 1. Download 424B and S-1 filings
-        # 2. Use LLM to extract features
-        # 3. Convert to SecurityData objects
-        # 4. Save to JSON
-        pass
-
-class CorporateActionsExtractor:
-    def __init__(self):
-        self.sec_client = SECAPIClient()
-        self.llm = GeminiModel()
-    
-    def extract_actions(self, ticker: str) -> List[CorporateAction]:
-        # 1. Download 8-K, 10-K, 10-Q filings
-        # 2. Use LLM to extract actions
-        # 3. Convert to structured objects
-        # 4. Save to JSON
-        pass
+#### **Data Fusion Architecture**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   XBRL Parser   │───▶│  Series Mapper  │───▶│   LLM Extractor │
+│                 │    │                 │    │                 │
+│ • Extract       │    │ • Map series to │    │ • Analyze       │
+│   outstanding   │    │   424B filings  │    │   specific      │
+│   amounts       │    │                 │    │   series        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │  Data Fusion    │
+                    │                 │
+                    │ • Combine       │
+                    │   sources       │
+                    │ • Validate      │
+                    │   consistency   │
+                    └─────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Final        │
+                    │   Database     │
+                    └─────────────────┘
 ```
 
-### **LLM Prompts**
-- [ ] **Securities Features Prompt**: Focus on bond/preferred terms
-- [ ] **Corporate Actions Prompt**: Focus on recent events and transactions
+#### **Implementation Steps**
+- [ ] **XBRL Parser Enhancement** - Improve extraction of specific series data
+- [ ] **Filing Discovery** - Automated mapping of series to 424B filings
+- [ ] **LLM Prompt Engineering** - Target specific series for detailed analysis
+- [ ] **Cross-Validation** - Ensure XBRL and LLM data consistency
+- [ ] **Performance Optimization** - Batch processing and caching
 
-## 📋 **Success Criteria**
+### **Phase 4: 🚀 Production Features** *(FUTURE)*
 
-### **For BW Test Case:**
-- [ ] Successfully extract change-of-control provisions from BW debt
-- [ ] Extract preferred stock redemption terms
-- [ ] Identify recent corporate actions (asset sales, credit amendments)
-- [ ] Generate clean, readable JSON output
-- [ ] No random text matching or false positives
+#### **Advanced Capabilities**
+- [ ] **Historical Data** - Backfill XBRL data for trend analysis
+- [ ] **Real-time Updates** - Monitor new filings automatically
+- [ ] **API Rate Limiting** - Production-ready API management
+- [ ] **Database Integration** - PostgreSQL for data persistence
+- [ ] **User Interface** - Web dashboard for data exploration
 
-### **Output Quality:**
-- [ ] Each security has clear, structured features
-- [ ] Corporate actions have dates, descriptions, affected securities
-- [ ] No duplicates or noise
-- [ ] Easy to read and analyze
+#### **Data Quality Enhancements**
+- [ ] **Confidence Scoring** - Combined confidence from XBRL + LLM sources
+- [ ] **Data Validation** - Cross-reference between multiple sources
+- [ ] **Error Handling** - Graceful degradation when data is incomplete
+- [ ] **Audit Trail** - Track data sources and extraction methods
 
-## 🔮 LLM-Native Enhancements (Planned)
-- [ ] Evidence-linked extraction: quote snippets + file and char ranges per field
-- [ ] Uncertainty/conflict detection across documents with confidence scores
-- [ ] Clause reconciliation (base prospectus vs pricing supplements vs amendments)
-- [ ] Ambiguity surfacing and auto-generated follow-up questions
-- [ ] Semantic de-duplication and issuance clustering by template family
-- [ ] Natural-language payoff explainer (initial version added)
-- [ ] Edge-case enumerator for path-dependent features (autocall/KO/memory)
-- [ ] Table normalization for schedules and calendars
-- [ ] Anti-dilution/adjustment logic canonicalization
-- [ ] Taxonomy classification with rationale and confidence
-- [ ] Self-consistency voting across multiple extractions
-- [ ] Auto test generation for payoff boundary conditions
-- [ ] Change tracking of term drift across issuances
-- [ ] Risk factor mapping linked to mechanics
+---
 
-## 🚫 **What We DON'T Want**
-- [ ] ❌ Thousands of test files
-- [ ] ❌ Random number pattern matching
-- [ ] ❌ Complex nested analysis functions
-- [ ] ❌ Multiple output formats
-- [ ] ❌ Overly complex class hierarchies
+## 🎯 **Next Immediate Actions**
 
-## 🎯 **Keep It Simple**
-- [ ] ✅ Two files: `securities_features_extractor.py` + `corporate_actions_extractor.py`
-- [ ] ✅ Clean LLM prompts focused on specific goals
-- [ ] ✅ Use existing `models.py` SecurityData structure
-- [ ] ✅ Clear JSON output in `output/` directory
-- [ ] ✅ Focus on BW as test case first
+1. **Enhance XBRL Series Identification** - Extract specific preferred share series names, CUSIPs, and identifiers from XBRL data
+2. **Improve Filing Mapping** - Create intelligent logic to map XBRL series to their corresponding 424B/424B5 filings
+3. **Implement Data Fusion** - Combine XBRL structured data with LLM contextual analysis for comprehensive results
+4. **Add XBRL API Endpoint** - Expose XBRL extraction capabilities through the FastAPI backend
+5. **Optimize Core Modules** - Enhance error handling, logging, and performance across all extractors
 
-## 📅 **Timeline**
-1. **Today**: Clean up files and finalize TODO
-2. **Next**: Build securities features extractor
-3. **Then**: Build corporate actions extractor  
-4. **Finally**: Test with BW and other companies 
+## 📊 **Current Data Sources**
+
+### **XBRL Data (Structured)**
+- **Source**: 10-Q/10-K filings
+- **Data**: Outstanding shares, balance sheet positions, institutional holdings
+- **Format**: Standardized XBRL tags
+- **Reliability**: High (exact numbers)
+
+### **LLM Data (Contextual)**
+- **Source**: 424B/424B5 filings
+- **Data**: Conversion terms, redemption provisions, special features
+- **Format**: Natural language processing
+- **Reliability**: High (understands context)
+
+### **Combined Approach Benefits**
+- **✅ Precision**: XBRL provides exact financial data
+- **✅ Context**: LLM understands legal terms and conditions
+- **✅ Completeness**: Both sources provide complementary information
+- **✅ Validation**: Cross-reference between sources for accuracy
+
+---
+
+*This TODO tracks our progress toward a comprehensive preferred shares analysis system that leverages both XBRL structured data and LLM contextual understanding.*

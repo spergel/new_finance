@@ -550,6 +550,101 @@ class SECAPIClient:
             results[filing_type] = text
         
         return results
+    
+    def get_all_424b_filings(self, ticker: str, max_filings: int = 100,
+                            filing_variants: List[str] = None) -> List[Dict]:
+        """
+        Get all 424B filings (all variants) for a company.
+        
+        Args:
+            ticker: Company ticker symbol
+            max_filings: Maximum number of filings to return
+            filing_variants: List of 424B variants to include (default: all)
+        
+        Returns:
+            List of dicts with filing metadata:
+            - form: Filing type (e.g., "424B5", "424B2")
+            - date: Filing date (YYYY-MM-DD)
+            - accession: Accession number
+            - description: Primary document filename
+            - url: URL to filing viewer
+            - index_url: URL to filing index page (for fetching content)
+        """
+        if filing_variants is None:
+            # Include all common 424B variants
+            filing_variants = ['424B', '424B1', '424B2', '424B3', '424B4', '424B5', '424B7']
+        
+        cik = self.get_cik(ticker)
+        if not cik:
+            logger.warning(f"Could not find CIK for {ticker}")
+            return []
+        
+        try:
+            submissions_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
+            response = requests.get(submissions_url, headers=self.headers)
+            response.raise_for_status()
+            submissions = response.json()
+            
+            recent_filings = submissions['filings']['recent']
+            
+            # Find all 424B filings
+            filings_424b = []
+            for i, form in enumerate(recent_filings['form']):
+                if form in filing_variants:
+                    accession = recent_filings['accessionNumber'][i]
+                    accession_no_hyphens = accession.replace('-', '')
+                    
+                    filing_info = {
+                        'form': form,
+                        'date': recent_filings['filingDate'][i],
+                        'accession': accession,
+                        'description': recent_filings['primaryDocument'][i],
+                        'url': f"https://www.sec.gov/cgi-bin/viewer?action=view&cik={cik}&accession_number={accession_no_hyphens}&xbrl_type=v",
+                        'index_url': f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_hyphens}/{accession}-index.html"
+                    }
+                    filings_424b.append(filing_info)
+                    
+                    if len(filings_424b) >= max_filings:
+                        break
+            
+            logger.info(f"Found {len(filings_424b)} 424B filings for {ticker}")
+            return filings_424b
+            
+        except Exception as e:
+            logger.error(f"Error fetching 424B filings for {ticker}: {e}")
+            return []
+    
+    def get_filing_by_accession(self, ticker: str, accession: str, filing_type: str) -> Optional[str]:
+        """
+        Get a specific filing by its accession number.
+        
+        Args:
+            ticker: Company ticker symbol
+            accession: Accession number (e.g., "0001104659-23-028831")
+            filing_type: Type of filing (e.g., "424B5")
+        
+        Returns:
+            Filing text content, or None if not found
+        """
+        cik = self.get_cik(ticker)
+        if not cik:
+            return None
+        
+        try:
+            # Build the index URL
+            accession_no_hyphens = accession.replace('-', '')
+            index_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_hyphens}/{accession}-index.html"
+            
+            logger.debug(f"Fetching filing by accession: {accession} from {index_url}")
+            
+            # Use existing method to fetch by index URL
+            result = self.fetch_filing_by_index_url(index_url, ticker, filing_type, save_to_file=False)
+            
+            return result.text if result else None
+            
+        except Exception as e:
+            logger.error(f"Error fetching filing by accession {accession}: {e}")
+            return None
 
     def download_filings_by_date_range(self, ticker: str, filing_types: List[str],
                                      months_back: int = 3,
