@@ -1,113 +1,102 @@
-# SEC Securities Analysis Tool
+# Documentation
 
-A focused tool for extracting two types of information from SEC filings:
+## Core Documentation
 
-## 🎯 **Two Simple Paths**
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and data flow
+- **[FEATURES.md](FEATURES.md)** - Complete list of extracted features
+- **[USAGE.md](USAGE.md)** - How to use the system
+- **[TODO.md](TODO.md)** - Development roadmap
 
-### **Path 1: Securities Features Extractor**
-- **Purpose**: Extract detailed features of bonds and preferred shares
-- **Sources**: 424B filings and S-1 shelf registrations
-- **Target Features**:
-  - Conversion terms (price, ratio, conditions)
-  - Redemption terms (call provisions, prices, notice periods)
-  - Special features (change of control, make-whole, anti-dilution)
-  - Interest rates, maturity dates, principal amounts
-  - VWAP pricing mechanisms
-  - Hedging arrangements
+## Quick Links
 
-### **Path 2: Corporate Actions Extractor**
-- **Purpose**: Extract recent corporate actions affecting securities
-- **Sources**: 8-K, 10-K, and 10-Q filings
-- **Target Actions**:
-  - Tender offers
-  - Redemptions and calls
-  - Conversions and exchanges
-  - Spin-offs and distributions
-  - Mergers and acquisitions
-  - Debt refinancing
-  - Change of control events
+### For Users
+- **Quick Start:** See [USAGE.md](USAGE.md#quick-start)
+- **Feature List:** See [FEATURES.md](FEATURES.md)
+- **Output Format:** See [FEATURES.md](FEATURES.md#fused-output)
 
-## 🏗️ **Architecture**
+### For Developers
+- **System Design:** See [ARCHITECTURE.md](ARCHITECTURE.md)
+- **Data Flow:** See [ARCHITECTURE.md](ARCHITECTURE.md#data-flow)
+- **Core Modules:** See [ARCHITECTURE.md](ARCHITECTURE.md#core-modules)
 
-```
-SEC Filings
-    ├── 424B + S-1 → Securities Features → JSON output
-    └── 8-K + 10-K/Q → Corporate Actions → JSON output
-```
+## Overview
 
-## 📁 **Output Structure**
+This system extracts comprehensive preferred stock data from SEC filings using:
 
-### Securities Features Output
-```json
-{
-  "ticker": "BW",
-  "extraction_date": "2025-01-19",
-  "securities": [
-    {
-      "id": "bw_8125_notes_2026",
-      "type": "senior_notes",
-      "principal_amount": 151200000,
-      "interest_rate": 8.125,
-      "maturity_date": "2026-02-28",
-      "conversion_terms": null,
-      "redemption_terms": {
-        "callable": true,
-        "call_price": 100.0,
-        "notice_days": 30
-      },
-      "special_features": {
-        "change_of_control": true,
-        "make_whole": false,
-        "anti_dilution": false
-      },
-      "source_filing": "S-3"
-    }
-  ]
-}
-```
+1. **XBRL Extraction** - Current financial data from 10-Q filings
+2. **Filing Matcher** - Intelligent 424B prospectus matching  
+3. **LLM Extraction** - Detailed terms from prospectuses
+4. **Data Fusion** - Combined complete datasets
 
-### Corporate Actions Output
-```json
-{
-  "ticker": "BW", 
-  "extraction_date": "2025-01-19",
-  "actions": [
-    {
-      "id": "bw_tender_2024_q3",
-      "action_type": "tender_offer",
-      "announcement_date": "2024-09-15",
-      "target_security": "8.125% Senior Notes",
-      "offer_price": 102.5,
-      "expiration_date": "2024-10-15",
-      "source_filing": "8-K"
-    }
-  ]
-}
-```
+## What's Extracted
 
-## 🎯 **Key Principles**
+### From 10-Q (XBRL)
+- Dividend rate
+- Outstanding/authorized shares
+- Par value
+- Cumulative status
+- Basic voting rights
 
-1. **Simple & Focused**: Two extractors, two purposes, clean separation
-2. **LLM-Powered**: Use Gemini to intelligently extract structured data
-3. **Standards-Based**: Use existing models.py SecurityData structure
-4. **No Noise**: Focus on actual securities features and corporate actions, not random text matching
-5. **Reliable Sources**: 424B/S-1 for original terms, 8-K/10-K/Q for recent events
+### From 424B (LLM)
+- Conversion terms
+- Redemption provisions
+- Governance features
+- Rate reset terms
+- Special provisions
 
-## 🚀 **Usage**
+### Fused Output
+Complete dataset combining current financials with detailed terms.
+
+**Location:** `output/fused/{TICKER}_fused_preferred_shares.json`
+
+## Quick Start
 
 ```bash
-# Extract securities features
-python3 securities_features_extractor.py BW
+# Extract complete data for a ticker
+python scripts/run_fusion.py JXN
 
-# Extract corporate actions  
-python3 corporate_actions_extractor.py BW
-
-# Results saved to output/
+# Output: output/fused/JXN_fused_preferred_shares.json
 ```
 
-## 📊 **Example Use Cases**
+```python
+from scripts.run_fusion import main
 
-- **Investment Analysis**: Understand conversion optionality and call risk
-- **Risk Management**: Track change of control provisions and redemption terms
-- **Event Monitoring**: Stay updated on tender offers and refinancing activities
-- **Portfolio Management**: Monitor corporate actions affecting held securities 
+result = main('JXN')
+# Returns fused data with XBRL + LLM
+```
+
+## Example Output
+
+```json
+{
+  "ticker": "JXN",
+  "series_name": "A",
+  "dividend_rate": 8.0,
+  "outstanding_shares": 22000,
+  "par_value": 25000.0,
+  "is_cumulative": false,
+  "redemption_terms": {
+    "is_callable": true,
+    "earliest_call_date": "2028-03-30"
+  },
+  "has_llm_data": true
+}
+```
+
+## Documentation Structure
+
+```
+docs/
+├── README.md           # This file - documentation index
+├── ARCHITECTURE.md     # System design and data flow
+├── FEATURES.md         # Complete feature list
+├── USAGE.md            # Usage guide
+└── TODO.md             # Development roadmap
+```
+
+## Need Help?
+
+1. **Getting Started:** [USAGE.md](USAGE.md)
+2. **Understanding Output:** [FEATURES.md](FEATURES.md)
+3. **System Design:** [ARCHITECTURE.md](ARCHITECTURE.md)
+4. **Issues/Questions:** Create an issue on GitHub
