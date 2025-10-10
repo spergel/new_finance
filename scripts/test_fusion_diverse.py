@@ -48,7 +48,9 @@ def test_fusion(ticker):
         print(f"  XBRL only: {fused['total_securities'] - fused['securities_with_llm_data']}")
         
         # Save
-        output_file = f'{ticker}/{ticker}_fused_preferred_shares.json'
+        import os
+        os.makedirs('output/fused', exist_ok=True)
+        output_file = f'output/fused/{ticker}_fused_preferred_shares.json'
         with open(output_file, 'w') as f:
             json.dump(fused, f, indent=2, default=str)
         print(f"\n  Saved to: {output_file}")
@@ -57,9 +59,12 @@ def test_fusion(ticker):
         if fused['securities']:
             sec = fused['securities'][0]
             print(f"\n  Sample (Series {sec.get('series_name')}):")
-            print(f"    Dividend Rate: {sec.get('dividend_rate')}%")
-            print(f"    Outstanding: {sec.get('outstanding_shares'):,}")
-            print(f"    Par Value: ${sec.get('par_value'):,.0f}")
+            div_rate = sec.get('dividend_rate')
+            print(f"    Dividend Rate: {div_rate}%" if div_rate else "    Dividend Rate: N/A")
+            outstanding = sec.get('outstanding_shares')
+            print(f"    Outstanding: {outstanding:,}" if outstanding else "    Outstanding: N/A")
+            par = sec.get('par_value')
+            print(f"    Par Value: ${par:,.0f}" if par else "    Par Value: N/A")
             print(f"    Has LLM Data: {sec.get('has_llm_data')}")
             if sec.get('redemption_terms'):
                 call_date = sec['redemption_terms'].get('earliest_call_date')

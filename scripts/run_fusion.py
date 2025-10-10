@@ -36,7 +36,9 @@ def main(ticker='JXN'):
     print(f"  With LLM data: {fused['securities_with_llm_data']}")
     
     # Save
-    output_file = f'{ticker}/{ticker}_fused_preferred_shares.json'
+    import os
+    os.makedirs('output/fused', exist_ok=True)
+    output_file = f'output/fused/{ticker}_fused_preferred_shares.json'
     with open(output_file, 'w') as f:
         json.dump(fused, f, indent=2, default=str)
     
