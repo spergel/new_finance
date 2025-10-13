@@ -61,6 +61,7 @@ class ConversionTerms(BaseModelWithConfig):
     is_conditional: Optional[bool] = False
     conversion_triggers: List[str] = []  # e.g., ["change_of_control", "delisting"]
     earliest_conversion_date: Optional[date] = None
+    conversion_details: Optional[str] = None  # Longer description with paragraph text
 
 class RedemptionTerms(BaseModelWithConfig):
     """Terms for redeeming or calling the security"""
@@ -73,16 +74,50 @@ class RedemptionTerms(BaseModelWithConfig):
     has_sinking_fund: Optional[bool] = False
     sinking_fund_schedule: Optional[str] = None
     sinking_fund_amount_per_year: Optional[float] = None
+    redemption_details: Optional[str] = None  # Longer description with paragraph text
+
+class Covenants(BaseModelWithConfig):
+    """Debt covenants and contractual restrictions"""
+    # Financial Covenants
+    has_financial_covenants: Optional[bool] = False
+    minimum_interest_coverage: Optional[float] = None  # e.g., EBITDA/Interest >= 2.0x
+    maximum_debt_to_ebitda: Optional[float] = None     # e.g., Total Debt/EBITDA <= 4.0x
+    minimum_ebitda: Optional[float] = None             # Minimum EBITDA requirement
+    maximum_debt_to_capital: Optional[float] = None    # Debt/(Debt + Equity) ratio
+
+    # Negative Covenants (things issuer CANNOT do)
+    restricted_payments_covenant: Optional[str] = None  # Dividend restrictions
+    additional_debt_restrictions: Optional[str] = None  # Limits on new debt
+    asset_sale_restrictions: Optional[str] = None       # Limits on asset sales
+    merger_restrictions: Optional[str] = None          # Limits on M&A
+    investment_restrictions: Optional[str] = None      # Limits on investments
+
+    # Affirmative Covenants (things issuer MUST do)
+    reporting_requirements: Optional[str] = None       # Financial reporting
+    maintenance_covenants: Optional[str] = None        # Insurance, taxes, etc.
+    collateral_maintenance: Optional[str] = None       # Asset maintenance
+
+    # Default Provisions
+    cross_default_provision: Optional[str] = None      # Default on other debt triggers this
+    events_of_default: List[str] = []                  # What triggers default
+
+    # Other
+    change_of_control_covenant: Optional[str] = None   # Change of control triggers
+    covenant_summary: Optional[str] = None            # Overall covenant overview
 
 class SpecialFeatures(BaseModelWithConfig):
     """Special features like change-of-control provisions"""
     has_change_of_control: Optional[bool] = False
-    change_of_control_protection: Optional[str] = None
+    change_of_control_protection: Optional[str] = None  # Short summary
     change_of_control_put_right: Optional[bool] = False  # Can holders force redemption?
     change_of_control_put_price: Optional[float] = None  # Price for forced redemption
     change_of_control_definition: Optional[str] = None  # What triggers it
+    change_of_control_details: Optional[str] = None  # Longer description with paragraph text
     has_anti_dilution: Optional[bool] = False
     has_vwap_pricing: Optional[bool] = False
+
+    # Covenants (NEW)
+    covenants: Optional[Covenants] = None
 
 class RateResetTerms(BaseModelWithConfig):
     """Rate reset features for floating or fixed-to-floating preferreds"""
@@ -110,11 +145,17 @@ class SpecialRedemptionEvents(BaseModelWithConfig):
     has_rating_agency_event: Optional[bool] = False
     rating_agency_event_price: Optional[float] = None
     rating_agency_event_window: Optional[str] = None  # e.g., "90 days"
+    rating_agency_event_definition: Optional[str] = None  # Exact definition of trigger
+
     has_regulatory_capital_event: Optional[bool] = False
     regulatory_capital_event_price: Optional[float] = None
     regulatory_capital_event_window: Optional[str] = None
+    regulatory_capital_event_definition: Optional[str] = None  # Exact definition
+
     has_tax_event: Optional[bool] = False
     tax_event_details: Optional[str] = None
+
+    tax_treatment_notes: Optional[str] = None  # General tax treatment info
 
 class SecurityFeatures(BaseModelWithConfig):
     """Main security features data structure"""
@@ -138,7 +179,14 @@ class SecurityFeatures(BaseModelWithConfig):
     payment_frequency: Optional[str] = None  # "quarterly", "monthly", "semi-annually"
     dividend_payment_dates: List[str] = []  # Specific payment dates if regular (e.g., ["Mar 30", "Jun 30"])
     dividend_stopper_clause: Optional[str] = None  # Restrictions on common dividends
+    dividend_calculation_method: Optional[str] = None  # e.g., "360-day year", "actual/360"
     is_perpetual: Optional[bool] = None  # No maturity date
+
+    # Original offering information (NEW)
+    original_offering_size: Optional[int] = None  # Shares originally offered
+    original_offering_date: Optional[date] = None  # When originally issued
+    original_offering_price: Optional[float] = None  # Original price per share
+    is_new_issuance: Optional[bool] = None  # True if recently issued
     
     # Voting and governance (preferred stock)
     voting_rights_description: Optional[str] = None

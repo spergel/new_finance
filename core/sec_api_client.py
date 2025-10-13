@@ -342,11 +342,110 @@ class SECAPIClient:
             logger.error(f"Could not parse document URLs from index {index_url}: {e}")
             return []
 
+    def _extract_xbrl_text(self, xml_soup) -> str:
+        """Extract meaningful text content from XBRL XML files with better structure preservation."""
+        if not xml_soup:
+            return ""
+
+        extracted_text = []
+        structured_data = {}
+
+        # First pass: collect structured data by context
+        contexts = xml_soup.find_all(['context', 'xbrli:context'])
+        context_map = {}
+        for context in contexts:
+            context_id = context.get('id', '')
+            if context_id:
+                # Extract entity and period information from context
+                entity_info = context.find(['entity', 'xbrli:entity'])
+                period_info = context.find(['period', 'xbrli:period'])
+                if entity_info and period_info:
+                    context_map[context_id] = {
+                        'entity': entity_info.get_text(strip=True),
+                        'period': period_info.get_text(strip=True)
+                    }
+
+        # Second pass: extract facts with context
+        for element in xml_soup.find_all():
+            # Skip schema elements and metadata
+            if element.name and element.name.startswith(('xs:', 'xsd:', 'link:', 'xbrli:', 'xbrldi:')):
+                continue
+
+            # Special handling for DEI (Document and Entity Information) elements
+            # These contain important security descriptions and identifiers
+            is_dei_element = element.name and element.name.startswith('dei:')
+            if is_dei_element:
+                # DEI elements often contain security descriptions with dividend rates
+                text_content = element.get_text(strip=True)
+                if text_content and len(text_content) > 5:  # DEI content is usually descriptive
+                    extracted_text.append(f"{element.name}: {text_content}")
+                continue
+
+            # Get text content
+            text_content = element.get_text(strip=True)
+            if not text_content or len(text_content) <= 1:
+                continue
+
+            element_name = element.name or ""
+
+            # Get context reference
+            context_ref = element.get('contextRef', '')
+            unit_ref = element.get('unitRef', '')
+
+            # Format structured data
+            if any(keyword in element_name.lower() for keyword in [
+                'preferred', 'stock', 'series', 'dividend', 'rate', 'share',
+                'outstanding', 'par', 'value', 'cumulative', 'callable', 'redemption',
+                'depositary', 'perpetual', 'liquidation'
+            ]):
+                # Financial data - format with context
+                formatted = f"{element_name}"
+                if context_ref and context_ref in context_map:
+                    ctx = context_map[context_ref]
+                    formatted += f" [{ctx['period']}]"
+                if unit_ref:
+                    formatted += f" ({unit_ref})"
+                formatted += f": {text_content}"
+
+                # Group by category for better extraction
+                category = 'other'
+                if 'preferred' in element_name.lower() and 'share' in element_name.lower():
+                    category = 'preferred_shares'
+                elif 'dividend' in element_name.lower():
+                    category = 'dividends'
+                elif 'outstanding' in element_name.lower():
+                    category = 'outstanding'
+                elif 'rate' in element_name.lower():
+                    category = 'rates'
+
+                if category not in structured_data:
+                    structured_data[category] = []
+                structured_data[category].append(formatted)
+
+                extracted_text.append(formatted)
+
+            elif 'us-gaap:' in element_name or 'rily:' in element_name:
+                # XBRL taxonomy elements - include for context
+                formatted = f"{element_name}: {text_content}"
+                extracted_text.append(formatted)
+
+        # Add structured sections for better parsing
+        for category, items in structured_data.items():
+            if items:
+                extracted_text.append(f"\n--- {category.upper()} ---")
+                extracted_text.extend(items)
+
+        # Join with newlines to preserve some structure
+        combined_text = '\n'.join(extracted_text)
+
+        # Clean the combined text
+        return self.clean_text(combined_text)
+
     def clean_text(self, text: str) -> str:
         """Clean and normalize text content."""
         if not text:
             return ""
-        
+
         # Handle encoding issues
         if isinstance(text, bytes):
             try:
@@ -356,18 +455,18 @@ class SECAPIClient:
                     text = text.decode('latin-1')
                 except UnicodeDecodeError:
                     text = text.decode('utf-8', errors='replace')
-        
+
         # Remove HTML tags
         import re
         text = re.sub(r'<[^>]+>', '', text)
-        
+
         # Normalize whitespace
         text = re.sub(r'\s+', ' ', text)
-        
+
         # Remove special characters that cause issues
         text = text.replace('\x00', '')  # Remove null bytes
         text = text.replace('\ufffd', '')  # Remove replacement characters
-        
+
         return text.strip()
 
     def fetch_filing(self, ticker: str, filing_type: str = "10-K", 
@@ -411,9 +510,44 @@ class SECAPIClient:
                     
                     # Handle different content types
                     content_type = response.headers.get('content-type', '').lower()
-                    
-                    if 'xml' in content_type or doc.filename.endswith('.xml'):
-                        # Skip XML files as they cause encoding issues
+                    filename = doc.filename.lower()
+
+                    # Check if this is an XBRL file (contains structured financial data)
+                    is_xbrl_file = (
+                        'xml' in content_type or filename.endswith('.xml')
+                    ) and (
+                        # XBRL instance documents typically have date patterns like 20240930
+                        re.search(r'\d{8}', filename) and
+                        ('htm' in filename or 'xbrl' in filename or '_' in filename)
+                    )
+
+                    if is_xbrl_file:
+                        # Process XBRL XML files - they contain valuable financial data
+                        try:
+                            # Parse as XML and extract text content
+                            if response.encoding is None:
+                                response.encoding = 'utf-8'
+
+                            xml_content = response.text
+                            # Parse XML and extract all text content
+                            xml_soup = BeautifulSoup(xml_content, 'xml')
+                            # Extract text from all elements, preserving structure
+                            xbrl_text = self._extract_xbrl_text(xml_soup)
+                            full_text += xbrl_text
+
+                        except Exception as e:
+                            logger.warning(f"Failed to process XBRL file {doc.filename}: {e}")
+                            # Fallback: try to extract raw text
+                            try:
+                                raw_text = self.clean_text(xml_content)
+                                if raw_text.strip():
+                                    full_text += raw_text
+                            except Exception as e2:
+                                logger.warning(f"Failed to extract raw text from XBRL file {doc.filename}: {e2}")
+                                continue
+
+                    elif 'xml' in content_type or filename.endswith('.xml'):
+                        # Skip non-XBRL XML files (schema files, etc.) that may cause issues
                         continue
                     elif 'image' in content_type or any(doc.filename.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
                         # Skip image files
@@ -424,14 +558,14 @@ class SECAPIClient:
                             # Try to detect encoding
                             if response.encoding is None:
                                 response.encoding = 'utf-8'
-                            
+
                             text_content = response.text
-                            
+
                             # Parse and clean text
                             soup = BeautifulSoup(text_content, 'html.parser')
                             cleaned_text = self.clean_text(soup.get_text())
                             full_text += cleaned_text
-                            
+
                         except UnicodeDecodeError:
                             # Fallback to binary content with manual encoding
                             try:
@@ -735,9 +869,47 @@ class SECAPIClient:
                         label = f"{doc.exhibit_type} ({doc.filename})"
                     full_text += f"\n\n--- DOCUMENT: {label} ---\n\n"
                     content_type = response.headers.get('content-type', '').lower()
-                    if 'xml' in content_type or doc.filename.endswith('.xml'):
+                    filename = doc.filename.lower()
+
+                    # Check if this is an XBRL file (contains structured financial data)
+                    is_xbrl_file = (
+                        'xml' in content_type or filename.endswith('.xml')
+                    ) and (
+                        # XBRL instance documents typically have date patterns like 20240930
+                        re.search(r'\d{8}', filename) and
+                        ('htm' in filename or 'xbrl' in filename or '_' in filename)
+                    )
+
+                    if is_xbrl_file:
+                        # Process XBRL XML files - they contain valuable financial data
+                        try:
+                            # Parse as XML and extract text content
+                            if response.encoding is None:
+                                response.encoding = 'utf-8'
+
+                            xml_content = response.text
+                            # Parse XML and extract all text content
+                            xml_soup = BeautifulSoup(xml_content, 'xml')
+                            # Extract text from all elements, preserving structure
+                            xbrl_text = self._extract_xbrl_text(xml_soup)
+                            full_text += xbrl_text
+
+                        except Exception as e:
+                            logger.warning(f"Failed to process XBRL file {doc.filename}: {e}")
+                            # Fallback: try to extract raw text
+                            try:
+                                raw_text = self.clean_text(xml_content)
+                                if raw_text.strip():
+                                    full_text += raw_text
+                            except Exception as e2:
+                                logger.warning(f"Failed to extract raw text from XBRL file {doc.filename}: {e2}")
+                                continue
+
+                    elif 'xml' in content_type or filename.endswith('.xml'):
+                        # Skip non-XBRL XML files (schema files, etc.) that may cause issues
                         continue
                     elif 'image' in content_type or any(doc.filename.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                        # Skip image files
                         continue
                     else:
                         if response.encoding is None:
