@@ -733,7 +733,7 @@ class SECAPIClient:
                         'date': recent_filings['filingDate'][i],
                         'accession': accession,
                         'description': recent_filings['primaryDocument'][i],
-                        'url': f"https://www.sec.gov/cgi-bin/viewer?action=view&cik={cik}&accession_number={accession_no_hyphens}&xbrl_type=v",
+                        'url': f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_hyphens}/{recent_filings['primaryDocument'][i]}",
                         'index_url': f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_no_hyphens}/{accession}-index.html"
                     }
                     filings_424b.append(filing_info)

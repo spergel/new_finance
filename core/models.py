@@ -62,6 +62,8 @@ class ConversionTerms(BaseModelWithConfig):
     conversion_triggers: List[str] = []  # e.g., ["change_of_control", "delisting"]
     earliest_conversion_date: Optional[date] = None
     conversion_details: Optional[str] = None  # Longer description with paragraph text
+    # Additional
+    share_cap: Optional[float] = None  # e.g., 7.39645
 
 class RedemptionTerms(BaseModelWithConfig):
     """Terms for redeeming or calling the security"""
@@ -181,6 +183,10 @@ class SecurityFeatures(BaseModelWithConfig):
     dividend_stopper_clause: Optional[str] = None  # Restrictions on common dividends
     dividend_calculation_method: Optional[str] = None  # e.g., "360-day year", "actual/360"
     is_perpetual: Optional[bool] = None  # No maturity date
+    # Additional dividend details
+    first_dividend_date: Optional[date] = None
+    first_dividend_amount: Optional[float] = None
+    dividend_payment_schedule: List[str] = []  # e.g., ["Jan 15", "Apr 15", "Jul 15", "Oct 15"]
 
     # Original offering information (NEW)
     original_offering_size: Optional[int] = None  # Shares originally offered
@@ -217,6 +223,8 @@ class SecurityFeatures(BaseModelWithConfig):
     # Exchange listing (for liquidity)
     exchange_listed: Optional[str] = None  # e.g., "NYSE", "Nasdaq", "OTC"
     trading_symbol: Optional[str] = None  # Primary trading symbol
+    listing_status: Optional[str] = None  # e.g., "application filed", "approved", "trading"
+    ownership_restrictions: Optional[str] = None  # e.g., REIT-related ownership/transfer restrictions summary
 
     # Source information
     source_filing: str

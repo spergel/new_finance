@@ -17,30 +17,30 @@ logger = logging.getLogger(__name__)
 def match_series_to_424b(ticker: str, series_names: List[str], max_filings: int = 20) -> List[Dict]:
     """
     Find the BEST 424B filing for each series.
-
+    
     Args:
         ticker: Company ticker
         series_names: List of series names (e.g., ["A", "B", "Series C"])
         max_filings: Maximum number of filings to check
-
+    
     Returns:
         List of best matched filings - one per series
     """
     logger.info(f"Finding best 424B filings for {ticker} series: {series_names}")
-
+    
     client = SECAPIClient()
-
+    
     # Get recent 424B filings
     filings = client.get_all_424b_filings(
-        ticker,
+        ticker, 
         max_filings=max_filings,
         filing_variants=['424B5', '424B3', '424B7']  # Actual issuances only
     )
-
+    
     if not filings:
         logger.warning(f"No 424B filings found for {ticker}")
         return []
-
+    
     # For each series, find the best matching filing
     best_filings_per_series = {}
 
@@ -69,24 +69,35 @@ def match_series_to_424b(ticker: str, series_names: List[str], max_filings: int 
                         break
 
                 if found_match:
-                    # Choose the best filing for this series (prefer more recent)
-                    if series not in best_filings_per_series:
-                        best_filings_per_series[series] = filing.copy()
-                        best_filings_per_series[series]['content'] = content
-                        best_filings_per_series[series]['matched_series'] = [series]
-                        logger.info(f"Found filing for Series {series}: {filing['form']} ({filing['date']})")
-                    else:
-                        # Keep the more recent filing
-                        existing_date = best_filings_per_series[series]['date']
-                        if filing['date'] > existing_date:
+                    # Check if this filing actually contains offering details for preferred shares
+                    # Look for keywords that indicate this is actually a preferred share offering
+                    preferred_keywords = ['preferred shares', 'preferred stock', 'cumulative', 'liquidation preference', 'dividend']
+                    content_lower = content.lower()
+
+                    has_preferred_content = any(keyword in content_lower for keyword in preferred_keywords)
+
+                    if has_preferred_content:
+                        # Choose the best filing for this series (prefer more recent that has preferred content)
+                        if series not in best_filings_per_series:
                             best_filings_per_series[series] = filing.copy()
                             best_filings_per_series[series]['content'] = content
                             best_filings_per_series[series]['matched_series'] = [series]
-
+                            logger.info(f"Found filing for Series {series}: {filing['form']} ({filing['date']}) - Has preferred content")
+                        else:
+                            # Keep the more recent filing that has preferred content
+                            existing_date = best_filings_per_series[series]['date']
+                            if filing['date'] > existing_date:
+                                best_filings_per_series[series] = filing.copy()
+                                best_filings_per_series[series]['content'] = content
+                                best_filings_per_series[series]['matched_series'] = [series]
+                                logger.info(f"Updated to more recent filing for Series {series}: {filing['form']} ({filing['date']})")
+            else:
+                        logger.debug(f"Series {series} mentioned in {filing['form']} ({filing['date']}) but no preferred content found")
+        
         except Exception as e:
             logger.error(f"Error processing filing {filing.get('accession')}: {e}")
             continue
-
+    
     # Return the best filing for each series
     matched_filings = list(best_filings_per_series.values())
     logger.info(f"Selected {len(matched_filings)} best filings (one per series)")
@@ -96,22 +107,22 @@ def match_series_to_424b(ticker: str, series_names: List[str], max_filings: int 
 if __name__ == "__main__":
     # Quick test
     import sys
-
+    
     if len(sys.argv) < 2:
         print("Usage: python filing_matcher.py <TICKER> <SERIES1> <SERIES2> ...")
         sys.exit(1)
-
+    
     ticker = sys.argv[1]
     series_names = sys.argv[2:] if len(sys.argv) > 2 else []
 
     if not series_names:
         print(f"No series names provided. Use: python filing_matcher.py <TICKER> <SERIES1> <SERIES2> ...")
         sys.exit(1)
-
+    
     # Match filings
     print(f"\nMatching 424B filings for series: {series_names}")
     matched = match_series_to_424b(ticker, series_names, max_filings=20)
-
+    
     print(f"\nMatched {len(matched)} filings:")
     for filing in matched:
         print(f"  - {filing['form']} ({filing['date']}): Series {filing['matched_series']}")

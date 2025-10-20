@@ -9,11 +9,12 @@ Focuses on conversion terms, redemption terms, and special features like change-
 import os
 import json
 import logging
+import re
 from typing import List, Dict, Optional
 from datetime import datetime, date
 from core.sec_api_client import SECAPIClient
 from core.models import (
-    SecurityFeatures, SecuritiesFeaturesResult, SecurityType,
+    SecurityFeatures, SecuritiesFeaturesResult, SecurityType, 
     ConversionTerms, RedemptionTerms, SpecialFeatures, Covenants,
     RateResetTerms, DepositarySharesInfo, SpecialRedemptionEvents
 )
@@ -391,7 +392,11 @@ class SecuritiesFeaturesExtractor:
             matches = re.findall(pattern, content[:20000], re.IGNORECASE | re.MULTILINE)
             if matches:
                 # Clean up matches - remove empty strings and duplicates
-                clean_matches = [m.strip() for m in matches if m.strip()]
+                if isinstance(matches[0], tuple):
+                    flat = [" ".join([p for p in tup if p]) for tup in matches]
+                    clean_matches = [m.strip() for m in flat if m.strip()]
+                else:
+                    clean_matches = [m.strip() for m in matches if m.strip()]
                 tax_notes.extend(clean_matches)
 
         if tax_notes:
@@ -434,6 +439,82 @@ class SecuritiesFeaturesExtractor:
             r'filing.*?date.*?(\d{4}-\d{2}-\d{2})',
             r'dated.*?(\d{4}-\d{2}-\d{2})',
         ]
+
+        # Extract dividend payment schedule and first dividend info
+        schedule_patterns = [
+            r'payable\s+quarterly\s+in\s+arrears\s+on\s+the\s+([\d]{1,2}(?:st|nd|rd|th)\s+day\s+of\s+[A-Za-z]+(?:,\s*[A-Za-z]+)*)',
+            r'payable\s+quarterly\s+in\s+arrears\s+on\s+the\s+([A-Za-z]+\s+\d{1,2}(?:,\s*[A-Za-z]+\s+\d{1,2})*)',
+            r'payable\s+quarterly\s+in\s+arrears\s+on\s+the\s+15th\s+day\s+of\s+([A-Za-z,\s]+)\s+of\s+each\s+year',
+            r'payable\s+quarterly\s+.*?on\s+the\s+15th\s+day\s+of\s+([A-Za-z,\s]+)'
+        ]
+
+        first_div_patterns = [
+            r'first\s+distribution.*?will\s+be\s+paid\s+on\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})',
+            r'first\s+distribution.*?amount\s+of\s*\$?([\d\.]+)'
+        ]
+
+        # Payment schedule months
+        months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+        month_set = set(m.lower() for m in months)
+
+        for pattern in schedule_patterns:
+            matches = re.findall(pattern, content[:20000], re.IGNORECASE | re.MULTILINE)
+            if matches:
+                text = matches[0]
+                # Extract month names from the captured text
+                found_months = []
+                for m in months:
+                    if re.search(rf'\b{m}\b', text, re.IGNORECASE):
+                        found_months.append(m[:3] + " 15")
+                if found_months:
+                    for series in extracted:
+                        if 'dividend_payment_schedule' not in extracted[series]:
+                            extracted[series]['dividend_payment_schedule'] = found_months
+                            extracted[series]['payment_frequency'] = extracted[series].get('payment_frequency') or 'quarterly'
+                    break
+
+        # First dividend date and amount
+        first_date_match = re.search(first_div_patterns[0], content[:20000], re.IGNORECASE | re.MULTILINE)
+        if first_date_match:
+            first_date = first_date_match.group(1)
+            for series in extracted:
+                if 'first_dividend_date' not in extracted[series]:
+                    extracted[series]['first_dividend_date'] = first_date
+
+        first_amt_match = re.search(first_div_patterns[1], content[:20000], re.IGNORECASE | re.MULTILINE)
+        if first_amt_match:
+            try:
+                amt = float(first_amt_match.group(1))
+                for series in extracted:
+                    if 'first_dividend_amount' not in extracted[series]:
+                        extracted[series]['first_dividend_amount'] = amt
+            except ValueError:
+                pass
+
+        # Listing status/symbol (application vs listed)
+        list_patterns = [
+            r'application\s+to\s+list\s+.*?on\s+(NASDAQ|NYSE)[^\n]*?under\s+the\s+symbol\s+“?\"?([A-Z]{3,6})',
+            r'listed\s+on\s+(NASDAQ|NYSE)[^\n]*?under\s+the\s+symbol\s+“?\"?([A-Z]{3,6})'
+        ]
+        for pattern in list_patterns:
+            m = re.search(pattern, content[:20000], re.IGNORECASE | re.MULTILINE)
+            if m:
+                exch = m.group(1).upper()
+                sym = m.group(2).upper()
+                for series in extracted:
+                    if 'exchange_listed' not in extracted[series]:
+                        extracted[series]['exchange_listed'] = exch
+                        extracted[series]['trading_symbol'] = sym
+                        extracted[series]['listing_status'] = 'application filed' if 'application' in pattern else 'listed'
+                break
+
+        # REIT ownership restrictions
+        reit_pat = r'(?:restrictions\s+on\s+ownership\s+and\s+transfer|preserve\s+our\s+REIT\s+status|to\s+preserve\s+.*?REIT)'
+        m = re.search(reit_pat, content[:20000], re.IGNORECASE | re.MULTILINE)
+        if m:
+            for series in extracted:
+                if 'ownership_restrictions' not in extracted[series]:
+                    extracted[series]['ownership_restrictions'] = 'REIT ownership and transfer restrictions present'
 
         for pattern in date_patterns:
             matches = re.findall(pattern, content[:5000], re.IGNORECASE | re.MULTILINE)
@@ -479,7 +560,7 @@ class SecuritiesFeaturesExtractor:
             filing_date_obj = datetime.strptime(filing.get('filingDate', ''), '%Y-%m-%d').date()
         except:
             filing_date_obj = date.today()
-
+        
         # Include extracted terms in the prompt
         extracted_text = ""
         if extracted_rates or extracted_terms:
@@ -500,6 +581,20 @@ class SecuritiesFeaturesExtractor:
                     extracted_text += f" tax_treatment_notes: {terms['tax_treatment_notes'][:200]}..."  # Truncate long text
                 if 'dividend_restrictions' in terms:
                     extracted_text += f" dividend_restrictions: {terms['dividend_restrictions']}"
+                if 'dividend_payment_schedule' in terms:
+                    extracted_text += f" dividend_payment_schedule: {terms['dividend_payment_schedule']}"
+                if 'first_dividend_date' in terms:
+                    extracted_text += f" first_dividend_date: {terms['first_dividend_date']}"
+                if 'first_dividend_amount' in terms:
+                    extracted_text += f" first_dividend_amount: {terms['first_dividend_amount']}"
+                if 'exchange_listed' in terms:
+                    extracted_text += f" exchange_listed: {terms['exchange_listed']}"
+                if 'trading_symbol' in terms:
+                    extracted_text += f" trading_symbol: {terms['trading_symbol']}"
+                if 'listing_status' in terms:
+                    extracted_text += f" listing_status: {terms['listing_status']}"
+                if 'ownership_restrictions' in terms:
+                    extracted_text += f" ownership_restrictions: {terms['ownership_restrictions']}"
 
         prompt = f"""
         Analyze this {filing_type} filing for {ticker} and extract information about PREFERRED SHARES and other securities.{extracted_text}
@@ -528,25 +623,30 @@ class SecuritiesFeaturesExtractor:
         2. Description (full name like "8.125% Non-Cumulative Preferred Stock, Series A")
         3. Par value (stated as "$X.XX per share" or "par value $X.XX")
         4. Liquidation preference (stated as "$X.XX per share" or "liquidation preference $X.XX")
-
+        
         **Dividend Features:**
         5. Dividend rate (fixed or floating) - CRITICAL - extract from title/headers like "7.375% Series B"
         6. Dividend calculation method (e.g., "360-day year", "actual/360", "quarterly at 8.125% per annum")
         7. Is cumulative or non-cumulative - SEARCH for "non-cumulative", "cumulative", "dividends not mandatory"
         8. Dividend stopper clause (restrictions on common dividends if preferred dividends not paid)
         9. Dividend payment obligations - "may declare dividends", "no obligation to pay", "discretionary dividends"
+        10. Dividend payment schedule (e.g., ["Jan 15","Apr 15","Jul 15","Oct 15"])
+        11. First dividend date (parse to ISO if a date is given) and first dividend amount (numeric)
 
         **Offering Information:**
         10. Original offering details: size of offering, offering date, offering price - SEARCH CAREFULLY
         11. Is this a new issuance or refinancing of existing debt?
-
+        
         **Conversion Features:**
         12. Is convertible to common stock? If yes:
            - Conversion ratio or price
-           - Conversion triggers (mandatory vs optional) - INCLUDE RELEVANT PARAGRAPH TEXT
+           - Conversion type: Choose from ["mandatory", "optional", "change_of_control", "fundamental_change"]
+           - Conversion triggers: List only the trigger types as simple strings (e.g., ["mandatory", "optional"]) - DO NOT include full legal text
+           - Conversion conditions: Brief 1-2 sentence summary of when/how conversion works
            - Adjustment formulas (anti-dilution provisions)
            - Earliest conversion date
-
+           - Share cap (numeric), if a cap like 7.39645 is specified
+        
         **Redemption/Call Features:**
         13. Is callable by company? If yes:
             - Earliest call date
@@ -554,12 +654,12 @@ class SecuritiesFeaturesExtractor:
             - Notice period required
             - Optional vs mandatory redemption
         14. Holder put rights (can holders force redemption?)
-
+        
         **Governance Rights:**
         15. Voting rights (conditions under which preferred holders can vote)
         16. Board appointment rights (can elect directors?)
         17. Protective provisions (veto rights over major decisions like M&A, new senior debt, etc.)
-
+        
         **Special Provisions:**
         18. Change of control provisions (what happens on acquisition) - INCLUDE RELEVANT PARAGRAPH TEXT
         19. Rate reset terms (for floating rate preferreds)
@@ -568,6 +668,7 @@ class SecuritiesFeaturesExtractor:
         22. Regulatory capital treatment (Tier 1, additional Tier 1, Tier 2 capital) - CRITICAL for bank preferreds
         23. Mandatory conversion triggers (e.g., IPO, change of control)
         24. Sinking fund provisions
+        25. REIT ownership and transfer restrictions (short summary if present)
 
         **Covenants and Restrictions:**
         25. Financial covenants: interest coverage ratios, debt-to-EBITDA limits, minimum EBITDA
@@ -576,7 +677,7 @@ class SecuritiesFeaturesExtractor:
         28. Events of default: payment defaults, bankruptcy, covenant breaches
         29. Cross-default provisions: default on other debt
         30. Change of control covenants: what triggers on ownership changes
-
+        
         Return ONLY valid JSON (no markdown, no explanations) as a list of securities:
         [
           {{
@@ -603,10 +704,10 @@ class SecuritiesFeaturesExtractor:
             "conversion_terms": {{
               "conversion_price": null,
               "conversion_ratio": null,
-              "is_conditional": false,
-              "conversion_triggers": [],
+              "is_conditional": true,
+              "conversion_triggers": ["change_of_control"],
               "earliest_conversion_date": null,
-              "conversion_details": null
+              "conversion_details": "Holders may convert upon change of control at fundamental change conversion rate"
             }},
             "redemption_terms": {{
               "is_callable": true,
@@ -667,8 +768,8 @@ class SecuritiesFeaturesExtractor:
           }}
         ]
 
-        Filing content (first 12000 characters):
-        {content[:12000]}
+        Filing content (first 60000 characters):
+        {content[:60000]}
 
         Return ONLY the JSON array, no other text.
 """
@@ -700,8 +801,8 @@ class SecuritiesFeaturesExtractor:
                         if security_key not in seen_securities:
                             seen_securities.add(security_key)
                             securities.append(security)
-                        else:
-                            logger.info(f"Skipping duplicate security: {security.security_id}")
+                    else:
+                        logger.info(f"Skipping duplicate security: {security.security_id}")
                 except Exception as e:
                     logger.warning(f"Error parsing security data: {e}")
 
@@ -732,7 +833,8 @@ class SecuritiesFeaturesExtractor:
                         is_conditional=conv_data.get('is_conditional', False),
                         conversion_triggers=conv_data.get('conversion_triggers', []),
                         earliest_conversion_date=conv_data.get('earliest_conversion_date'),
-                        conversion_details=conv_data.get('conversion_details')
+                        conversion_details=conv_data.get('conversion_details'),
+                        share_cap=self._safe_float(conv_data.get('share_cap'))
                     )
                 except Exception as e:
                     logger.warning(f"Error creating conversion terms: {e}")
@@ -745,7 +847,7 @@ class SecuritiesFeaturesExtractor:
                     redemption_terms = RedemptionTerms(
                         is_callable=red_data.get('is_callable', False),
                         call_price=self._safe_float(red_data.get('call_price')),
-                        earliest_call_date=red_data.get('earliest_call_date'),
+                        earliest_call_date=self._parse_date(red_data.get('earliest_call_date')),
                         notice_period_days=self._safe_int(red_data.get('notice_period_days')),
                         has_make_whole=red_data.get('has_make_whole', False),
                         has_sinking_fund=red_data.get('has_sinking_fund', False),
@@ -845,7 +947,7 @@ class SecuritiesFeaturesExtractor:
                 spec_data = data['special_features']
                 special_features = SpecialFeatures(
                     has_change_of_control=spec_data.get('has_change_of_control', False),
-                    change_of_control_protection=spec_data.get('change_of_control_protection'),
+                    change_of_control_protection=self._safe_string(spec_data.get('change_of_control_protection')),
                     change_of_control_put_right=spec_data.get('change_of_control_put_right', False),
                     change_of_control_put_price=self._safe_float(spec_data.get('change_of_control_put_price')),
                     change_of_control_definition=spec_data.get('change_of_control_definition'),
@@ -868,7 +970,7 @@ class SecuritiesFeaturesExtractor:
                     dividend_rate_final = extracted_rates[series_name]
                     logger.info(f"Using regex-extracted dividend rate for {series_name}: {dividend_rate_final}%")
 
-                # Try to extract series from security_id
+                    # Try to extract series from security_id
                 elif 'Series' in data.get('security_id', ''):
                     import re
                     match = re.search(r'Series\s+([A-Z])\b', data.get('security_id', ''), re.IGNORECASE)
@@ -910,17 +1012,20 @@ class SecuritiesFeaturesExtractor:
                 dividend_stopper_clause=data.get('dividend_stopper_clause'),
                 dividend_calculation_method=data.get('dividend_calculation_method'),
                 is_perpetual=data.get('is_perpetual'),
+                first_dividend_date=self._parse_date(data.get('first_dividend_date')),
+                first_dividend_amount=self._safe_float(data.get('first_dividend_amount')),
+                dividend_payment_schedule=data.get('dividend_payment_schedule', []),
 
                 # Original offering information
                 original_offering_size=self._safe_int(data.get('original_offering_size')),
-                original_offering_date=data.get('original_offering_date'),
+                original_offering_date=self._parse_date(data.get('original_offering_date')),
                 original_offering_price=self._safe_float(data.get('original_offering_price')),
                 is_new_issuance=data.get('is_new_issuance'),
                 # Voting and governance
                 voting_rights_description=data.get('voting_rights'),
                 can_elect_directors=data.get('can_elect_directors'),
                 director_election_trigger=data.get('director_election_trigger'),
-                protective_provisions=data.get('protective_provisions', []),
+                protective_provisions=data.get('protective_provisions') or [],
                 # Terms
             conversion_terms=conversion_terms,
                 redemption_terms=redemption_terms,
@@ -933,6 +1038,8 @@ class SecuritiesFeaturesExtractor:
                 # Exchange listing
                 exchange_listed=data.get('exchange_listed'),
                 trading_symbol=data.get('trading_symbol'),
+                listing_status=data.get('listing_status'),
+                ownership_restrictions=data.get('ownership_restrictions'),
                 source_filing=filing_type,
                 filing_url=filing_url,
                 extraction_confidence=0.8,  # Default confidence
@@ -946,6 +1053,72 @@ class SecuritiesFeaturesExtractor:
             logger.error(f"Error parsing security data: {e}")
             return None
     
+    def _parse_date(self, date_str: str) -> Optional[date]:
+        """Parse date from various formats and return ISO format date.
+
+        Handles formats like:
+        - ISO format: 2024-06-24
+        - Month DD, YYYY: November 30, 2022
+        - Month DD YYYY: August 11 2023
+        - DD/MM/YYYY: 15/06/2024
+        - MM/DD/YYYY: 06/15/2024
+        """
+        if not date_str or not isinstance(date_str, str):
+            return None
+
+        # Clean up the string
+        date_str = date_str.strip()
+
+        # Remove extra text like "(expected)"
+        date_str = re.sub(r'\s*\([^)]*\)\s*', '', date_str)
+
+        # Handle empty month names like "March , 2024"
+        date_str = re.sub(r',\s*,', ',', date_str)
+
+        try:
+            # Try ISO format first (YYYY-MM-DD)
+            if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+                return date.fromisoformat(date_str)
+
+            # Try Month DD, YYYY format
+            month_day_year = re.match(r'^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$', date_str)
+            if month_day_year:
+                month_name, day, year = month_day_year.groups()
+                month_num = {
+                    'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
+                    'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+                }.get(month_name.title())
+                if month_num:
+                    return date(int(year), month_num, int(day))
+
+            # Try DD/MM/YYYY or MM/DD/YYYY
+            slash_date = re.match(r'^(\d{1,2})/(\d{1,2})/(\d{4})$', date_str)
+            if slash_date:
+                part1, part2, year = slash_date.groups()
+                # Assume MM/DD/YYYY if first part <= 12, otherwise DD/MM/YYYY
+                if int(part1) <= 12:
+                    return date(int(year), int(part1), int(part2))
+                else:
+                    return date(int(year), int(part2), int(part1))
+
+            # Try Month YYYY format (set to first day of month)
+            month_year = re.match(r'^([A-Za-z]+),?\s+(\d{4})$', date_str)
+            if month_year:
+                month_name, year = month_year.groups()
+                month_num = {
+                    'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
+                    'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+                }.get(month_name.title())
+                if month_num:
+                    return date(int(year), month_num, 1)
+
+            logger.warning(f"Could not parse date: {date_str}")
+            return None
+
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Error parsing date '{date_str}': {e}")
+            return None
+
     def _parse_security_type(self, type_str: str) -> SecurityType:
         """Parse string to SecurityType enum."""
         type_map = {
@@ -989,6 +1162,14 @@ class SecuritiesFeaturesExtractor:
             return int(float(value))
         except (ValueError, TypeError):
             return None
+
+    def _safe_string(self, value) -> Optional[str]:
+        """Safely convert value to string, handle boolean conversion."""
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return "Yes" if value else "No"
+        return str(value).strip() if value else None
 
     def _get_security_key(self, security: SecurityFeatures) -> str:
         """Generate a unique key for a security to detect duplicates."""
@@ -1104,15 +1285,22 @@ def extract_preferred_stocks_simple(ticker: str, api_key: str = None) -> Securit
 
     # Simple regex to find preferred stock series in 10-Q
     import re
-    series_pattern = r'Series\s+([A-Z]+).*?Preferred\s+Stock'
+
+    # Look for specific patterns: "Series X Preferred Stock" where X is a single letter
+    series_pattern = r'Series\s+([A-Z])\s+Preferred\s+Stock'
     series_matches = re.findall(series_pattern, filing_content, re.IGNORECASE | re.MULTILINE)
 
-    # Also look for "Preferred Stock, Series X" pattern
-    reverse_pattern = r'Preferred\s+Stock.*?Series\s+([A-Z]+)'
+    # Also look for "Preferred Stock, Series X" where X is a single letter
+    reverse_pattern = r'Preferred\s+Stock.*?Series\s+([A-Z])\b'
     reverse_matches = re.findall(reverse_pattern, filing_content, re.IGNORECASE | re.MULTILINE)
 
-    # Combine and deduplicate series names
-    series_names = list(set(series_matches + reverse_matches))
+    # Also look for "Series X" followed by preferred-related terms within same sentence
+    combined_pattern = r'Series\s+([A-Z])(?:\s+(?:Cumulative|Non-Cumulative|Redeemable|Perpetual|Reset|Convertible))*\s+Preferred\s+Stock'
+    combined_matches = re.findall(combined_pattern, filing_content, re.IGNORECASE | re.MULTILINE)
+
+    # Combine and deduplicate series names (only single letters)
+    all_matches = series_matches + reverse_matches + combined_matches
+    series_names = list(set([match for match in all_matches if len(match) == 1 and match.isalpha()]))
 
     if not series_names:
         logger.warning(f"No preferred stock series found in 10-Q for {ticker}")

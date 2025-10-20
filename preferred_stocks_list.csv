@@ -1,0 +1,27 @@
+ticker,company_name,status
+BAC,Bank of America,processed_no_securities
+BW,Babcock & Wilcox,processed
+C,Citigroup,processed_no_securities
+FBIO,Fortress Biotech,processed
+GREE,Gree Inc,processed
+JXN,Jackson Financial,processed
+RILY,B. Riley Financial,processed
+WFC,Wells Fargo,processed_no_securities
+ALLY,Ally Financial,processed
+AXP,American Express,processed_no_securities
+COF,Capital One,processed
+DFS,Discover Financial,processed_no_securities
+GS,Goldman Sachs,processed
+JPM,JPMorgan Chase,processed_no_securities
+KEY,KeyCorp,processed_no_securities
+MET,MetLife,processed_no_securities
+MS,Morgan Stanley,processed_no_securities
+PGR,Progressive,processed_no_securities
+PRU,Prudential,processed_no_securities
+RF,Regions Financial,processed_no_securities
+SCHW,Charles Schwab,processed
+SPG,Simon Property Group,processed_no_securities
+TFC,Truist Financial,processed
+USB,U.S. Bancorp,processed_no_securities
+VNO,Vornado Realty Trust,processed_no_securities
+
