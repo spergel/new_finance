@@ -1,0 +1,6 @@
+beautifulsoup4>=4.11.0
+pandas>=1.3.0
+requests>=2.25.0
+edgartools>=1.0.0
+yfinance>=0.2.0
+lxml>=4.6.0

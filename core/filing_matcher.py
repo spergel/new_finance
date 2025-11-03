@@ -41,7 +41,7 @@ def match_series_to_424b(ticker: str, series_names: List[str], max_filings: int 
         logger.warning(f"No 424B filings found for {ticker}")
         return []
     
-    # For each series, find the best matching filing
+    # For each series, find the best matching filing using a simple score
     best_filings_per_series = {}
 
     for filing in filings:
@@ -51,48 +51,77 @@ def match_series_to_424b(ticker: str, series_names: List[str], max_filings: int 
             if not content:
                 continue
 
-            # Check first 1000 characters for series mentions
-            header_text = content[:1000].lower()
+            # Lower-cased content and header slice for quick checks
+            content_lower = content.lower()
+            header_text = content_lower[:2000]
 
             for series in series_names:
                 series_lower = series.lower()
                 # Handle both "Series A" and "A" formats
-                patterns = [
-                    rf'\bseries\s+{re.escape(series_lower)}\b',
-                    rf'\b{re.escape(series_lower)}\s+series\b',
-                ]
+                # Scoring criteria
+                score = 0
+                # Direct header mention of series
+                if re.search(rf'\bseries\s+{re.escape(series_lower)}\b', header_text):
+                    score += 3
+                # Preferred context near header
+                if re.search(rf'\bseries\s+{re.escape(series_lower)}\b.*?preferred\s+stock', header_text) or re.search(r'preferred\s+(stock|shares)', header_text):
+                    score += 2
+                # Presence of a section like "Description of the Series X Preferred Stock"
+                has_series_section = bool(re.search(rf'description\s+of\s+the\s+series\s+{re.escape(series_lower)}\s+preferred\s+stock', content_lower))
+                if has_series_section:
+                    score += 6
+                # Offering language specific to this series, within a tight window
+                window_pattern = rf'(we\s+are\s+offering|public\s+offering\s+price|we\s+offer)[\s\S]{{0,400}}series\s+{re.escape(series_lower)}\b'
+                m_off = re.search(window_pattern, content_lower)
+                has_series_offering = bool(m_off)
+                exclusive_offering = False
+                if has_series_offering:
+                    # Extract a local window and check if other series letters are co-mentioned
+                    start = max(0, m_off.start() - 200)
+                    end = min(len(content_lower), m_off.end() + 200)
+                    win = content_lower[start:end]
+                    other_series = [s for s in series_names if s.lower() != series_lower]
+                    other_hits = 0
+                    for os in other_series:
+                        if re.search(rf'\bseries\s+{re.escape(os.lower())}\b', win):
+                            other_hits += 1
+                    if other_hits == 0:
+                        exclusive_offering = True
+                        score += 8
+                    else:
+                        # Non-exclusive offering mention: smaller boost and a slight penalty
+                        score += 3
+                        score -= min(2, other_hits)  # penalize omnibus offering mentions
+                # Strong preferred indicators anywhere
+                if any(k in content_lower for k in ['liquidation preference', 'dividend', 'cumulative']):
+                    score += 1
+                # Exclusion: if clearly a notes prospectus without preferred context
+                if ('senior notes' in content_lower or 'notes due' in content_lower) and 'preferred stock' not in content_lower:
+                    score = 0
 
-                found_match = False
-                for pattern in patterns:
-                    if re.search(pattern, header_text):
-                        found_match = True
-                        break
+                if score > 0:
+                    existing = best_filings_per_series.get(series)
+                    candidate = filing.copy()
+                    candidate['content'] = content
+                    candidate['matched_series'] = [series]
+                    candidate['_score'] = score
+                    candidate['_has_series_section'] = has_series_section
+                    candidate['_has_series_offering'] = has_series_offering
+                    candidate['_exclusive_offering'] = exclusive_offering
 
-                if found_match:
-                    # Check if this filing actually contains offering details for preferred shares
-                    # Look for keywords that indicate this is actually a preferred share offering
-                    preferred_keywords = ['preferred shares', 'preferred stock', 'cumulative', 'liquidation preference', 'dividend']
-                    content_lower = content.lower()
-
-                    has_preferred_content = any(keyword in content_lower for keyword in preferred_keywords)
-
-                    if has_preferred_content:
-                        # Choose the best filing for this series (prefer more recent that has preferred content)
-                        if series not in best_filings_per_series:
-                            best_filings_per_series[series] = filing.copy()
-                            best_filings_per_series[series]['content'] = content
-                            best_filings_per_series[series]['matched_series'] = [series]
-                            logger.info(f"Found filing for Series {series}: {filing['form']} ({filing['date']}) - Has preferred content")
-                        else:
-                            # Keep the more recent filing that has preferred content
-                            existing_date = best_filings_per_series[series]['date']
-                            if filing['date'] > existing_date:
-                                best_filings_per_series[series] = filing.copy()
-                                best_filings_per_series[series]['content'] = content
-                                best_filings_per_series[series]['matched_series'] = [series]
-                                logger.info(f"Updated to more recent filing for Series {series}: {filing['form']} ({filing['date']})")
-            else:
-                        logger.debug(f"Series {series} mentioned in {filing['form']} ({filing['date']}) but no preferred content found")
+                    if not existing:
+                        best_filings_per_series[series] = candidate
+                        logger.info(f"Candidate for Series {series}: score={score} {filing['form']} ({filing['date']})")
+                    else:
+                        # Prefer filings that have offering language for the series, then explicit series section, then score/date
+                        ex_off = existing.get('_has_series_offering', False)
+                        ex_excl = existing.get('_exclusive_offering', False)
+                        if (not ex_off and candidate['_has_series_offering']) \
+                           or (ex_off == candidate['_has_series_offering'] and (not ex_excl and candidate.get('_exclusive_offering', False))) \
+                           or (ex_off == candidate['_has_series_offering'] and ex_excl == candidate.get('_exclusive_offering', False) and (not existing.get('_has_series_section') and candidate['_has_series_section'])) \
+                           or (ex_off == candidate['_has_series_offering'] and ex_excl == candidate.get('_exclusive_offering', False) and existing.get('_has_series_section') == candidate['_has_series_section'] and (score > existing.get('_score', 0) or (score == existing.get('_score', 0) and filing['date'] > existing['date']))):
+                            best_filings_per_series[series] = candidate
+                            logger.info(f"Updated candidate for Series {series}: score={score} {filing['form']} ({filing['date']})")
         
         except Exception as e:
             logger.error(f"Error processing filing {filing.get('accession')}: {e}")

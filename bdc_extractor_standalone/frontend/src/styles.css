@@ -1,0 +1,23 @@
+@layer components {
+  .window {
+    @apply bg-panel border border-silver/30 rounded-window shadow-crt;
+  }
+  .titlebar {
+    @apply px-3 py-2 flex items-center justify-between bg-panel/80 border-b border-silver/20 rounded-t-window;
+  }
+  .badge {
+    @apply text-xs px-2 py-0.5 rounded border font-semibold;
+  }
+  .badge-ok { @apply bg-teal/20 text-teal border-teal/50; }
+  .badge-warn { @apply bg-accent/20 text-accent border-accent/50; }
+  .badge-danger { @apply bg-danger/20 text-danger border-danger/50; }
+  .btn {
+    @apply bg-panel px-3 py-1 border border-silver/30 rounded-sm hover:bg-panel/70 transition;
+  }
+}
+
+
+
+
+
+

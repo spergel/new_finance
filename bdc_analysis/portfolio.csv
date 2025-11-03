@@ -1,0 +1,12 @@
+context_ref,industry,company_name,acquisition_date,maturity_date,principal_amount,cost_basis,fair_value,interest_rate,basis_spread,floor_rate,eot_rate,pik_rate
+c-54,Aerospace and Defense,Loft Orbital Solutions Inc.,11/21/2023,11/30/2027,,846,846,,6.75,10.00,5.00,
+c-59,Aerospace and Defense,"Parry Labs, LLC",12/20/2024,11/30/2028,"19,500","19,341","19,341",,3.50,11.25,5.00,
+c-63,Business Applications Software,"Arcadia Power, Inc.",5/6/2022,11/30/2026,"2,902","2,779","2,779",11.75,,,7.75,
+c-66,Business Applications Software,"FlashParking, Inc.",6/26/2024,5/31/2027,"20,520","20,281","20,281",,1.75,12.75,,2.50
+c-67,Business Applications Software,"Farmer's Business Network, Inc.",9/28/2023,9/27/2025,14,14,14,15.00,,,,
+c-68,Business Applications Software,NewStore Inc.,1/29/2024,1/31/2027,"2,500","2,538","2,538",4.00,,11.50,6.25,
+c-70,Business Products and Services,Equafin Corp.,4/17/2025,4/1/2028,123,122,122,,1.25,8.00,3.50,
+c-71,Business Products and Services,"Muon Space, Inc.",5/30/2025,11/1/2027,"2,300","2,260","2,260",,0.00,7.00,6.00,
+c-75,Business/Productivity Software,"Ao1 Holdings, Inc.",12/13/2024,12/1/2027,"3,997","3,978","3,978",,1.00,7.75,3.00,
+c-76,Business/Productivity Software,"Forum Brands, LLC",6/1/2025,5/1/2027,"13,253","13,870","12,084",,,,5.48,12.00
+c-82,Consumer Non-Durables,"Don't Run Out, Inc.",12/30/2021,10/31/2025,"1,000","1,094","1,094",,8.75,16.25,11.00,
