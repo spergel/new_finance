@@ -1,0 +1,6 @@
+Table 34 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK LASH OPCO, LLC Revolving Loan 11.39 % SOFR (Q) 7.00 % 1.00 % 12/29/2021 3/18/2026 866 863 823 First Lien 11.39 % SOFR (Q) 7.00 % 1.00 % 12/29/2021 3/18/2026 17,618 17,448 16,737 18,311 17,560 REVO BRAN

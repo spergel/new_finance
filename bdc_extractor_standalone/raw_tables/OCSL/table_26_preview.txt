@@ -1,0 +1,6 @@
+Table 26 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Finastra USA, Inc. Application Software First Lien Term Loan SOFR+ 7.25 % 12.18 % 9/13/2029 $ 11,683 $ 11,491 $ 11,521 (6)(11)(15) Finastra USA, Inc. Application Software First Lien Revolver SOFR+ 7.25 % 12.18 % 9/13/2029 564 544 547 (6)(11)(15)(19) Finthrive Software Intermediate Holdings, Inc. Health Care Technology First Lien Term Loan SOF

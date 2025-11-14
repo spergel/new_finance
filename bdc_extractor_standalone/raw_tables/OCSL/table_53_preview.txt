@@ -1,0 +1,6 @@
+Table 53 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment Index Spread Cash Interest Rate (1)(2) PIK Maturity Date Shares Principal Cost Fair Value (3) Notes Cloud Software Group, Inc. Application Software First Lien Term Loan SOFR+ 3.50 % 7.80 % 3/29/2029 $ 6,026 $ 5,698 $ 6,039 Crown Subsea Communications Holding, Inc. Alternative Carriers First Lien Term Loan SOFR+ 4.00 % 8.33 % 1/30/2031 7,920 7,852 7,981 DirecTV Financing, LLC Cable & Satellite First Lien Term Loan SOFR+ 5.25 % 9.79 % 8/2/2029 8,080 7,

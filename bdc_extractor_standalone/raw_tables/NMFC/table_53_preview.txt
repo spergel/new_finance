@@ -1,0 +1,6 @@
+Table 53 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets WEG Sub Intermediate Holdings, LLC Wealth Enhancement Group, LLC Financial Services First lien (2)(12)(13) SOFR(Q) 5.00 % 9.55 % 05/2022 10/2028 $ 15,593 $ 15,565 $ 15,593 First lien (3)(11)(13) SOFR(Q) 5.00 % 9.55 % 08/2021 10/2028 11,908 11,887 11,908 First lien (2)(12)(13) SO

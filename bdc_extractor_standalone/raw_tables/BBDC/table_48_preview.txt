@@ -1,0 +1,6 @@
+Table 48 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Dune Group First Lien Senior Secured Term Loan EURIBOR + 4.00 %, 6.6 % Cash 09/21 09/28 $ 120 $ 117 $ 91 — % (3)(7)(8)(10)(30) Dune Group First Lien Senior Secured Term Loan SOFR + 4.00 %, 8.8 % Cash 09/21 09/28 204 204 193 — % (3)(7)(8)(13) Dune Group First Lien Senior Secured Term Loan SOFR + 4.00 %, 6.3 % Cash, 2.3 % PIK 09/21 09/28 1,230 1,218 1,164 0.1 % (3)

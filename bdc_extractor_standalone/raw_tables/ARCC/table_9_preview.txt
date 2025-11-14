@@ -1,0 +1,6 @@
+Table 9 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Software and Services ACP Avenu Midco LLC (13) Provider of technology solutions and hardware to U.S. state and local governments and motor vehicle agencies First lien senior secured loan 9.29 % SOFR (Q) 5.00 % 04/2025 10/2029 $ 13.2 $ 13.0 $ 13.2 (2)(9) First lien senior secured loan 9.32 % SOFR (Q) 5.00 % 08/2025 10/2029 

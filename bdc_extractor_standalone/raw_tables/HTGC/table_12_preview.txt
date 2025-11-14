@@ -1,0 +1,6 @@
+Table 12 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Debt Investments Biotechnology Tools Antheia, Inc. Senior Secured August 2029 Prime + 2.85 %, Floor rate 10.35 %, 5.55 % Exit Fee $ 21,250 $ 19,483 $ 19,483 Subtotal: Biotechnology Tools ( 0.89 %)* 19,483 19,483 Communications & Networking Aryaka Networks, Inc. Senior Secured December 2028 Prime + 1.80 %, Floor rate 9.30 %, PIK Interest 1.25 %, 6.73 % Exit Fee $ 28,182 28,315 

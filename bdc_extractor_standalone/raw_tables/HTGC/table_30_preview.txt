@@ -1,0 +1,6 @@
+Table 30 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Senior Secured October 2025 Prime + 5.20 %, Floor rate 9.95 %, 4.95 % Exit Fee £ 1,250 $ 1,612 $ 1,594 (5)(10) Total Cutover, Inc. 7,279 7,261 Dashlane, Inc. Senior Secured December 2027 Prime + 3.05 %, Floor rate 11.55 %, PIK Interest 1.10 %, 6.28 % Exit Fee $ 45,476 46,450 47,708 (11)(13)(14)(17)(19) Dispatch Technologies, Inc. Senior Secured April 2028 3-month SOFR + 8.01 %

@@ -1,0 +1,6 @@
+Table 20 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS (Unaudited) September 30, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK Industrial Services BP LOENBRO HOLDINGS INC. Revolving Loan 10.01 % SOFR (M) 5.75 % 1.50 % 2/9/2024 2/1/2029 330 316 330 (10) First Lien 10.16 % SOFR (Q) 5.75 % 1.50 % 2/9/2024 2/1/2029

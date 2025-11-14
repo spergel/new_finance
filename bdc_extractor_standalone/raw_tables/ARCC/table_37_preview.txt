@@ -1,0 +1,6 @@
+Table 37 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 8.79 % SOFR (S) 4.50 % 05/2025 02/2028 8.4 8.4 8.4 (2)(6)(9) 8.7 8.7 Convera International Holdings Limited and Convera International Financial S.A R.L. (13) Provider of B2B international payment and FX risk management solutions First lien senior secured loan 10.15 % SOFR (Q) 6.00 % 03/2022 0

@@ -1,0 +1,6 @@
+Table 110 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) Marcel Bidco LLC (Marcel Bidco GmbH) Software SOFR(M) 3.50 % 8.07 % 11/2030 $ 2,029 $ 2,002 $ 2,052 Maverick Bidco Inc. Software SOFR(Q) 5.00 % 9.69 % 05/2028 1,965 1,900 1,968 Maverick Bidco Inc. Software SOFR(Q) 3.75 % 8.49 % 05/2028 7,761 7,739 7,773 Mavis Tire Express Services Topco, Corp. Retail SOFR(M) 3.50 % 7.86 % 05/2028 8,180 8,158 8,246 M

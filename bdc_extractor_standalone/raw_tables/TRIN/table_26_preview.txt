@@ -1,0 +1,6 @@
+Table 26 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Slingshot Aerospace, Inc. Secured Loan July 12, 2024 August 1, 2029 Variable interest rate Prime + 5.5 % or Floor rate 14.0 %; EOT 3.0 % $ 23,700 $ 23,499 $ 23,907 (8)(9)(14)(19) Secured Loan August 7, 2024 April 30, 2026 Fixed interest rate 10.0 %; EOT 0.0 % 500 500 559 Total Slingshot Aerospace, Inc. 24,200

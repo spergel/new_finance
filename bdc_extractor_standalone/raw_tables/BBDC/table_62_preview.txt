@@ -1,0 +1,6 @@
+Table 62 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Mercell Holding AS Class B Units 08/22 28,943.8 $ — $ 21 — % (3)(7)(29) Syniverse Holdings, Inc. Series A Preferred Equity 12.5 % PIK 05/22 7,575,758 10,167 10,076 0.8 % (7) Subtotal Telecommunications ( 0.9 %)* 10,278 10,222 Transportation: Cargo AIT Worldwide Logistics Holdings, Inc. Partnership Units 04/21 348.68 349 550 — % (7)(29) Echo Global Logistics, Inc. P

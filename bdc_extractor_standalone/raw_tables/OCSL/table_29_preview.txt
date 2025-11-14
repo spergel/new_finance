@@ -1,0 +1,6 @@
+Table 29 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Salus Workers' Compensation, LLC Diversified Financial Services Warrants 991,019 $ 327 $ 89 (15) Saratoga Diversified Financial Services Credit Linked Note SOFR+ 5.33 % 10.18 % 12/31/2029 $ 24,500 24,478 24,478 (6)(11)(15)(22) Scilex Holding Co Biotechnology Common Stock 9,307 78 9 (11) scPharmaceuticals Inc. Pharmaceuticals Warrants 53,700 1

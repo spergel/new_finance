@@ -1,0 +1,6 @@
+Table 39 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 9.40 % SOFR (Q) 5.25 % 07/2025 07/2030 4.3 4.3 4.3 (2)(6)(9) 9.5 9.5 Nexus Buyer LLC Provider of FDIC-insured deposit placement services Second lien senior secured loan 9.91 % SOFR (M) 5.75 % 08/2025 02/2032 124.9 123.8 124.6 (2)(16) Pathstone Family Office LLC and Kelso XI Tailwind Co-Invest

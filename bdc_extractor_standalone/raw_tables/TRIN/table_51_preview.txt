@@ -1,0 +1,6 @@
+Table 51 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Green Technology Commonwealth Fusion Systems, LLC Equipment Financing June 16, 2023 July 1, 2030 Fixed interest rate 13.0 %; EOT 10.0 % $ 3,450 $ 3,565 $ 3,665 (9)(14)(19) Equipment Financing June 27, 2024 July 1, 2030 Fixed interest rate 13.2 %; EOT 10.0 % 9,979 10,021 10,333 (9)(14)(19) Total Commonwealth F

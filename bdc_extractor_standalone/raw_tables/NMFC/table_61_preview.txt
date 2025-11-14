@@ -1,0 +1,6 @@
+Table 61 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Park Place Technologies, LLC Business Services First lien (2)(12)(13) SOFR(M) 5.25 % 9.61 % 07/2024 03/2031 $ 7,654 $ 7,635 $ 7,635 First lien (3)(11)(13)(16) - Drawn SOFR(M) 5.25 % 9.80 % 07/2024 03/2030 258 258 258 7,893 7,893 0.58 % Eclipse Topco, Inc. (33) Eclipse Buyer Inc.

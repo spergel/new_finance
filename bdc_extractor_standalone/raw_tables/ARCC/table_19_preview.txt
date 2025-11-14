@@ -1,0 +1,6 @@
+Table 19 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets 5.8 2.4 Runway Bidco, LLC (13) Provider of workload automation software First lien senior secured loan 9.00 % SOFR (Q) 5.00 % 12/2024 12/2031 42.6 42.2 42.2 (2)(9) Sapphire Software Buyer, Inc. (13) Provider of application security testing solutions First lien senior secured loan 8.87 % SOFR (S) 5.00 % 09/2024 09/2031 31.6

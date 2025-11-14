@@ -1,0 +1,6 @@
+Table 23 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Other Healthcare Services Cellares Corporation Equipment Financing August 2, 2024 September 1, 2029 Fixed interest rate 12.0 %; EOT 4.5 % $ 3,906 $ 3,971 $ 4,038 (14)(19) Equipment Financing January 10, 2025 February 1, 2030 Fixed interest rate 12.2 %; EOT 4.5 % 5,386 5,428 5,434 (14)(19) Equipment Financing 

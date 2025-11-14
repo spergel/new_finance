@@ -192,7 +192,7 @@ def main():
 	tables = extract_tables_under_heading(soup)
 	records = parse_section_tables(tables)
 
-	out_dir = os.path.join(os.path.dirname(__file__), "output")
+	out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 	os.makedirs(out_dir, exist_ok=True)
 	out_csv = os.path.join(out_dir, "CSWC_Schedule_from_html.csv")
 	fields = [

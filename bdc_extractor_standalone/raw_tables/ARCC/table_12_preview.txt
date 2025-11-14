@@ -1,0 +1,6 @@
+Table 12 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 8.03 % SOFR (M) 3.75 % 06/2024 10/2028 16.5 15.0 15.8 (2)(9)(16) Second lien senior secured loan 10.78 % SOFR (M) 6.50 % 10/2021 10/2029 137.5 137.5 123.7 (2)(9) Series A preferred shares 10.50 % PIK 10/2021 116,413 170.2 142.9 (2) Class A-1 common stock 10/2021 1,360,100 13.6 20.6 (2) 344.7 

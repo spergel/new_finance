@@ -1,0 +1,6 @@
+Table 52 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets OA Topco, L.P.(29) OA Buyer, Inc. Healthcare First lien (2)(12)(13) SOFR(M) 4.75 % 9.11 % 06/2024 12/2028 $ 31,513 $ 31,442 $ 31,513 First lien (2)(12)(13) SOFR(M) 4.75 % 9.11 % 12/2021 12/2028 27,425 27,248 27,425 First lien (2)(12)(13) SOFR(M) 4.75 % 9.11 % 05/2022 12/2028 1,7

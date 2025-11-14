@@ -856,6 +856,7 @@ class SECAPIClient:
                         # This indicates there are more filings in separate files
                         # We'd need to fetch those files individually, but for now
                         # we'll rely on the 'recent' filings which typically cover 2+ years
+                        pass
             
             logger.info(f"Found {len(filings_10q)} 10-Q filings for {ticker} between {start_datetime.date()} and {end_datetime.date()}")
             return filings_10q

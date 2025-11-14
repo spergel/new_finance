@@ -1,0 +1,6 @@
+Table 24 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Apex Bidco Limited First Lien Senior Secured Term Loan SONIA + 7.00 %, 11.1 % Cash 01/20 01/27 $ 3,440 $ 3,222 $ 3,358 0.3 % (3)(7)(8)(16) Apex Bidco Limited Subordinated Senior Unsecured Term Loan 9.0 % PIK 01/20 07/27 376 361 352 — % (3)(7) Artemis Bidco Limited First Lien Senior Secured Term Loan EURIBOR + 5.00 %, 7.0 % Cash 11/24 11/31 495 430 472 — % (3)(7)(

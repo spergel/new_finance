@@ -1,0 +1,6 @@
+Table 30 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Consumer Products & Services BaubleBar, Inc. Warrant January 16, 2020 March 29, 2027 Preferred Series C 531,806 $ 1.96 $ 639 $ 10 (17) Warrant January 16, 2020 April 20, 2028 Preferred Series C 60,000 $ 1.96 72 1 (17) Total BaubleBar, Inc. 711 11 Bobbie Baby, Inc. Warrant September 12, 2025 September 12, 2035 Commo

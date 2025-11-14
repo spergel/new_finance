@@ -1,0 +1,6 @@
+Table 57 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Perimeter Master Note Business Trust Structured Secured Note - Class C 5.9 % Cash 05/22 11/28 $ 182 $ 182 $ 180 — % (3)(7) Perimeter Master Note Business Trust Structured Secured Note - Class D 8.5 % Cash 05/22 11/28 182 182 178 — % (3)(7) Perimeter Master Note Business Trust Structured Secured Note - Class E 11.4 % Cash 05/22 11/28 9,274 9,274 8,904 0.7 % (3)(7)

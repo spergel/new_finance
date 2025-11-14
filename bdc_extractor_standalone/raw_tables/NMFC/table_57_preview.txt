@@ -1,0 +1,6 @@
+Table 57 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Power Grid Holdings, Inc. Business Products First lien (4)(13) SOFR(Q) 4.75 % 9.08 % 11/2023 12/2030 $ 22,387 $ 22,228 $ 22,387 1.65 % Xactly Corporation Software First lien (4)(13) SOFR(Q) 6.25 % 10.86 % 07/2017 07/2027 22,500 22,483 22,250 1.64 % YLG Holdings, Inc. Business Se

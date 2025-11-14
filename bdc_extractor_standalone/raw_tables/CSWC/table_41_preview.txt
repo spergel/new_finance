@@ -1,0 +1,6 @@
+Table 41 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK SUREKAP, LLC First Lien - Term Loan A 9.30 % SOFR (Q) 5.00 % 1.50 % 6/24/2024 6/25/2029 19,089 18,932 19,089 First Lien - Term Loan B 11.30 % SOFR (Q) 7.00 % 1.50 % 6/24/2024 6/25/2029 19,089 18,931 19

@@ -25,6 +25,11 @@ class LRFCInvestment:
     floor_rate: Optional[str] = None
     pik_rate: Optional[str] = None
     context_ref: Optional[str] = None
+    shares_units: Optional[str] = None
+    percent_net_assets: Optional[str] = None
+    currency: Optional[str] = None
+    commitment_limit: Optional[float] = None
+    undrawn_commitment: Optional[float] = None
 
 
 class LRFCExtractor:
@@ -97,7 +102,8 @@ class LRFCExtractor:
         for x in invs:
             ind[x.industry] += 1; ty[x.investment_type] += 1
 
-        out_dir = 'output'; os.makedirs(out_dir, exist_ok=True)
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
+        os.makedirs(out_dir, exist_ok=True)
         out_file = os.path.join(out_dir, 'LRFC_Logan_Ridge_Finance_Corp_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
             w = csv.DictWriter(f, fieldnames=['company_name','industry','business_description','investment_type','acquisition_date','maturity_date','principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate'])
@@ -110,7 +116,9 @@ class LRFCExtractor:
                 
                 w.writerow({'company_name':x.company_name,'industry':standardized_industry,'business_description':x.business_description,'investment_type':standardized_inv_type,'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardized_ref_rate,'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate})
         logger.info(f"Saved to {out_file}")
-        return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}
+        # Convert invs to dict format
+        investment_dicts = [{'company_name':x.company_name,'industry':standardize_industry(x.industry),'business_description':x.business_description,'investment_type':standardize_investment_type(x.investment_type),'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardize_reference_rate(x.reference_rate),'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate} for x in invs]
+        return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'investments':investment_dicts,'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}
 
     def _extract_typed_contexts(self, content: str) -> List[Dict]:
         res = []
@@ -351,15 +359,29 @@ class LRFCExtractor:
 
     def _extract_facts(self, content: str) -> Dict[str,List[Dict]]:
         facts=defaultdict(list)
-        sp=re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*>([^<]*)</\1>', re.DOTALL)
-        for concept,cref,val in sp.findall(content):
-            if val and cref: facts[cref].append({'concept':concept,'value':val.strip()})
-        ixp=re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
+        # Extract standard XBRL facts and capture unitRef for currency
+        sp=re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*(?:unitRef="([^"]*)")?[^>]*>([^<]*)</\1>', re.DOTALL)
+        for match in sp.finditer(content):
+            concept=match.group(1); cref=match.group(2); unit_ref=match.group(3); val=match.group(4)
+            if val and cref:
+                fact_entry={'concept':concept,'value':val.strip()}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match=re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency']=currency_match.group(1)
+                facts[cref].append(fact_entry)
+        ixp=re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:unitRef="([^"]*)")?[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
         for m in ixp.finditer(content):
-            name=m.group(1); cref=m.group(2); html=m.group(4)
+            name=m.group(1); cref=m.group(2); unit_ref=m.group(3); html=m.group(5)
             if not cref: continue
             txt=re.sub(r'<[^>]+>','',html).strip()
-            if txt: facts[cref].append({'concept':name,'value':txt})
+            if txt:
+                fact_entry={'concept':name,'value':txt}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match=re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency']=currency_match.group(1)
+                facts[cref].append(fact_entry)
             start=max(0,m.start()-3000); end=min(len(content), m.end()+3000); window=content[start:end]
             ref=re.search(r'\b(SOFR\+|PRIME\+|LIBOR\+|Base Rate\+|EURIBOR\+)\b', window, re.IGNORECASE)
             if ref: facts[cref].append({'concept':'derived:ReferenceRateToken','value':ref.group(1).replace('+','').upper()})
@@ -368,29 +390,46 @@ class LRFCExtractor:
             pik=re.search(r'\bPIK\b[^\d%]{0,20}([\d\.]+)\s*%?', window, re.IGNORECASE)
             if pik: facts[cref].append({'concept':'derived:PIKRate','value':pik.group(1)})
             # Handle both 2-digit and 4-digit years
-            dates=re.findall(r'\b\d{1,2}/\d{1,2}/(?:\d{2}|\d{4})\b', window)
+            # Try multiple date patterns
+            dates=[]
+            dates.extend(re.findall(r'\b\d{1,2}/\d{1,2}/(?:\d{2}|\d{4})\b', window))
+            dates.extend(re.findall(r'\b\d{4}-\d{1,2}-\d{1,2}\b', window))
+            dates.extend(re.findall(r'\b[A-Za-z]+\s+\d{1,2},\s*\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{1,2}/\d{4}\b', window))
             if dates:
-                # Normalize dates to 4-digit years
+                # Normalize dates to 4-digit years and remove duplicates
                 normalized_dates = []
+                seen = set()
                 for d in dates:
                     parts = d.split('/')
                     if len(parts) == 3:
                         year_str = parts[2]
                         if len(year_str) == 2:
-                            year = int(year_str)
-                            if year < 50:
-                                year_str = f"20{year:02d}"
-                            else:
-                                year_str = f"19{year:02d}"
-                        normalized_dates.append(f"{parts[0]}/{parts[1]}/{year_str}")
+                            try:
+                                year = int(year_str)
+                                if year < 50:
+                                    year_str = f"20{year:02d}"
+                                else:
+                                    year_str = f"19{year:02d}"
+                            except:
+                                pass
+                        normalized_d = f"{parts[0]}/{parts[1]}/{year_str}"
                     else:
-                        normalized_dates.append(d)
+                        normalized_d = d
+                    if normalized_d not in seen:
+                        seen.add(normalized_d)
+                        normalized_dates.append(normalized_d)
                 
                 if len(normalized_dates)>=2:
                     facts[cref].append({'concept':'derived:AcquisitionDate','value':normalized_dates[0]})
                     facts[cref].append({'concept':'derived:MaturityDate','value':normalized_dates[-1]})
-                else:
-                    facts[cref].append({'concept':'derived:MaturityDate','value':normalized_dates[0]})
+                elif len(normalized_dates)==1:
+                    date_idx=window.find(normalized_dates[0])
+                    date_context=window[max(0,date_idx-50):min(len(window),date_idx+50)]
+                    if re.search(r'\b(acquisition|origination|investment|purchase|initial)\s+date\b', date_context, re.IGNORECASE):
+                        facts[cref].append({'concept':'derived:AcquisitionDate','value':normalized_dates[0]})
+                    else:
+                        facts[cref].append({'concept':'derived:MaturityDate','value':normalized_dates[0]})
         return facts
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[LRFCInvestment]:
@@ -439,6 +478,16 @@ class LRFCExtractor:
             if cl=='derived:pikrate': inv.pik_rate=self._percent(v); continue
             if cl=='derived:acquisitiondate': inv.acquisition_date=v; continue
             if cl=='derived:maturitydate': inv.maturity_date=v; continue
+            # Extract shares/units for equity investments
+            if any(k in cl for k in ['numberofshares','sharesoutstanding','unitsoutstanding','sharesheld','unitsheld']):
+                try: 
+                    shares_val=v.strip().replace(',','')
+                    float(shares_val)  # Validate
+                    inv.shares_units=shares_val
+                except: pass
+                continue
+            # Extract currency from fact metadata
+            if 'currency' in f: inv.currency=f.get('currency')
         # Fill missing fields from parsed identifier tokens
         if not inv.maturity_date and context.get('maturity_date'):
             inv.maturity_date = context['maturity_date']
@@ -455,6 +504,12 @@ class LRFCExtractor:
             inv.spread = context['spread']
         if not inv.floor_rate and context.get('floor_rate'):
             inv.floor_rate = context['floor_rate']
+        # Heuristic for commitment_limit and undrawn_commitment
+        if inv.fair_value and not inv.principal_amount: inv.commitment_limit=inv.fair_value
+        elif inv.fair_value and inv.principal_amount:
+            if inv.fair_value>inv.principal_amount:
+                inv.commitment_limit=inv.fair_value
+                inv.undrawn_commitment=inv.fair_value-inv.principal_amount
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value): return inv
         return None
 
@@ -531,6 +586,11 @@ class LRFCInvestment:
     floor_rate: Optional[str] = None
     pik_rate: Optional[str] = None
     context_ref: Optional[str] = None
+    shares_units: Optional[str] = None
+    percent_net_assets: Optional[str] = None
+    currency: Optional[str] = None
+    commitment_limit: Optional[float] = None
+    undrawn_commitment: Optional[float] = None
 
 
 class LRFCExtractor:
@@ -603,7 +663,8 @@ class LRFCExtractor:
         for x in invs:
             ind[x.industry] += 1; ty[x.investment_type] += 1
 
-        out_dir = 'output'; os.makedirs(out_dir, exist_ok=True)
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
+        os.makedirs(out_dir, exist_ok=True)
         out_file = os.path.join(out_dir, 'LRFC_Logan_Ridge_Finance_Corp_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
             w = csv.DictWriter(f, fieldnames=['company_name','industry','business_description','investment_type','acquisition_date','maturity_date','principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate'])
@@ -616,7 +677,9 @@ class LRFCExtractor:
                 
                 w.writerow({'company_name':x.company_name,'industry':standardized_industry,'business_description':x.business_description,'investment_type':standardized_inv_type,'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardized_ref_rate,'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate})
         logger.info(f"Saved to {out_file}")
-        return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}
+        # Convert invs to dict format
+        investment_dicts = [{'company_name':x.company_name,'industry':standardize_industry(x.industry),'business_description':x.business_description,'investment_type':standardize_investment_type(x.investment_type),'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardize_reference_rate(x.reference_rate),'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate} for x in invs]
+        return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'investments':investment_dicts,'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}
 
     def _extract_typed_contexts(self, content: str) -> List[Dict]:
         res = []
@@ -857,15 +920,29 @@ class LRFCExtractor:
 
     def _extract_facts(self, content: str) -> Dict[str,List[Dict]]:
         facts=defaultdict(list)
-        sp=re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*>([^<]*)</\1>', re.DOTALL)
-        for concept,cref,val in sp.findall(content):
-            if val and cref: facts[cref].append({'concept':concept,'value':val.strip()})
-        ixp=re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
+        # Extract standard XBRL facts and capture unitRef for currency
+        sp=re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*(?:unitRef="([^"]*)")?[^>]*>([^<]*)</\1>', re.DOTALL)
+        for match in sp.finditer(content):
+            concept=match.group(1); cref=match.group(2); unit_ref=match.group(3); val=match.group(4)
+            if val and cref:
+                fact_entry={'concept':concept,'value':val.strip()}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match=re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency']=currency_match.group(1)
+                facts[cref].append(fact_entry)
+        ixp=re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:unitRef="([^"]*)")?[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
         for m in ixp.finditer(content):
-            name=m.group(1); cref=m.group(2); html=m.group(4)
+            name=m.group(1); cref=m.group(2); unit_ref=m.group(3); html=m.group(5)
             if not cref: continue
             txt=re.sub(r'<[^>]+>','',html).strip()
-            if txt: facts[cref].append({'concept':name,'value':txt})
+            if txt:
+                fact_entry={'concept':name,'value':txt}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match=re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency']=currency_match.group(1)
+                facts[cref].append(fact_entry)
             start=max(0,m.start()-3000); end=min(len(content), m.end()+3000); window=content[start:end]
             ref=re.search(r'\b(SOFR\+|PRIME\+|LIBOR\+|Base Rate\+|EURIBOR\+)\b', window, re.IGNORECASE)
             if ref: facts[cref].append({'concept':'derived:ReferenceRateToken','value':ref.group(1).replace('+','').upper()})
@@ -874,29 +951,46 @@ class LRFCExtractor:
             pik=re.search(r'\bPIK\b[^\d%]{0,20}([\d\.]+)\s*%?', window, re.IGNORECASE)
             if pik: facts[cref].append({'concept':'derived:PIKRate','value':pik.group(1)})
             # Handle both 2-digit and 4-digit years
-            dates=re.findall(r'\b\d{1,2}/\d{1,2}/(?:\d{2}|\d{4})\b', window)
+            # Try multiple date patterns
+            dates=[]
+            dates.extend(re.findall(r'\b\d{1,2}/\d{1,2}/(?:\d{2}|\d{4})\b', window))
+            dates.extend(re.findall(r'\b\d{4}-\d{1,2}-\d{1,2}\b', window))
+            dates.extend(re.findall(r'\b[A-Za-z]+\s+\d{1,2},\s*\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{1,2}/\d{4}\b', window))
             if dates:
-                # Normalize dates to 4-digit years
+                # Normalize dates to 4-digit years and remove duplicates
                 normalized_dates = []
+                seen = set()
                 for d in dates:
                     parts = d.split('/')
                     if len(parts) == 3:
                         year_str = parts[2]
                         if len(year_str) == 2:
-                            year = int(year_str)
-                            if year < 50:
-                                year_str = f"20{year:02d}"
-                            else:
-                                year_str = f"19{year:02d}"
-                        normalized_dates.append(f"{parts[0]}/{parts[1]}/{year_str}")
+                            try:
+                                year = int(year_str)
+                                if year < 50:
+                                    year_str = f"20{year:02d}"
+                                else:
+                                    year_str = f"19{year:02d}"
+                            except:
+                                pass
+                        normalized_d = f"{parts[0]}/{parts[1]}/{year_str}"
                     else:
-                        normalized_dates.append(d)
+                        normalized_d = d
+                    if normalized_d not in seen:
+                        seen.add(normalized_d)
+                        normalized_dates.append(normalized_d)
                 
                 if len(normalized_dates)>=2:
                     facts[cref].append({'concept':'derived:AcquisitionDate','value':normalized_dates[0]})
                     facts[cref].append({'concept':'derived:MaturityDate','value':normalized_dates[-1]})
-                else:
-                    facts[cref].append({'concept':'derived:MaturityDate','value':normalized_dates[0]})
+                elif len(normalized_dates)==1:
+                    date_idx=window.find(normalized_dates[0])
+                    date_context=window[max(0,date_idx-50):min(len(window),date_idx+50)]
+                    if re.search(r'\b(acquisition|origination|investment|purchase|initial)\s+date\b', date_context, re.IGNORECASE):
+                        facts[cref].append({'concept':'derived:AcquisitionDate','value':normalized_dates[0]})
+                    else:
+                        facts[cref].append({'concept':'derived:MaturityDate','value':normalized_dates[0]})
         return facts
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[LRFCInvestment]:
@@ -945,6 +1039,16 @@ class LRFCExtractor:
             if cl=='derived:pikrate': inv.pik_rate=self._percent(v); continue
             if cl=='derived:acquisitiondate': inv.acquisition_date=v; continue
             if cl=='derived:maturitydate': inv.maturity_date=v; continue
+            # Extract shares/units for equity investments
+            if any(k in cl for k in ['numberofshares','sharesoutstanding','unitsoutstanding','sharesheld','unitsheld']):
+                try: 
+                    shares_val=v.strip().replace(',','')
+                    float(shares_val)  # Validate
+                    inv.shares_units=shares_val
+                except: pass
+                continue
+            # Extract currency from fact metadata
+            if 'currency' in f: inv.currency=f.get('currency')
         # Fill missing fields from parsed identifier tokens
         if not inv.maturity_date and context.get('maturity_date'):
             inv.maturity_date = context['maturity_date']
@@ -961,6 +1065,12 @@ class LRFCExtractor:
             inv.spread = context['spread']
         if not inv.floor_rate and context.get('floor_rate'):
             inv.floor_rate = context['floor_rate']
+        # Heuristic for commitment_limit and undrawn_commitment
+        if inv.fair_value and not inv.principal_amount: inv.commitment_limit=inv.fair_value
+        elif inv.fair_value and inv.principal_amount:
+            if inv.fair_value>inv.principal_amount:
+                inv.commitment_limit=inv.fair_value
+                inv.undrawn_commitment=inv.fair_value-inv.principal_amount
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value): return inv
         return None
 
@@ -1009,5 +1119,8 @@ def main():
 
 if __name__=='__main__':
     main()
+
+
+
 
 

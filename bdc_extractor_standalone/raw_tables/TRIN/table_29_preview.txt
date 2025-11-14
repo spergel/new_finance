@@ -1,0 +1,6 @@
+Table 29 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States Artificial Intelligence & Automation Ambient Photonics, Inc. Warrant July 27, 2022 July 27, 2032 Common Stock 15,976 $ 5.50 $ 48 $ — D-Wave Quantum Inc. Warrant August 1, 2025 August 1, 2035 Common Stock 13,585 $ 16.05 $ 184 $ 287 (19)(22) Everalbum, Inc. Warrant January 16, 2020 July 29, 2026 Class A Common Stock 851,063 $ 0

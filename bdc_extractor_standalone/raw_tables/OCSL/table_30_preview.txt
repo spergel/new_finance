@@ -1,0 +1,6 @@
+Table 30 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes USIC Holdings, Inc. Diversified Support Services First Lien Term Loan SOFR+ 5.50 % 10.35 % 9/10/2031 $ 24 $ 24 $ 15 (6)(15)(19) USIC Holdings, Inc. Diversified Support Services First Lien Revolver SOFR+ 5.25 % 10.10 % 9/10/2031 975 955 955 (6)(15)(19) Verona Pharma, Inc. Pharmaceuticals First Lien Term Loan 11.00 % 5/9/2029 2,512 2,466 2,468 

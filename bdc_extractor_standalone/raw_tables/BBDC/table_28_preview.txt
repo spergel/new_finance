@@ -1,0 +1,6 @@
+Table 28 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Premium Franchise Brands, LLC First Lien Senior Secured Term Loan SOFR + 6.25 %, 10.7 % Cash 12/20 12/26 $ 7,423 $ 7,387 $ 7,378 0.6 % (7)(8)(14) Premium Franchise Brands, LLC First Lien Senior Secured Term Loan SOFR + 6.75 %, 11.2 % Cash 12/20 12/26 2,717 2,674 2,717 0.2 % (7)(8)(14) QPE7 SPV1 BidCo Pty Ltd First Lien Senior Secured Term Loan BBSY + 4.50 %, 8.1 

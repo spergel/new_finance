@@ -1,0 +1,6 @@
+Table 28 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes AmplifyBio, LLC Senior Secured January 2027 Prime + 2.50 %, Floor rate 9.50 %, Cap rate 10.75 %, 5.85 % Exit Fee $ 24,000 $ 24,640 $ 24,940 (15) Arcus Biosciences, Inc. Senior Secured September 2029 Prime + 1.95 %, Floor rate 10.45 %, 7.75 % Exit Fee $ 37,500 37,379 37,379 (6)(10)(15)(17) ATAI Life Sciences N.V. Senior Secured August 2026 Prime + 4.30 %, Floor rate 9.05 %, 6.9

@@ -1,0 +1,6 @@
+Table 46 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Connectivity Tarana Wireless, Inc. Secured Loan September 23, 2024 October 1, 2029 Variable interest rate Prime + 4.5 % or Floor rate 12.5 %; EOT 4.0 % $ 14,800 $ 14,058 $ 14,283 (8)(9)(19) Vertical Communications, Inc. Secured Loan August 23, 2021 March 1, 2026 Variable interest rate Prime + 4.0 % or Floor r

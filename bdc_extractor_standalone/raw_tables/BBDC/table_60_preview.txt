@@ -1,0 +1,6 @@
+Table 60 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Environmental Industries Bridger Aerospace Group Holdings, LLC Preferred Stock- Series C 7.0 % PIK 07/22 14,618 $ 16,725 $ 14,618 1.2 % (7) Subtotal Environmental Industries ( 1.2 %)* 16,725 14,618 Healthcare & Pharmaceuticals Amalfi Midco Class B Common Stock 09/22 98,906,608 1,115 1,239 0.1 % (3)(7)(29) Amalfi Midco Warrants 09/22 380,385 4 919 0.1 % (3)(7)(29) C

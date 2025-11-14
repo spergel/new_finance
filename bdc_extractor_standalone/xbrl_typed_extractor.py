@@ -77,6 +77,12 @@ class TypedMemberExtractor:
         contexts = self._extract_typed_contexts(content)
         logger.info(f"Found {len(contexts)} investment contexts with InvestmentIdentifierAxis")
         
+        # Filter to latest reporting instant to avoid mixing quarterly and year-end data
+        selected_instant = self._select_reporting_instant(contexts)
+        if selected_instant:
+            contexts = [c for c in contexts if c.get('instant') == selected_instant]
+            logger.info(f"Filtered contexts to instant {selected_instant}: {len(contexts)} remaining")
+        
         # Extract facts
         facts_by_context = self._extract_facts(content)
         logger.info(f"Found facts for {len(facts_by_context)} contexts")
@@ -157,10 +163,17 @@ class TypedMemberExtractor:
                 # Parse company name and investment type from the identifier
                 company_name, investment_type = self._parse_investment_identifier(investment_identifier)
                 
-                # Extract dates
+                # Extract dates from XBRL context
                 instant_match = re.search(r'<instant>([^<]+)</instant>', ctx_content)
                 start_match = re.search(r'<startDate>([^<]+)</startDate>', ctx_content)
                 end_match = re.search(r'<endDate>([^<]+)</endDate>', ctx_content)
+                
+                # Also try to extract dates from identifier string itself
+                acq_date_from_id, mat_date_from_id = self._extract_dates_from_identifier(investment_identifier)
+                
+                # Prefer dates from identifier, fall back to XBRL context dates
+                acquisition_date = acq_date_from_id or (start_match.group(1) if start_match else None)
+                maturity_date = mat_date_from_id or (end_match.group(1) if end_match else None)
                 
                 context = {
                     'id': ctx_id,
@@ -168,70 +181,363 @@ class TypedMemberExtractor:
                     'company_name': company_name,
                     'investment_type': investment_type,
                     'instant': instant_match.group(1) if instant_match else None,
-                    'start_date': start_match.group(1) if start_match else None,
-                    'end_date': end_match.group(1) if end_match else None
+                    'start_date': acquisition_date,
+                    'end_date': maturity_date
                 }
                 
                 contexts.append(context)
         
         return contexts
     
+    def _extract_dates_from_identifier(self, identifier: str) -> Tuple[Optional[str], Optional[str]]:
+        """Extract acquisition and maturity dates from identifier string."""
+        acquisition_date = None
+        maturity_date = None
+        
+        # Normalize HTML entities
+        import html
+        ident_clean = html.unescape(identifier or "")
+        
+        # Acquisition date patterns
+        acq_patterns = [
+            r'Initial\s+Acquisition\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'Acquisition\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'Origination\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'Investment\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})',
+        ]
+        
+        # Maturity date patterns
+        mat_patterns = [
+            r'Maturity\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'Maturity\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'Due\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'Due\s+(\d{1,2}/\d{1,2}/\d{4})',
+        ]
+        
+        for pattern in acq_patterns:
+            match = re.search(pattern, ident_clean, re.IGNORECASE)
+            if match:
+                acquisition_date = match.group(1)
+                break
+        
+        for pattern in mat_patterns:
+            match = re.search(pattern, ident_clean, re.IGNORECASE)
+            if match:
+                maturity_date = match.group(1)
+                break
+        
+        return acquisition_date, maturity_date
+    
+    def _select_reporting_instant(self, contexts: List[Dict]) -> Optional[str]:
+        """Choose the latest instant (YYYY-MM-DD) among contexts, if available.
+        
+        This prevents mixing quarterly and year-end data in the same extraction.
+        """
+        dates = []
+        for c in contexts:
+            inst = c.get('instant')
+            if inst and re.match(r'^\d{4}-\d{2}-\d{2}$', inst):
+                dates.append(inst)
+        if not dates:
+            return None
+        return max(dates)
+    
     def _parse_investment_identifier(self, identifier: str) -> Tuple[str, str]:
         """
         Parse investment identifier into company name and investment type.
         
-        Example: "Banyan Software Holdings, LLC, First lien senior secured loan"
-        Returns: ("Banyan Software Holdings, LLC", "First lien senior secured loan")
+        Examples:
+        - "Banyan Software Holdings, LLC, First lien senior secured loan"
+        - "BRANDNER DESIGN, LLC, Revolving Loan"
+        - "American Nuts, LLC, Secured Debt 1"
+        - "Investment, Non-Affiliated Issuer, First Lien Debt, Company Name, Industry"
+        - "Company, Industry, Investment Type"
+        - "PPW Aero Buyer, Inc., One stop 1"
+        - "Hg Genesis 8 Sumoco Limited, Unsecured facility"
+        Returns: (company_name, investment_type)
         """
         
-        # Common investment type patterns
+        # Remove common prefixes that appear at the start
+        cleaned = identifier
+        prefixes = [
+            r'^Investment,\s*Non-Affiliated\s+Issuer,\s*',
+            r'^Investment,\s*Non-Affiliate\s+Issuer,\s*',
+            r'^Investment,\s*Affiliated\s+Issuer,\s*',
+            r'^Investment,\s*Controlled\s+Affiliate,\s*',
+            r'^Services\s+&\s+Supplies\s+',
+            r'^Care\s+Providers\s+&\s+Services\s+',
+            r'^Care\s+Equipment\s+&\s+Supplies\s+',
+            r'^Equipment,\s+Instruments\s+&\s+Components\s+',
+            r'^Defense\s+',
+        ]
+        for prefix in prefixes:
+            cleaned = re.sub(prefix, '', cleaned, flags=re.IGNORECASE)
+        
+        # Common investment type patterns (order matters - check longer patterns first)
         investment_type_patterns = [
-            'First lien senior secured loan',
             'First lien senior secured revolving loan',
+            'First lien senior secured loan',
+            'First lien senior secured notes',
+            'First lien - term loan a',
+            'First lien - term loan b',
+            'First lien term loan',
+            'First lien',
             'Second lien senior secured loan',
+            'Second lien senior secured notes',
+            'Second lien',
             'Senior subordinated loan',
             'Subordinated loan',
+            'Subordinated revolving loan',
+            'Subordinated',
+            'Senior secured notes',
+            'Revolving loan',
+            'Revolver',
+            'One stop',
+            'Unsecured facility',
+            'Unsecured debt',
+            'Unsecured notes',
+            'Secured debt 1',
+            'Secured debt 2',
+            'Secured debt',
+            'Preferred member units',
+            'Preferred member',
             'Limited partnership interest',
             'Limited partnership interests',
+            'Limited partner interest',
+            'Limited partner interests',
             'Partnership units',
             'Partnership interest',
             'Preferred stock',
             'Preferred shares',
+            'Preferred equity',
+            'Junior preferred shares',
+            'Redeemable shares',
+            'Series A preferred units',
+            'Series B preferred units',
+            'Series C preferred units',
+            'Series D preferred units',
             'Series A preferred',
             'Series B preferred',
+            'Series C preferred',
+            'Series D preferred',
+            'Series A',
+            'Series B',
+            'Series C',
+            'Series D',
             'Common stock',
             'Common shares',
+            'Common units',
+            'Common unit',
+            'Ordinary shares',
             'Class A',
             'Class B',
+            'Class C',
+            'Class D',
+            'Membership interest',
+            'Membership interests',
             'Warrant',
+            'Warrants',
             'units',
             'membership units',
+            'convertible note',
+            'convertible notes',
+            'convertible shares',
+            'simple agreement for future equity',
         ]
         
         # Try to find investment type in the identifier
         investment_type = "Unknown"
-        company_name = identifier
+        company_name = cleaned
         
-        # Check each pattern (order matters - check longer patterns first)
-        for pattern in sorted(investment_type_patterns, key=len, reverse=True):
-            # Case-insensitive search
-            pattern_lower = pattern.lower()
-            identifier_lower = identifier.lower()
+        # Handle complex formats with multiple commas
+        # Pattern 1: "Company, Industry, Investment Type"
+        # Pattern 2: "Company, Investment Type"
+        # Pattern 3: "Investment, Non-Affiliated Issuer, First Lien Debt, Company, Industry"
+        # Pattern 4: "First Lien Debt, Company, Industry" (after prefix removal)
+        
+        if ',' in cleaned:
+            parts = [p.strip() for p in cleaned.split(',')]
             
-            if pattern_lower in identifier_lower:
-                # Find the position
-                idx = identifier_lower.find(pattern_lower)
+            # Special case: "First Lien Debt, Company, Industry" format (after prefix removal)
+            if len(parts) >= 3:
+                first_part = parts[0]
+                first_part_lower = first_part.lower()
+                # Check if first part is an investment type
+                for pattern in sorted(investment_type_patterns, key=len, reverse=True):
+                    pattern_lower = pattern.lower()
+                    if pattern_lower in first_part_lower:
+                        # First part is investment type
+                        investment_type = first_part
+                        # Company might be just parts[1], or parts[1] + parts[2] if parts[2] looks like company suffix (LP, LLC, Inc., etc.)
+                        # Check if parts[2] looks like industry or company suffix
+                        third_part = parts[2] if len(parts) > 2 else None
+                        industry_indicators = ['services', 'healthcare', 'technology', 'financial', 'consumer', 
+                                              'industrial', 'energy', 'retail', 'manufacturing', 'aerospace',
+                                              'defense', 'pharmaceuticals', 'media', 'telecommunications', 'durables',
+                                              'household', 'data processing', 'outsourced', 'diversified', 'equipment',
+                                              'storage', 'transportation', 'gas', 'oil', 'multi-sector', 'metal',
+                                              'glass', 'plastic', 'containers', 'energy equipment']
+                        
+                        # Check if third part looks like industry
+                        is_industry = third_part and any(ind in third_part.lower() for ind in industry_indicators)
+                        # Check if third part looks like company suffix
+                        is_company_suffix = third_part and re.search(r'\b(LP|LLC|Inc\.?|Corp\.?|Ltd\.?|Limited|LLP)\b', third_part, re.IGNORECASE)
+                        
+                        if is_industry:
+                            # Third part is industry, company is just second part
+                            company_name = parts[1]
+                        elif is_company_suffix:
+                            # Third part looks like company suffix, combine with second part
+                            company_name = f"{parts[1]}, {third_part}"
+                        else:
+                            # Default: company is second part
+                            company_name = parts[1]
+                        break
+            
+            # If we have 3+ parts and haven't found investment type yet
+            if investment_type == "Unknown" and len(parts) >= 3:
+                # Check if last part is an investment type
+                last_part = parts[-1]
+                last_part_lower = last_part.lower()
                 
-                # Company name is everything before the investment type
-                # Usually separated by ", "
-                if idx > 0:
-                    company_name = identifier[:idx].strip()
-                    # Remove trailing comma and spaces
-                    company_name = company_name.rstrip(', ')
+                # Check if second-to-last might be industry (common industry patterns)
+                second_last = parts[-2] if len(parts) >= 2 else None
+                industry_indicators = ['services', 'healthcare', 'technology', 'financial', 'consumer', 
+                                      'industrial', 'energy', 'retail', 'manufacturing', 'aerospace',
+                                      'defense', 'pharmaceuticals', 'media', 'telecommunications', 'durables',
+                                      'household', 'data processing', 'outsourced', 'equipment', 'storage',
+                                      'transportation', 'gas', 'oil', 'multi-sector', 'sector', 'metal',
+                                      'glass', 'plastic', 'containers', 'energy equipment']
+                
+                # If last part matches investment type pattern, use it
+                for pattern in sorted(investment_type_patterns, key=len, reverse=True):
+                    pattern_lower = pattern.lower()
+                    if pattern_lower in last_part_lower or re.match(rf'^{re.escape(pattern_lower)}\s*\d*$', last_part_lower):
+                        # Last part is investment type
+                        investment_type = last_part
+                        # Check if second-to-last looks like industry
+                        is_industry = second_last and any(ind in second_last.lower() for ind in industry_indicators)
+                        # Check if second-to-last is actually an investment type (like "Subordinated")
+                        is_inv_type = second_last and any(pattern.lower() in second_last.lower() for pattern in investment_type_patterns)
+                        
+                        if is_industry:
+                            # Second-to-last is industry, company is everything before that
+                            # But check if there are more industry parts before that
+                            company_parts = []
+                            for i in range(len(parts) - 2):
+                                part = parts[i]
+                                # Check if this part looks like industry
+                                part_is_industry = any(ind in part.lower() for ind in industry_indicators)
+                                # Check if this part looks like company suffix
+                                part_is_suffix = re.search(r'\b(Inc\.?|LLC|LP|Corp\.?|Ltd\.?|Limited|LLP)\b', part, re.IGNORECASE)
+                                
+                                if part_is_suffix:
+                                    # This is part of company name (suffix), include it and everything before
+                                    company_parts = parts[:i+1]
+                                    break
+                                elif not part_is_industry:
+                                    # Not industry, likely part of company name
+                                    company_parts.append(part)
+                                # If it's industry, skip it
+                            
+                            if company_parts:
+                                company_name = ','.join(company_parts).strip()
+                            else:
+                                # Fallback: everything before second-to-last
+                                company_name = ','.join(parts[:-2]).strip()
+                        elif not is_industry and second_last:
+                            # Second-to-last is not industry, but check if it might still be industry
+                            # (e.g., "Energy Equipment & Services" contains "equipment" but might not match all indicators)
+                            second_last_lower = second_last.lower()
+                            # More lenient check - if it contains multiple industry keywords, it's likely industry
+                            industry_keyword_count = sum(1 for ind in industry_indicators if ind in second_last_lower)
+                            if industry_keyword_count >= 1:  # At least one industry keyword
+                                # Likely industry, exclude it
+                                company_name = ','.join(parts[:-2]).strip()
+                            else:
+                                # Not clearly industry, might be part of company name
+                                company_name = ','.join(parts[:-1]).strip()
+                        elif is_inv_type:
+                            # Second-to-last is also investment type, combine them
+                            investment_type = f"{second_last}, {last_part}".strip(', ')
+                            company_name = ','.join(parts[:-2]).strip()
+                        else:
+                            # Company name is everything before the last part
+                            # But check if second-to-last looks like it could be part of company name
+                            # (e.g., "Inc.", "LLC", "LP", etc.)
+                            if second_last and re.search(r'\b(Inc\.?|LLC|LP|Corp\.?|Ltd\.?|Limited|LLP)\b', second_last, re.IGNORECASE):
+                                # Second-to-last is likely part of company name, include it
+                                company_name = ','.join(parts[:-1]).strip()
+                            else:
+                                # Check if second-to-last is a single word that might be industry
+                                # If it's a short word and doesn't look like company suffix, might be industry
+                                if second_last and len(second_last.split()) <= 3 and not re.search(r'\b(Inc\.?|LLC|LP|Corp\.?|Ltd\.?|Limited|LLP)\b', second_last, re.IGNORECASE):
+                                    # Might be industry, exclude it
+                                    company_name = ','.join(parts[:-2]).strip()
+                                else:
+                                    # Default: company name is everything before the last part
+                                    company_name = ','.join(parts[:-1]).strip()
+                        break
+                    # Also check if pattern is in second-to-last and last is a number/variant
+                    elif second_last and pattern_lower in second_last.lower():
+                        # Second-to-last is investment type, last might be number/variant
+                        investment_type = f"{second_last}, {last_part}".strip(', ')
+                        company_name = ','.join(parts[:-2]).strip()
+                        break
+                
+                # If we didn't find investment type yet, try simpler approach
+                if investment_type == "Unknown":
+                    # Try last comma approach
+                    last_comma_idx = cleaned.rfind(',')
+                    potential_company = cleaned[:last_comma_idx].strip()
+                    potential_type = cleaned[last_comma_idx + 1:].strip()
                     
-                    # Investment type is the matched pattern
-                    investment_type = identifier[idx:].strip()
+                    potential_type_lower = potential_type.lower()
+                    for pattern in sorted(investment_type_patterns, key=len, reverse=True):
+                        pattern_lower = pattern.lower()
+                        # Check if pattern is at the start of potential_type (allowing for additional descriptive text)
+                        if potential_type_lower.startswith(pattern_lower) or pattern_lower in potential_type_lower or re.match(rf'^{re.escape(pattern_lower)}\s*\d*', potential_type_lower):
+                            company_name = potential_company
+                            investment_type = potential_type
+                            break
+            elif len(parts) == 2:
+                # Only 2 parts: "Company, Investment Type"
+                potential_company = parts[0]
+                potential_type = parts[1]
+                
+                potential_type_lower = potential_type.lower()
+                for pattern in sorted(investment_type_patterns, key=len, reverse=True):
+                    pattern_lower = pattern.lower()
+                    if pattern_lower in potential_type_lower or re.match(rf'^{re.escape(pattern_lower)}\s*\d*$', potential_type_lower):
+                        company_name = potential_company
+                        investment_type = potential_type
+                        break
+        
+        # If comma-based parsing didn't work, try pattern matching in the full identifier
+        if investment_type == "Unknown":
+            identifier_lower = cleaned.lower()
+            for pattern in sorted(investment_type_patterns, key=len, reverse=True):
+                pattern_lower = pattern.lower()
+                if pattern_lower in identifier_lower:
+                    idx = identifier_lower.find(pattern_lower)
+                    if idx > 0:
+                        company_name = cleaned[:idx].strip()
+                        company_name = company_name.rstrip(', ')
+                        investment_type = cleaned[idx:].strip()
                     break
+        
+        # Clean up company name - remove trailing numbers that might be investment variants
+        # But preserve numbers that are part of company name (like "Company 123 LLC")
+        if company_name and re.search(r'\s+\d+$', company_name):
+            # Check if it's likely an investment variant (short number) vs company name part
+            match = re.search(r'\s+(\d+)$', company_name)
+            if match and len(match.group(1)) <= 2:  # 1-2 digit numbers are likely variants
+                company_name = company_name[:match.start()].strip()
+        
+        # Clean up company name - fix spacing around commas
+        if company_name:
+            company_name = re.sub(r',\s*', ', ', company_name)  # Ensure space after comma
+            company_name = company_name.strip()
         
         return company_name, investment_type
     
@@ -262,22 +568,65 @@ class TypedMemberExtractor:
         if not company_name:
             return None
         
+        def _percent(v: str) -> Optional[str]:
+            try:
+                val = float(str(v).replace(',', '').replace('%', ''))
+                if val < 1:
+                    return f"{val * 100:.2f}%"
+                else:
+                    return f"{val:.2f}%"
+            except:
+                return str(v) if v else None
+        
         # Extract financial data from facts
         cost_basis = None
         fair_value = None
         principal_amount = None
+        maturity_date = None
+        acquisition_date = None
+        interest_rate = None
+        reference_rate = None
+        spread = None
+        floor_rate = None
+        pik_rate = None
         
         for fact in facts:
             concept = fact['concept']
             value = fact['value']
+            if not value:
+                continue
+            
+            v_clean = value.replace(',', '').strip()
+            cl = concept.lower()
             
             try:
-                if 'InvestmentOwnedAtCost' in concept or 'AmortizedCost' in concept:
-                    cost_basis = float(value)
-                elif 'InvestmentOwnedAtFairValue' in concept or 'FairValue' in concept:
-                    fair_value = float(value)
-                elif 'InvestmentOwnedBalancePrincipalAmount' in concept or 'PrincipalAmount' in concept:
-                    principal_amount = float(value)
+                if 'InvestmentOwnedAtCost' in concept or 'AmortizedCost' in concept or ('cost' in cl and ('amortized' in cl or 'basis' in cl)):
+                    cost_basis = float(v_clean)
+                elif 'InvestmentOwnedAtFairValue' in concept or 'FairValue' in concept or 'fairvalue' in cl:
+                    fair_value = float(v_clean)
+                elif 'InvestmentOwnedBalancePrincipalAmount' in concept or 'PrincipalAmount' in concept or 'principalamount' in cl:
+                    principal_amount = float(v_clean)
+                elif 'maturitydate' in cl or ('maturity' in cl and 'date' in cl):
+                    maturity_date = value.strip()
+                elif 'acquisitiondate' in cl or 'investmentdate' in cl:
+                    acquisition_date = value.strip()
+                elif 'interestrate' in cl and 'floor' not in cl:
+                    interest_rate = _percent(v_clean)
+                elif 'variableinterestratetype' in cl or ('reference' in cl and 'rate' in cl):
+                    if 'sofr' in cl or 'sofr' in value.lower():
+                        reference_rate = 'SOFR'
+                    elif 'libor' in cl or 'libor' in value.lower():
+                        reference_rate = 'LIBOR'
+                    elif 'prime' in cl or 'prime' in value.lower():
+                        reference_rate = 'PRIME'
+                    elif value and not value.startswith('http'):
+                        reference_rate = value.upper().strip()
+                elif 'spread' in cl or ('basis' in cl and 'spread' in cl):
+                    spread = _percent(v_clean)
+                elif 'floor' in cl and 'rate' in cl:
+                    floor_rate = _percent(v_clean)
+                elif 'pik' in cl and 'rate' in cl:
+                    pik_rate = _percent(v_clean)
             except (ValueError, TypeError):
                 pass
         
@@ -288,12 +637,16 @@ class TypedMemberExtractor:
         return BDCInvestment(
             company_name=company_name,
             investment_type=investment_type,
-            industry="Unknown",  # Will be filled from HTML table
-            acquisition_date=context.get('start_date'),
-            maturity_date=context.get('end_date'),
+            industry=context.get('industry', 'Unknown'),
+            acquisition_date=acquisition_date or context.get('start_date'),
+            maturity_date=maturity_date or context.get('end_date'),
             principal_amount=principal_amount,
             cost_basis=cost_basis,
             fair_value=fair_value,
+            interest_rate=interest_rate,
+            basis_spread=spread,
+            floor_rate=floor_rate,
+            pik_rate=pik_rate,
             context_ref=context['id']
         )
     
@@ -309,7 +662,9 @@ class TypedMemberExtractor:
     
     def save_results(self, result: BDCExtractionResult, output_dir: str = 'output'):
         """Save extraction results to JSON and CSV."""
-        
+
+        if not os.path.isabs(output_dir):
+            output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), output_dir)
         os.makedirs(output_dir, exist_ok=True)
         
         company_slug = result.company_name.replace(' ', '_').replace('.', '').replace(',', '')

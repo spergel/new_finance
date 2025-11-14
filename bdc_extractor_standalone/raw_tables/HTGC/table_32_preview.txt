@@ -1,0 +1,6 @@
+Table 32 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Equity Investments Biotechnology Tools Alamar Biosciences, Inc. Equity 2/21/2024 Preferred Series C 503,778 $ 1,500 $ 1,423 Subtotal: Biotechnology Tools ( 0.07 %)* 1,500 1,423 Consumer & Business Products Fabletics, Inc. Equity 4/30/2010 Common Stock 42,989 128 46 Equity 7/16/2013 Preferred Series B 130,191 1,101 299 Total Fabletics, Inc. 173,180 1,229 345 Grove Collaborative, Inc. Equity 4/30/2

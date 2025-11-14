@@ -1,0 +1,6 @@
+Table 54 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets TigerConnect, Inc. Healthcare First lien (2)(12)(13) SOFR(Q)* 3.38 % + 3.38 %/PIK 11.47 % 02/2022 02/2028 $ 29,868 $ 29,689 $ 29,868 First lien (2)(13)(16) - Drawn SOFR(Q)* 3.38 % + 3.38 %/PIK 11.47 % 02/2022 02/2028 2,440 2,440 2,440 32,129 32,308 2.38 % PPV Intermediate Holdin

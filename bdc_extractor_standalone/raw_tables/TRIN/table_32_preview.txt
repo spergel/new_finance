@@ -1,0 +1,6 @@
+Table 32 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Food and Agriculture Technologies Athletic Brewing Company, LLC Warrant October 28, 2022 October 28, 2032 Preferred Class B 3,741 $ 140.21 $ 287 $ 440 (17) DrinkPak, LLC Warrant September 13, 2022 September 13, 2032 Common Stock 2,387 $ 19.12 $ 7 $ 53 (9) Warrant February 17, 2023 February 17, 2033 Common Stock 12,

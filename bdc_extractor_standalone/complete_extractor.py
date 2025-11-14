@@ -320,6 +320,8 @@ class CompleteBDCExtractor:
     
     def save_results(self, result: BDCExtractionResult, output_dir: str = 'output'):
         """Save extraction results."""
+        if not os.path.isabs(output_dir):
+            output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), output_dir)
         self.xbrl_extractor.save_results(result, output_dir)
 
 

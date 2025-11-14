@@ -1,0 +1,6 @@
+Table 29 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Echo Global Logistics, Inc. Second Lien Senior Secured Term Loan SOFR + 7.25 %, 11.5 % Cash 11/21 11/29 $ 9,469 $ 9,380 $ 9,223 0.8 % (7)(8)(12) eShipping, LLC First Lien Senior Secured Term Loan SOFR + 5.00 %, 9.2 % Cash 11/21 11/27 2,971 2,949 2,971 0.3 % (7)(8)(12) eShipping, LLC Revolver SOFR + 5.00 %, 9.2 % Cash 11/21 11/27 99 88 99 — % (7)(8)(12)(30) FitzMa

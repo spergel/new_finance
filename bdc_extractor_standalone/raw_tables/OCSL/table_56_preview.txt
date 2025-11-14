@@ -1,0 +1,6 @@
+Table 56 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment Index Spread Cash Interest Rate (1)(2) PIK Maturity Date Shares Principal Cost Fair Value (3) Notes Husky Injection Molding Systems Ltd. Industrial Machinery & Supplies & Components First Lien Term Loan SOFR+ 5.00 % 10.33 % 2/15/2029 $ 5,089 $ 5,028 $ 5,071 Indivior Finance S.À.R.L. Pharmaceuticals First Lien Term Loan SOFR+ 5.25 % 10.21 % 6/30/2026 7,256 7,205 7,247 INW Manufacturing, LLC Personal Care Products First Lien Term Loan SOFR+ 5.75 % 10.6

@@ -1,0 +1,6 @@
+Table 39 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK CDC DENTAL MANAGEMENT CO., LLC Revolving Loan 12.31 % SOFR (Q) 8.00 % 2.00 % 10/31/2023 10/31/2028 500 471 490 (10) First Lien - Term Loan A 11.31 % SOFR (Q) 7.00 % 2.00 % 10/31/2023 10/31/2028 5,500 5

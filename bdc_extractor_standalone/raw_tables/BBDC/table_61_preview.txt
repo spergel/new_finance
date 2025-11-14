@@ -1,0 +1,6 @@
+Table 61 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes ASC Communications, LLC Class A Units 07/22 25,718.20 $ 539 $ 869 0.1 % (7) Subtotal Media: Advertising, Printing & Publishing ( 0.1 %)* 902 1,615 Media: Broadcasting & Subscription The Octave Music Group, Inc. Partnership Equity 04/22 676,881.00 677 2,180 0.2 % (7) Subtotal Media: Broadcasting & Subscription ( 0.2 %)* 677 2,180 Media: Diversified & Production Brig

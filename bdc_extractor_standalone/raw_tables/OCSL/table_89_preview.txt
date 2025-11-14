@@ -1,0 +1,6 @@
+Table 89 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Industry Investment Type Index Spread Cash PIK Rate Maturity Date Shares Principal Net Realized Gain (Loss) Amount of Interest, Fees or Dividends Credited in Income (2) Fair Value at October 1, 2024 Gross Additions (3) Gross Reductions (4) Fair Value at June 30, 2025 % of Total Net Assets Control Investments C5 Technology Holdings, LLC Data Processing & Outsourced Services Common Stock 829 $ — $ — $ — $ — $ — $ — — % C5 Technology Holdings, LLC Data Processing & Outsourced 

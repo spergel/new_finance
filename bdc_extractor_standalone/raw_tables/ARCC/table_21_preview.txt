@@ -1,0 +1,6 @@
+Table 21 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Wellness AcquisitionCo, Inc. (13) Provider of retail consumer insights and analytics for manufacturers and retailers in the natural, organic and specialty products industry First lien senior secured revolving loan 02/2025 01/2029 — — — (2)(9)(11) First lien senior secured loan 8.93 % SOFR (Q) 4.75 % 02/2025 01/2029 18.3 18

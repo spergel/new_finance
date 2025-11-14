@@ -1,0 +1,6 @@
+Table 40 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK NEUROPSYCHIATRIC HOSPITALS, LLC Revolving Loan 11.96 % SOFR (Q) 7.50 % 1.00 % 5/14/2021 5/14/2026 3,000 2,973 3,000 (10) First Lien - Term Loan A 10.96 % SOFR (Q) 6.50 % 1.00 % 3/21/2023 5/14/2026 7,39

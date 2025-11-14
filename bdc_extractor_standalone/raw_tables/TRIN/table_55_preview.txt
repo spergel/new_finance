@@ -1,0 +1,6 @@
+Table 55 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Multi-Sector Holdings Senior Credit Corp 2022 LLC Secured Loan January 30, 2023 December 5, 2028 Fixed interest rate 8.5 %; EOT 0.0 % $ 12,885 $ 12,885 $ 12,885 (10)(14)(21) Sub-total:  Multi-Sector Holdings ( 1.6 %)* $ 12,885 $ 12,885 $ 12,885 Other Healthcare Services Cellares Corporation Equipment Financin

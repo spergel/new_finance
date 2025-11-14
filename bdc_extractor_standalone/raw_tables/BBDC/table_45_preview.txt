@@ -1,0 +1,6 @@
+Table 45 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Riedel Beheer B.V. First Lien Senior Secured Term Loan EURIBOR + 6.25 %, 9.6 % Cash 12/21 12/28 $ 2,147 $ 2,265 $ 1,963 0.2 % (3)(7)(8)(10) Woodland Foods, LLC First Lien Senior Secured Term Loan SOFR + 5.25 %, 9.9 % Cash 12/21 12/27 6,158 6,092 6,097 0.5 % (7)(8)(13) Woodland Foods, LLC Revolver SOFR + 5.25 %, 9.9 % Cash 12/21 12/27 1,065 1,041 1,043 0.1 % (7)(8

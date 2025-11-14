@@ -1,0 +1,6 @@
+Table 38 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Shares / Principal Series Cost Fair Value (6) Footnotes Equity Investments- United States Artificial Intelligence & Automation Cabernet AI, Inc. Equity February 27, 2025 $ 500 SAFE Note $ 500 $ 500 (17) Sub-Total:  Artificial Intelligence & Automation ( 0.1 %)* $ 500 $ 500 Connectivity Tarana Wireless, Inc. Equity March 16, 2022 611,246 Preferred Series 6 $ 500 $ 419 (17) Vertical Communications, Inc. Equity January 16, 2020 3,892,

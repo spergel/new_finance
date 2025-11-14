@@ -1,0 +1,6 @@
+Table 12 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes BAART Programs, Inc. Health Care Services First Lien Term Loan SOFR+ 5.00 % 9.56 % 6/11/2027 $ 3,189 $ 3,159 $ 2,817 (6)(15) BAART Programs, Inc. Health Care Services First Lien Term Loan SOFR+ 5.00 % 9.56 % 6/11/2027 1,239 1,243 1,094 (6)(15) BAART Programs, Inc. Health Care Services Second Lien Term Loan SOFR+ 8.50 % 6/11/2028 6,452 6,386 3

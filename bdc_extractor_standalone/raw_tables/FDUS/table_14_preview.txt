@@ -1,0 +1,6 @@
+Table 14 from FDUS
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1513363/000119312525269489/fdus-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (a)(b) Variable Index Rate (e) Investment Principal Fair Percent of Investment Type (c) Industry Spread / Floor (d) Cash/PIK Date (f) Maturity Amount Cost Value (g) Net Assets Control Investments (t) US GreenFiber, LLC (n) Building Products Manufacturing Second Lien Debt (j)(y) 0.00 %/ 0.00 % 7/3/2014 8/30/2024 $ 5,226 $ 5,223 $ — Common Equity ( 2,522 units) (h)(j) 7/3/2014 585 — Common Equity ( 425,508 units) (j) 8/30/2019 1 — Common Equity ( 1,022,813 units) (h)(j) 7/1/2020 

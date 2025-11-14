@@ -1,0 +1,6 @@
+Table 33 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Equity 6/6/2016 Preferred Series BB 1,000,000 $ — $ 17 (7) Equity 12/29/2023 Preferred Series C 3,235,298 13,263 3,606 (7) Total Tectura Corporation 419,230,161 14,163 3,630 Worldremit Group Limited Equity 6/24/2024 Preferred Series X 9,737 922 952 (5)(10) Subtotal: Consumer & Business Services ( 0.38 %)* 26,410 7,502 Diversified Financial Services Gibraltar Acquisition, LLC Equity 3/1/2018 Membe

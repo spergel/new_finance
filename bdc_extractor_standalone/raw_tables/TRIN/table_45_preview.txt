@@ -1,0 +1,6 @@
+Table 45 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States Artificial Intelligence & Automation Ambient Photonics, Inc. Secured Loan July 28, 2022 July 1, 2025 Variable interest rate Prime + 6.0 % or Floor rate 9.5 %; EOT 4.0 % $ 1,003 $ 1,175 $ 1,184 (8) Secured Loan November 17, 2022 May 1, 2025 Variable interest rate Prime + 6.0 % or Floor rate 9.5 %; EOT 4.0 % 947 1,131 939

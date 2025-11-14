@@ -1,0 +1,6 @@
+Table 22 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Control Investments (8)(9) C5 Technology Holdings, LLC Data Processing & Outsourced Services Common Stock 829 $ — $ — (15) C5 Technology Holdings, LLC Data Processing & Outsourced Services Preferred Equity 34,984,460 34,984 27,638 (15) Continental Intermodal Group LP Oil & Gas Storage & Transportation Preferred Equity 3,137,476 3,137 3,357 (1

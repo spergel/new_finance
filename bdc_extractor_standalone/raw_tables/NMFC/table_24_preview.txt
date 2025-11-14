@@ -1,0 +1,6 @@
+Table 24 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets eResearchTechnology, Inc. Healthcare First lien (3)(11)(13) SOFR(M) 4.75 % 8.91 % 03/2025 01/2032 $ 11,380 $ 11,271 $ 11,266 First lien (3)(11)(13) SOFR(M) 4.75 % 8.91 % 03/2025 01/2032 1,889 1,876 1,871 First lien (3)(11)(13)(16) - Drawn SOFR(M) 4.75 % 8.91 % 03/2025 01/2032 30

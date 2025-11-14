@@ -8,6 +8,8 @@ Creates time-series datasets for frontend visualization.
 
 import os
 import logging
+import shutil
+import glob
 from typing import List, Dict, Optional
 from datetime import datetime
 
@@ -18,33 +20,35 @@ logger = logging.getLogger(__name__)
 
 
 # Mapping of tickers to their parser module names
+# Note: Custom parsers are automatically prioritized by historical_investment_extractor
+# This mapping is only used if custom parser doesn't exist
 TICKER_TO_PARSER = {
     'ARCC': None,  # Needs special handling
-    'OBDC': 'obdc_parser',
-    'MAIN': 'main_parser',
-    'GBDC': 'gbdc_parser',
+    'OBDC': 'obdc_parser',  # Has obdc_custom_parser.py (auto-prioritized)
+    'MAIN': 'main_parser',  # Has main_custom_parser.py (auto-prioritized)
+    'GBDC': 'gbdc_parser',  # Has gbdc_custom_parser.py (auto-prioritized)
     'BXSL': 'bxsl_parser',
-    'HTGC': 'htgc_parser',
-    'FSK': 'fsk_parser',
-    'TSLX': 'tslx_parser',
-    'MSDL': 'msdl_parser',
-    'CSWC': 'cswc_parser',
-    'MFIC': 'mfic_parser',
-    'OCSL': 'ocsl_parser',
+    'HTGC': 'htgc_parser',  # Has htgc_custom_parser.py (auto-prioritized)
+    'FSK': 'fsk_parser',  # Has fsk_custom_parser.py (auto-prioritized)
+    'TSLX': 'tslx_parser',  # Has tslx_custom_parser.py (auto-prioritized)
+    'MSDL': 'msdl_parser',  # Has msdl_custom_parser.py (auto-prioritized)
+    'CSWC': 'cswc_parser',  # Has cswc_custom_parser.py (auto-prioritized)
+    'MFIC': 'mfic_parser',  # Has mfic_custom_parser.py (auto-prioritized)
+    'OCSL': 'ocsl_parser',  # Has ocsl_custom_parser.py (auto-prioritized)
     'GSBD': 'gsbd_parser',
-    'TRIN': 'trin_parser',
-    'PSEC': 'psec_parser',
-    'NMFC': 'nmfc_parser',
-    'PFLT': 'pflt_parser',
-    'CGBD': 'cgbd_parser',
-    'BBDC': 'bbdc_parser',
-    'FDUS': 'fdus_parser',
+    'TRIN': 'trin_parser',  # Has trin_custom_parser.py (auto-prioritized)
+    'PSEC': 'psec_parser',  # Has psec_custom_parser.py (auto-prioritized)
+    'NMFC': 'nmfc_parser',  # Has nmfc_custom_parser.py (auto-prioritized)
+    'PFLT': 'pflt_parser',  # Has pflt_custom_parser.py (auto-prioritized)
+    'CGBD': 'cgbd_parser',  # Has cgbd_custom_parser.py (auto-prioritized)
+    'BBDC': 'bbdc_parser',  # Has bbdc_custom_parser.py (auto-prioritized)
+    'FDUS': 'fdus_parser',  # Has fdus_custom_parser.py (auto-prioritized)
     'SLRC': 'slrc_parser',
-    'BCSF': 'bcsf_parser',
-    'GAIN': 'gain_parser',
-    'TCPC': 'tcpc_parser',
-    'CION': 'cion_parser',
-    'NCDL': 'ncdl_parser',
+    'BCSF': 'bcsf_parser',  # Has bcsf_custom_parser.py (auto-prioritized)
+    'GAIN': 'gain_parser',  # Has gain_custom_parser.py (auto-prioritized)
+    'TCPC': 'tcpc_parser',  # Has tcpc_custom_parser.py (auto-prioritized)
+    'CION': 'cion_parser',  # Has cion_custom_parser.py (auto-prioritized)
+    'NCDL': 'ncdl_parser',  # Has ncdl_custom_parser.py (auto-prioritized)
     'GLAD': 'glad_parser',
     'GECC': 'gecc_parser',
     'PFX': 'pfx_parser',
@@ -63,6 +67,7 @@ TICKER_TO_PARSER = {
     'WHF': 'whf_parser',
     'CCAP': 'ccap_parser',
     'ICMB': 'icmb_parser',
+    'KBDC': 'kbdc_parser',  # Has kbdc_custom_parser.py (auto-prioritized)
 }
 
 
@@ -78,6 +83,8 @@ class BatchHistoricalExtractor:
         user_agent: str = "BDC-Extractor/1.0 contact@example.com"
     ):
         self.years_back = years_back
+        if not os.path.isabs(output_dir):
+            output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), output_dir)
         self.output_dir = output_dir
         self.extractor = HistoricalInvestmentExtractor(user_agent=user_agent)
         self.results = []
@@ -184,6 +191,85 @@ class BatchHistoricalExtractor:
         
         self.results = results
         return results
+    
+    def copy_to_frontend_data(self, frontend_data_dir: Optional[str] = None) -> Dict[str, int]:
+        """
+        Copy CSV files from output directory to frontend data directory.
+        
+        Args:
+            frontend_data_dir: Path to frontend data directory. If None, uses default.
+            
+        Returns:
+            Dictionary with copy statistics
+        """
+        if frontend_data_dir is None:
+            # Default to frontend/public/data relative to bdc_extractor_standalone
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            frontend_data_dir = os.path.join(script_dir, 'frontend', 'public', 'data')
+        
+        os.makedirs(frontend_data_dir, exist_ok=True)
+        
+        stats = {
+            'tickers_copied': 0,
+            'files_copied': 0,
+            'errors': 0
+        }
+        
+        logger.info(f"\n{'='*60}")
+        logger.info("Copying CSV files to frontend data directory...")
+        logger.info(f"Source: {self.output_dir}")
+        logger.info(f"Destination: {frontend_data_dir}")
+        logger.info(f"{'='*60}\n")
+        
+        # Get all CSV files in output directory
+        csv_pattern = os.path.join(self.output_dir, "*.csv")
+        csv_files = glob.glob(csv_pattern)
+        
+        if not csv_files:
+            logger.warning(f"No CSV files found in {self.output_dir}")
+            return stats
+        
+        # Group files by ticker
+        ticker_files = {}
+        for csv_file in csv_files:
+            filename = os.path.basename(csv_file)
+            # Extract ticker from filename (format: TICKER_Company_Name_investments.csv)
+            parts = filename.split('_')
+            if parts:
+                ticker = parts[0].upper()
+                if ticker not in ticker_files:
+                    ticker_files[ticker] = []
+                ticker_files[ticker].append(csv_file)
+        
+        # Copy files for each ticker
+        for ticker, files in ticker_files.items():
+            ticker_data_dir = os.path.join(frontend_data_dir, ticker)
+            os.makedirs(ticker_data_dir, exist_ok=True)
+            
+            for source_file in files:
+                filename = os.path.basename(source_file)
+                dest_file = os.path.join(ticker_data_dir, filename)
+                
+                try:
+                    shutil.copy2(source_file, dest_file)
+                    stats['files_copied'] += 1
+                    logger.debug(f"Copied {filename} to {ticker_data_dir}")
+                except Exception as e:
+                    stats['errors'] += 1
+                    logger.error(f"Error copying {filename}: {e}")
+            
+            if files:
+                stats['tickers_copied'] += 1
+                logger.info(f"✅ {ticker}: Copied {len(files)} file(s)")
+        
+        logger.info(f"\n{'='*60}")
+        logger.info("Copy Summary:")
+        logger.info(f"  Tickers processed: {stats['tickers_copied']}")
+        logger.info(f"  Files copied: {stats['files_copied']}")
+        logger.info(f"  Errors: {stats['errors']}")
+        logger.info(f"{'='*60}\n")
+        
+        return stats
     
     def generate_summary_report(self, output_file: str = None) -> str:
         """
@@ -313,6 +399,17 @@ def main():
         '--report-file',
         help='Path to save summary report (optional)'
     )
+    parser.add_argument(
+        '--no-copy-to-frontend',
+        dest='copy_to_frontend',
+        action='store_false',
+        default=True,
+        help='Do not copy CSV files to frontend data directory (default: copies to frontend)'
+    )
+    parser.add_argument(
+        '--frontend-data-dir',
+        help='Path to frontend data directory (default: frontend/public/data)'
+    )
     
     args = parser.parse_args()
     
@@ -335,6 +432,10 @@ def main():
     
     # Generate summary report
     batch_extractor.generate_summary_report(output_file=args.report_file)
+    
+    # Copy to frontend data directory if requested
+    if args.copy_to_frontend:
+        batch_extractor.copy_to_frontend_data(frontend_data_dir=args.frontend_data_dir)
     
     # Exit with appropriate code
     successful = sum(1 for r in results.values() if r.get('status') == 'success')

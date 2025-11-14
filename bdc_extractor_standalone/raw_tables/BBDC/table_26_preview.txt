@@ -1,0 +1,6 @@
+Table 26 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Qualified Industries, LLC Revolver SOFR + 5.75 %, 9.7 % Cash 03/23 03/29 $ — $ ( 4 ) $ ( 4 ) — % (7)(8)(14)(30) Real Chemistry Intermediate III, Inc. First Lien Senior Secured Term Loan SOFR + 4.50 %, 8.8 % Cash 04/25 04/32 3,687 3,669 3,665 0.3 % (7)(8)(12)(30) Real Chemistry Intermediate III, Inc. Revolver SOFR + 4.50 %, 8.8 % Cash 04/25 04/32 — ( 5 ) ( 4 ) — %

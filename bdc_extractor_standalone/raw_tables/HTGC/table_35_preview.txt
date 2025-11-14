@@ -1,0 +1,6 @@
+Table 35 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Equity 8/24/2017 Preferred Series 3 93,620 $ 300 $ 1,075 Total Druva Holdings, Inc. 552,461 1,300 6,269 HighRoads, Inc. Equity 1/18/2013 Common Stock 190 307 — Leapwork ApS Equity 8/25/2023 Preferred Series B2 183,073 250 132 (5)(10) Lightbend, Inc. Equity 12/4/2020 Common Stock 38,461 265 24 Nextdoor.com, Inc. Equity 8/1/2018 Common Stock 1,019,255 4,854 2,416 (4) SingleStore, Inc. Equity 11/25/

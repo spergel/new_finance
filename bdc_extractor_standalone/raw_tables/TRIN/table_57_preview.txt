@@ -1,0 +1,6 @@
+Table 57 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Impulse Space, Inc. Equipment Financing June 18, 2024 July 1, 2027 Fixed interest rate 12.7 %; EOT 3.0 % $ 1,143 $ 1,133 $ 1,155 (9)(14)(19) Equipment Financing September 13, 2024 October 1, 2027 Fixed interest rate 12.5 %; EOT 3.0 % 901 887 907 (9)(14)(19) Equipment Financing December 27, 2024 January 1, 202

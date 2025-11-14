@@ -1,0 +1,6 @@
+Table 20 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets DOCS, MSO, LLC Healthcare First lien (3)(11)(13) SOFR(M) 5.75 % 10.10 % 06/2022 06/2028 $ 18,196 $ 18,196 $ 18,196 First lien (4)(13) SOFR(M) 5.75 % 10.10 % 06/2022 06/2028 6,814 6,814 6,814 First lien (3)(11)(13) SOFR(M) 5.75 % 10.01 % 02/2025 06/2028 3,363 3,342 3,363 28,352 2

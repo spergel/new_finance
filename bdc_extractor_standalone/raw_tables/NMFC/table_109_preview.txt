@@ -1,0 +1,6 @@
+Table 109 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) Funded Investments - First lien ADG, LLC Healthcare SOFR(Q) 1.00 % + 3.00 %/PIK 8.48 % 09/2026 $ 17,933 $ 17,928 $ 15,544 ADMI Corp. (aka Aspen Dental) Healthcare SOFR(M) 3.75 % 8.22 % 12/2027 1,814 1,809 1,788 AmSpec Parent, LLC Energy SOFR(Q) 4.25 % 8.56 % 12/2031 2,986 2,971 3,009 Ascensus Group Holdings, Inc. Business Services SOFR(M) 3.00 % 7.3

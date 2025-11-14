@@ -1,0 +1,6 @@
+Table 76 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets New Permian Holdco, Inc. Energy Ordinary shares (3)(13) — — — 10/2020 — 100 $ 11,155 $ 18,900 1.39 % NM YI, LLC Net Lease Membership interest (6)(13) — — — 09/2019 — — 6,272 9,960 0.73 % NM GP Holdco, LLC** Net Lease Membership interest (6)(13) — — — 06/2018 — — 850 322 0.02 % N

@@ -1,0 +1,6 @@
+Table 49 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets The Arcticom Group, LLC and AMCP Mechanical Holdings, LP (13) Refrigeration, heating, ventilation and air conditioning services provider First lien senior secured revolving loan 12.19 % ( 4.50 % PIK) SOFR (M) 8.00 % 12/2021 12/2027 12.1 12.1 12.0 (2)(9) First lien senior secured loan 12.16 % ( 4.50 % PIK) SOFR (M) 8.00 % 1

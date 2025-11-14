@@ -1,0 +1,6 @@
+Table 37 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Redshift Bioanalytics, Inc. Warrant 3/23/2022 Preferred Series E 475,510 $ 20 $ 22 (15) Scynexis, Inc. Warrant 5/14/2021 Common Stock 106,035 296 2 (4) SynOx Therapeutics Limited Warrant 4/18/2024 Preferred Series B 251,195 83 76 (5)(10) TG Therapeutics, Inc. Warrant 12/30/2021 Common Stock 117,168 721 1,730 (4)(10) Valo Health, LLC Warrant 6/15/2020 Common Units 102,216 256 39 X4 Pharmaceuticals

@@ -310,7 +310,7 @@ def main():
 	tables = extract_tables_under_heading(soup, normalize_key(heading_norm))
 	records = parse_section_tables(tables)
 
-	out_dir = os.path.join(os.path.dirname(__file__), "output")
+	out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 	os.makedirs(out_dir, exist_ok=True)
 	out_csv = os.path.join(out_dir, "OFS_Schedule_Continued_2025Q3.csv")
 	fieldnames = [

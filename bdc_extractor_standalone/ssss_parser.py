@@ -36,6 +36,11 @@ class SSSSInvestment:
     floor_rate: Optional[str] = None
     pik_rate: Optional[str] = None
     context_ref: Optional[str] = None
+    shares_units: Optional[str] = None
+    percent_net_assets: Optional[str] = None
+    currency: Optional[str] = None
+    commitment_limit: Optional[float] = None
+    undrawn_commitment: Optional[float] = None
 
 
 class SSSSExtractor:
@@ -243,7 +248,7 @@ class SSSSExtractor:
             seen.add(combo); ded.append(inv)
         investments = ded
         # write
-        out_dir = 'output'; os.makedirs(out_dir, exist_ok=True)
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output'); os.makedirs(out_dir, exist_ok=True)
         out_file = os.path.join(out_dir, 'SSSS_SuRo_Capital_Corp_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=[
@@ -333,15 +338,29 @@ class SSSSExtractor:
 
     def _extract_facts(self, content: str) -> Dict[str, List[Dict]]:
         facts = defaultdict(list)
-        sp = re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*>([^<]*)</\1>', re.DOTALL)
-        for concept, cref, val in sp.findall(content):
-            if val and cref: facts[cref].append({'concept': concept, 'value': val.strip()})
-        ixp = re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
+        # Extract standard XBRL facts and capture unitRef for currency
+        sp = re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*(?:unitRef="([^"]*)")?[^>]*>([^<]*)</\1>', re.DOTALL)
+        for match in sp.finditer(content):
+            concept = match.group(1); cref = match.group(2); unit_ref = match.group(3); val = match.group(4)
+            if val and cref:
+                fact_entry = {'concept': concept, 'value': val.strip()}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match = re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency'] = currency_match.group(1)
+                facts[cref].append(fact_entry)
+        ixp = re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:unitRef="([^"]*)")?[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
         for m in ixp.finditer(content):
-            name = m.group(1); cref = m.group(2); html = m.group(4)
+            name = m.group(1); cref = m.group(2); unit_ref = m.group(3); html = m.group(5)
             if not cref: continue
             txt = re.sub(r'<[^>]+>', '', html).strip()
-            if txt: facts[cref].append({'concept': name, 'value': txt})
+            if txt:
+                fact_entry = {'concept': name, 'value': txt}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match = re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency'] = currency_match.group(1)
+                facts[cref].append(fact_entry)
             window = content[max(0, m.start()-3000):min(len(content), m.end()+3000)]
             ref = re.search(r'\b(SOFR\+|PRIME\+|LIBOR\+|Base Rate\+|EURIBOR\+)\b', window, re.IGNORECASE)
             if ref: facts[cref].append({'concept':'derived:ReferenceRateToken','value': ref.group(1).replace('+','').upper()})
@@ -349,13 +368,27 @@ class SSSSExtractor:
             if floor: facts[cref].append({'concept':'derived:FloorRate','value': floor.group(1)})
             pik = re.search(r'\bPIK\b[^\d%]{0,20}([\d\.]+)\s*%?', window, re.IGNORECASE)
             if pik: facts[cref].append({'concept':'derived:PIKRate','value': pik.group(1)})
-            dates = re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', window)
+            # Try multiple date patterns
+            dates = []
+            dates.extend(re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{4}-\d{1,2}-\d{1,2}\b', window))
+            dates.extend(re.findall(r'\b[A-Za-z]+\s+\d{1,2},\s*\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{1,2}/\d{4}\b', window))
             if dates:
-                if len(dates)>=2:
-                    facts[cref].append({'concept':'derived:AcquisitionDate','value': dates[0]})
-                    facts[cref].append({'concept':'derived:MaturityDate','value': dates[-1]})
-                else:
-                    facts[cref].append({'concept':'derived:MaturityDate','value': dates[0]})
+                # Remove duplicates
+                seen = set(); unique_dates = []
+                for d in dates:
+                    if d not in seen: seen.add(d); unique_dates.append(d)
+                if len(unique_dates)>=2:
+                    facts[cref].append({'concept':'derived:AcquisitionDate','value': unique_dates[0]})
+                    facts[cref].append({'concept':'derived:MaturityDate','value': unique_dates[-1]})
+                elif len(unique_dates)==1:
+                    date_idx = window.find(unique_dates[0])
+                    date_context = window[max(0,date_idx-50):min(len(window),date_idx+50)]
+                    if re.search(r'\b(acquisition|origination|investment|purchase|initial)\s+date\b', date_context, re.IGNORECASE):
+                        facts[cref].append({'concept':'derived:AcquisitionDate','value': unique_dates[0]})
+                    else:
+                        facts[cref].append({'concept':'derived:MaturityDate','value': unique_dates[0]})
         return facts
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[SSSSInvestment]:
@@ -389,8 +422,24 @@ class SSSSExtractor:
             if cl=='derived:pikrate': inv.pik_rate=self._percent(v); continue
             if cl=='derived:acquisitiondate': inv.acquisition_date=v; continue
             if cl=='derived:maturitydate': inv.maturity_date=v; continue
+            # Extract shares/units for equity investments
+            if any(k in cl for k in ['numberofshares','sharesoutstanding','unitsoutstanding','sharesheld','unitsheld']):
+                try: 
+                    shares_val = v.strip().replace(',', '')
+                    float(shares_val)  # Validate
+                    inv.shares_units = shares_val
+                except: pass
+                continue
+            # Extract currency from fact metadata
+            if 'currency' in f: inv.currency = f.get('currency')
         if not inv.acquisition_date and context.get('start_date'):
             inv.acquisition_date=context['start_date'][:10]
+        # Heuristic for commitment_limit and undrawn_commitment
+        if inv.fair_value and not inv.principal_amount: inv.commitment_limit = inv.fair_value
+        elif inv.fair_value and inv.principal_amount:
+            if inv.fair_value > inv.principal_amount:
+                inv.commitment_limit = inv.fair_value
+                inv.undrawn_commitment = inv.fair_value - inv.principal_amount
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value):
             return inv
         return None
@@ -457,7 +506,8 @@ def main():
     def strip_footnote_refs(text: Optional[str]) -> str:
         if not text:
             return ""
-        cleaned = re.sub(r"(?:\s*\(\s*\d+\s*\))+", "", text)
+        cleaned = text.replace("â€“", "–").replace("â€”", "—")
+        cleaned = re.sub(r"(?:\s*\(\s*\d+\s*\))+", "", cleaned)
         return normalize_text(cleaned)
 
     def extract_tables_under_heading(ssoup: BeautifulSoup) -> List[BeautifulSoup]:
@@ -551,8 +601,8 @@ def main():
                 "ref": find_idx(["reference rate"]) or -1,
                 "spread": find_idx(["spread above index","spread"]) or -1,
                 "rate": find_idx(["interest rate"]) or -1,
-                "acq": find_idx(["acquisition date","investment date"]) or -1,
-                "mat": find_idx(["maturity date"]) or -1,
+                "acq": find_idx(["acquisition date","investment date","initial investment date"]) or -1,
+                "mat": find_idx(["maturity date","expiration date"]) or -1,
                 "prin": find_idx(["principal","share amount","principal/ quantity","principal/quantity","shares/principal/ quantity"]) or -1,
                 "cost": find_idx(["amortized cost","cost"]) or -1,
                 "fv": (fv_latest_idx if fv_latest_idx is not None else (find_idx(["fair value"]) or -1)),
@@ -588,6 +638,23 @@ def main():
             hdr = find_header_map(rows) or {}
             last_company: Optional[str] = None
             last_industry: Optional[str] = None
+            type_keyword = re.compile(
+                r'^(?:Common|Preferred|Class|Series|Membership|Senior|Subordinated|Warrant|Convertible|Note|Unit|Limited|Promissory|Simple\s+Agreement)',
+                re.IGNORECASE
+            )
+
+            def split_company_and_type(raw: str) -> (str, Optional[str]):
+                if not raw:
+                    return "", None
+                normalized = raw.replace("â€“", "–").replace("â€”", "—")
+                parts = re.split(r'\s*[–—-]\s*', normalized, maxsplit=1)
+                if len(parts) == 2 and type_keyword.match(parts[1].strip()):
+                    return parts[0].strip(), parts[1].strip()
+                return normalized.strip(), None
+
+            def is_type_string(text: Optional[str]) -> bool:
+                return bool(text and type_keyword.match(text.strip()))
+
             for r in rows:
                 row = compact_row(r)
                 if not row:
@@ -604,25 +671,38 @@ def main():
                 if not any(re.search(r"\d{1,2}/\d{1,2}/\d{4}", c) for c in row) and not any('%' in c for c in row):
                     # often industry-only rows
                     if len(row) == 1:
-                        last_industry = first
+                        candidate = split_company_and_type(first)[0]
+                        if not is_type_string(candidate):
+                            last_industry = candidate
                     else:
-                        last_company = first
+                        candidate, _ = split_company_and_type(row[0])
+                        if not is_type_string(candidate):
+                            last_company = candidate
                     continue
                 # Skip totals/subtotals and portfolio header rows
                 first_l = normalize_key(first)
-                if first_l.startswith('total ') or first_l.startswith('portfolio investments') or first_l.startswith('non-controlled') or first_l in ('preferred stock','options','common stock'):
+                if (
+                    first_l.startswith('total ')
+                    or first_l == 'total'
+                    or first_l == 'totals'
+                    or first_l.startswith('portfolio investments')
+                    or first_l.startswith('non-controlled')
+                    or first_l in ('preferred stock', 'options', 'common stock')
+                ):
                     continue
                 def get(idx: int) -> Optional[str]:
                     return row[idx] if 0 <= idx < len(row) else None
                 raw_company = get(hdr.get("company", -1)) or first
-                parts = re.split(r"\s+–\s+|-\s+", raw_company, maxsplit=1)
-                if len(parts) == 2:
-                    company = parts[0]
-                    inferred_type = parts[1]
-                else:
-                    company = raw_company
-                    inferred_type = None
+                company_candidate, inferred_type = split_company_and_type(raw_company)
                 inv_type = get(hdr.get("type", -1)) or inferred_type or ""
+                if is_type_string(company_candidate):
+                    # this cell is likely the investment type, use last known company
+                    if not inv_type:
+                        inv_type = company_candidate
+                    company = last_company or company_candidate
+                else:
+                    company = company_candidate
+                    last_company = company or last_company
                 floor = get(hdr.get("floor", -1))
                 ref = get(hdr.get("ref", -1))
                 spread = get(hdr.get("spread", -1))
@@ -644,6 +724,66 @@ def main():
                         pct_v = float(pp)
                     except:
                         pct_v = parse_money_cell(pct)
+                # Heuristic date extraction if acq/mat not in headers
+                row_blob = " ".join(row)
+                if not inv_type:
+                    inferred_match = re.search(
+                        r'(?:Common|Preferred)\s+Shares?(?:,\s*Series\s+[A-Za-z0-9-]+)?'
+                        r'|Class\s+[A-Za-z0-9-]+\s+Units?'
+                        r'|Membership\s+Interest(?:s)?(?:,\s*Class\s+[A-Za-z0-9-]+)?'
+                        r'|Series\s+[A-Za-z0-9-]+\s+Shares?'
+                        r'|Junior\s+Preferred\s+Shares?(?:,\s*Series\s+[A-Za-z0-9-]+)?'
+                        r'|Senior\s+Secured\s+[^,;]+'
+                        r'|Subordinated\s+(?:Debt|Note)'
+                        r'|Promissory\s+Note'
+                        r'|Convertible\s+(?:Debt|Notes?)'
+                        r'|Simple\s+Agreement\s+for\s+Future\s+Equity'
+                        r'|Warrants?',
+                        row_blob,
+                        re.IGNORECASE
+                    )
+                    if inferred_match:
+                        inv_type = inferred_match.group(0).strip()
+
+                if (not acq or acq == '') or (not mat or mat == ''):
+                    date_matches = re.findall(r"\b\d{1,2}/\d{1,2}/\d{4}\b", row_blob)
+                    if date_matches:
+                        if len(date_matches) >= 2:
+                            acq = acq or date_matches[0]
+                            mat = mat or date_matches[-1]
+                        else:
+                            if re.search(r"expiration|maturity", row_blob, re.IGNORECASE):
+                                mat = mat or date_matches[0]
+                            else:
+                                acq = acq or date_matches[0]
+
+                # Extract reference_rate and spread from inline text if not in columns
+                if not ref or not spread:
+                    # Pattern: "SOFR + 6.00%", "Prime + 2.85%", "LIBOR + 3.50%", "E + 7.00%" (EURIBOR)
+                    ref_map = {'E': 'EURIBOR', 'BASE RATE': 'BASE RATE', 'BASE': 'BASE RATE'}
+                    ref_match = re.search(r'(\b[0-9]+[-\s]?month\s+)?(SOFR|LIBOR|PRIME|Prime|Base Rate|EURIBOR|E)\s*\+\s*([\d\.]+)\s*%?', row_blob, re.IGNORECASE)
+                    if ref_match:
+                        sofr_type = ref_match.group(1).strip() if ref_match.group(1) else None
+                        base = ref_match.group(2).upper()
+                        base = ref_map.get(base, base)
+                        if sofr_type and base == 'SOFR':
+                            ref = ref or f"SOFR ({sofr_type})"
+                        else:
+                            ref = ref or base
+                        spread = spread or f"{float(ref_match.group(3)):.2f}%"
+
+                # Extract floor rate from inline text if not in column
+                if not floor:
+                    floor_match = re.search(r"floor\s*(?:rate)?\s*([\d\.]+)\s*%", row_blob, re.IGNORECASE)
+                    if floor_match:
+                        floor = f"{float(floor_match.group(1)):.2f}%"
+
+                # Extract PIK rate from inline text
+                pik_rate = None
+                pik_match = re.search(r"PIK\s*(?:interest)?\s*([\d\.]+)\s*%", row_blob, re.IGNORECASE)
+                if pik_match:
+                    pik_rate = f"{float(pik_match.group(1)):.2f}%"
+
                 recs.append({
                     "company_name": strip_footnote_refs(company),
                     "investment_type": strip_footnote_refs(inv_type),
@@ -651,6 +791,8 @@ def main():
                     "interest_rate": rate,
                     "reference_rate": ref,
                     "spread": spread,
+                    "floor_rate": floor,
+                    "pik_rate": pik_rate,
                     "acquisition_date": acq,
                     "maturity_date": mat,
                     "principal_amount": prin_v,
@@ -674,11 +816,11 @@ def main():
         tables = [t for _, t in scored[:10]]
     records = parse_section_tables(tables)
 
-    out_dir = os.path.join(os.path.dirname(__file__), "output")
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
     os.makedirs(out_dir, exist_ok=True)
     out_csv = os.path.join(out_dir, "SSSS_Schedule_Continued_latest.csv")
     fieldnames = [
-        "company_name","investment_type","industry","interest_rate","reference_rate","spread","acquisition_date","maturity_date","principal_amount","amortized_cost","fair_value","percent_of_net_assets",
+        "company_name","investment_type","industry","interest_rate","reference_rate","spread","floor_rate","pik_rate","acquisition_date","maturity_date","principal_amount","amortized_cost","fair_value","percent_of_net_assets",
     ]
     with open(out_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -736,8 +878,8 @@ def main():
             'interest_rate': rec.get('interest_rate') or '',
             'reference_rate': rec.get('reference_rate') or '',
             'spread': rec.get('spread') or '',
-            'floor_rate': '',
-            'pik_rate': '',
+            'floor_rate': rec.get('floor_rate') or '',
+            'pik_rate': rec.get('pik_rate') or '',
         })
 
     inv_out = os.path.join(out_dir, 'SSSS_SuRo_Capital_Corp_investments.csv')
@@ -777,9 +919,11 @@ def main():
 if __name__=='__main__':
     main()
 
+    import sys
+    sys.exit(0)
 
-
-    docs = client.get_documents_from_index(index_url)
+    # remove duplicate block below if still present
+    """
     main_html = next((d for d in docs if d.filename.lower().endswith(".htm")), None)
     if not main_html:
         print("No main HTML document found for SSSS")
@@ -986,6 +1130,32 @@ if __name__=='__main__':
                         pct_v = float(pp)
                     except:
                         pct_v = parse_money_cell(pct)
+                # Derive floor/PIK from row text if not provided as columns
+                row_blob = " ".join(row)
+                if not inv_type:
+                    inferred_match = re.search(
+                        r'(?:Common|Preferred)\s+Shares?(?:,\s*Series\s+[A-Za-z0-9]+)?'
+                        r'|Class\s+[A-Za-z0-9]+\s+Units?'
+                        r'|Membership\s+Interest(?:s)?(?:,\s*Class\s+[A-Za-z0-9]+)?'
+                        r'|Series\s+[A-Za-z0-9]+\s+Shares?'
+                        r'|Senior\s+Secured\s+[^,;]+'
+                        r'|Subordinated\s+(?:Debt|Note)'
+                        r'|Promissory\s+Note'
+                        r'|Convertible\s+(?:Debt|Notes?)'
+                        r'|Warrants?',
+                        row_blob,
+                        re.IGNORECASE
+                    )
+                    if inferred_match:
+                        inv_type = inferred_match.group(0).strip()
+                if not floor:
+                    m_floor = re.search(r"floor\s*(?:rate)?\s*([\d\.]+)\s*%", row_blob, re.IGNORECASE)
+                    if m_floor:
+                        floor = f"{float(m_floor.group(1)):.2f}%" if m_floor.group(1) else None
+                pik_rate = None
+                m_pik = re.search(r"PIK\s*(?:interest)?\s*([\d\.]+)\s*%", row_blob, re.IGNORECASE)
+                if m_pik:
+                    pik_rate = f"{float(m_pik.group(1)):.2f}%"
                 recs.append({
                     "company_name": strip_footnote_refs(company),
                     "investment_type": strip_footnote_refs(inv_type),
@@ -993,6 +1163,8 @@ if __name__=='__main__':
                     "interest_rate": rate,
                     "reference_rate": ref,
                     "spread": spread,
+                    "floor_rate": floor,
+                    "pik_rate": pik_rate,
                     "acquisition_date": acq,
                     "maturity_date": mat,
                     "principal_amount": prin_v,
@@ -1016,11 +1188,11 @@ if __name__=='__main__':
         tables = [t for _, t in scored[:10]]
     records = parse_section_tables(tables)
 
-    out_dir = os.path.join(os.path.dirname(__file__), "output")
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
     os.makedirs(out_dir, exist_ok=True)
     out_csv = os.path.join(out_dir, "SSSS_Schedule_Continued_latest.csv")
     fieldnames = [
-        "company_name","investment_type","industry","interest_rate","reference_rate","spread","acquisition_date","maturity_date","principal_amount","amortized_cost","fair_value","percent_of_net_assets",
+        "company_name","investment_type","industry","interest_rate","reference_rate","spread","floor_rate","pik_rate","acquisition_date","maturity_date","principal_amount","amortized_cost","fair_value","percent_of_net_assets",
     ]
     with open(out_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -1078,8 +1250,8 @@ if __name__=='__main__':
             'interest_rate': rec.get('interest_rate') or '',
             'reference_rate': rec.get('reference_rate') or '',
             'spread': rec.get('spread') or '',
-            'floor_rate': '',
-            'pik_rate': '',
+            'floor_rate': rec.get('floor_rate') or '',
+            'pik_rate': rec.get('pik_rate') or '',
         })
 
     inv_out = os.path.join(out_dir, 'SSSS_SuRo_Capital_Corp_investments.csv')
@@ -1115,8 +1287,6 @@ if __name__=='__main__':
             with open(os.path.join(tables_dir, f"ssss_table_{i}.html"), "w", encoding="utf-8") as fh:
                 fh.write(str(simple))
     print(f"Saved {len(tables)} simplified tables to {tables_dir}")
-
-if __name__=='__main__':
-    main()
+    """
 
 

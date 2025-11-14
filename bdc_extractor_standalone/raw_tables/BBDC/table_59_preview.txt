@@ -1,0 +1,6 @@
+Table 59 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Woodland Foods, LLC Preferred Stock 20.0 % PIK 12/21 364.00 $ 427 $ 427 — % (7) ZB Holdco LLC LLC Units 02/22 152.69 153 197 — % (7)(29) Subtotal Beverage, Food, & Tobacco ( 0.2 %)* 2,243 2,590 Capital Equipment Polara Enterprises, L.L.C. Partnership Units 12/21 7,409 741 1,229 0.1 % (7) Process Insights Acquisition, Inc. Common Stock 07/23 281 281 237 — % (7)(29) 

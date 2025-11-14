@@ -1,0 +1,6 @@
+Table 42 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets NHME Holdings Corp.(22) Healthcare Ordinary shares (3)(13) — — — 11/2018 — 640,000 $ 4,000 $ — — % Total Shares - United States $ 533,106 $ 511,147 40.48 % Total Shares $ 533,106 $ 511,147 40.48 % Warrants - United States NHME Holdings Corp. (22) Healthcare Warrants (3)(13) — — 

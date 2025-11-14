@@ -1,0 +1,6 @@
+Table 69 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Shares / Principal Series Cost Fair Value (6) Footnotes Equity Investments- United States Connectivity Tarana Wireless, Inc. Equity March 16, 2022 611,246 Preferred Series 6 $ 500 $ 564 (17) Vertical Communications, Inc. Equity January 16, 2020 3,892,485 Preferred Series 1 $ — $ — (11)(17)(21) Equity January 16, 2020 $ 5,500 Convertible Note 3,966 1,087 (16)(21) Total Vertical Communications, Inc. 3,966 1,087 viaPhoton Inc. Equity 

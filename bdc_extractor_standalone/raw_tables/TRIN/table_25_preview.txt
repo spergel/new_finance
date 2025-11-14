@@ -1,0 +1,6 @@
+Table 25 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Space Technology Astranis Space Technology Corporation Equipment Financing April 13, 2023 May 1, 2027 Fixed interest rate 12.1 %; EOT 6.5 % $ 5,699 $ 6,367 $ 6,179 (9)(14)(19) Equipment Financing September 27, 2024 October 1, 2028 Fixed interest rate 13.8 %; EOT 6.5 % 9,526 10,122 9,815 (9)(14)(19) Equipment 

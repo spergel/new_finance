@@ -1,0 +1,6 @@
+Table 48 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,18,21 Type of Investment 2 Acquisition Date 14 Cost 12,17 Fair Value 4 % of Net Assets Equity Investments Units Type Environmental Services ARBORWORKS, LLC 100 Class A Units 11/17/2021 100 5 (6)(9)(13) 13,898.32 Class A-1 Preferred Units 11/6/2023 3,170 3,032 (6) 13,898.32 Class B-1 Preferred Units 11/6/2023 — — (6) 1,666.67 Class A-1 Common Units 11/6/2023 — — (6) 3,270 3,037

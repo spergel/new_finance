@@ -1,0 +1,6 @@
+Table 61 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment Index Spread Cash Interest Rate (1)(2) PIK Maturity Date Shares Principal Cost Fair Value (3) Notes DTI Holdco, Inc. Research & Consulting Services First Lien Term Loan SOFR+ 4.00 % 8.33 % 4/26/2029 $ 3,517 $ 3,479 $ 3,481 (4) Eagle Parent Corp. Diversified Support Services First Lien Term Loan SOFR+ 4.25 % 8.55 % 4/2/2029 389 385 387 Engineering Research and Consulting LLC Construction & Engineering First Lien Term Loan SOFR+ 5.00 % 9.29 % 8/29/2031

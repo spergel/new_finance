@@ -1,0 +1,6 @@
+Table 19 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Akero Therapeutics, Inc. Equity 3/8/2024 Common Stock 34,483 $ 1,000 $ 1,637 (4)(10) Arcus Biosciences, Inc. Equity 2/19/2025 Common Stock 204,545 2,250 2,782 (4)(10) Avalo Therapeutics, Inc. Equity 8/19/2014 Common Stock 42 1,000 1 (4) Axsome Therapeutics, Inc. Equity 5/9/2022 Common Stock 127,021 4,165 15,427 (4)(10) Bicycle Therapeutics PLC Equity 10/5/2020 Common Stock 98,100 1,871 759 (4)(5)

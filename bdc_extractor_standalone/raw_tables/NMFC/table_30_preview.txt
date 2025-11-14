@@ -1,0 +1,6 @@
+Table 30 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Pioneer Topco I, L.P.(28) Software Class A-2 common units(10)(13) — — — 11/2021 — 199,980 $ 2,000 $ 2,086 0.17 % Ambrosia Topco LLC  (31) Distribution & Logistics Class A-1 common units(2)(13) — — — 01/2024 — 126,536 1,348 590 Class A-1 common units(3)(13) — — — 01/2024 — 122,04

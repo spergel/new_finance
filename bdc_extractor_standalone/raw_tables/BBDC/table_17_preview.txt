@@ -1,0 +1,6 @@
+Table 17 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Construction & Building BKF Buyer, Inc. First Lien Senior Secured Term Loan SOFR + 5.00 %, 9.2 % Cash 08/24 08/30 $ 8,097 $ 7,991 $ 7,995 0.7 % (7)(8)(12) BKF Buyer, Inc. Revolver SOFR + 5.00 %, 9.2 % Cash 08/24 08/30 — ( 37 ) ( 37 ) — % (7)(8)(12)(30) EMI Porta Holdco LLC First Lien Senior Secured Term Loan SOFR + 5.75 %, 9.9 % Cash 12/21 12/27 12,063 11,962 11,

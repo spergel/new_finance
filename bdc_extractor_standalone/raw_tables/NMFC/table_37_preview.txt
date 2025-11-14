@@ -1,0 +1,6 @@
+Table 37 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Ultimus Group Midco, LLC Financial Services First lien (3)(13)(16) - Undrawn — — — 07/2025 01/2028 $ 3,039 $ — $ — First lien (3)(13)(16) - Undrawn — — — 07/2025 07/2032 1,139 ( 6 ) ( 6 ) ( 6 ) ( 6 ) ( 0.00 ) % Bonterra LLC Software First lien (3)(13)(16) - Undrawn — — — 03/2025

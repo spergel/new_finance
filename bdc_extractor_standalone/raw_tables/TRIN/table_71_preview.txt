@@ -1,0 +1,6 @@
+Table 71 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Shares / Principal Series Cost Fair Value (6) Footnotes Equity Investments- United States, Continued Human Resource Technology Nomad Health, Inc. Equity May 27, 2022 37,920 Common Stock $ 500 $ — Sub-Total:  Human Resource Technology ( 0.0 %)* $ 500 $ — Industrials Digilens, Inc. Equity July 29, 2023 21,730 Preferred Series A-1 $ 14 $ 26 (17) Equity September 18, 2024 9,498 Preferred Series A-1 8 12 (17) Equity October 10, 2023 6,3

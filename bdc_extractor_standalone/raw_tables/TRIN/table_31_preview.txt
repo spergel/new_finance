@@ -1,0 +1,6 @@
+Table 31 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Finance and Insurance Alt Platform Inc. Warrant July 8, 2025 July 8, 2035 Common Stock 256,692 $ 0.74 $ 310 $ 302 (10)(12)(21) Beam Technologies, Inc. Warrant August 30, 2024 August 30, 2034 Common Stock 47,479 $ 17.28 $ 629 $ 377 (9)(19) Warrant August 7, 2025 August 7, 2032 Preferred Series F Prime 4,083 $ 0.00 1

@@ -1,0 +1,6 @@
+Table 20 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Curana Health Holdings, LLC Equity 5/13/2024 Common Units 1,114,380 $ 2,500 $ 3,312 Main Street Rural, Inc. Equity 10/28/2024 Preferred Series D 496 874 1,209 Strive Health Holdings, LLC Equity 6/27/2025 Common Units 82,043 599 743 WellBe Senior Medical, LLC Equity 6/10/2024 Common Units 181,163 1,600 1,877 Subtotal: Healthcare Services, Other ( 0.43 %)* 14,239 9,318 Information Services Yipit, L

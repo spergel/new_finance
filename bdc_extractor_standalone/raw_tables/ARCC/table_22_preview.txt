@@ -1,0 +1,6 @@
+Table 22 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Second lien senior secured loan 5.00 % PIK 06/2023 03/2027 49.7 49.7 45.2 (2) Membership units 09/2016 3,000,000 — — (2) Class A common units 06/2023 7,604,889 29.4 — (2) 94.8 60.9 Advarra Holdings, Inc. (13) Provider of central institutional review boards over clinical trials First lien senior secured loan 8.66 % SOFR (M)

@@ -1,6 +1,6 @@
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse';
-import { Holding } from '../data/adapter';
+import type { Holding } from '../data/adapter';
 
 type Props = { data: Holding[]; filename?: string };
 
@@ -15,7 +15,7 @@ export function ExportBar({ data, filename = 'OFS_holdings' }: Props) {
     saveAs(blob, `${filename}.csv`);
   };
   return (
-    <div className="flex gap-2 p-2 border-t border-silver/20 bg-panel/60">
+    <div className="flex gap-2 p-2 border-t border-[#c0c0c0] bg-[#c0c0c0]">
       <button className="btn" onClick={dlCsv}>Export CSV</button>
       <button className="btn" onClick={dlJson}>Export JSON</button>
     </div>

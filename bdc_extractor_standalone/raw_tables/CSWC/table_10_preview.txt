@@ -1,0 +1,6 @@
+Table 10 from CSWC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
+
+Preview (first 500 chars):
+CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS (Unaudited) September 30, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK Building & Infrastructure Products BRANDNER DESIGN, LLC Revolving Loan 16.30 % SOFR (Q) 12.00 % 2.00 % 2.00 % 4/15/2024 4/13/2029 135 125 101 (7)(10)(20) First Lien 16.29 % SOFR (Q) 12.

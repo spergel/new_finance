@@ -1,0 +1,6 @@
+Table 59 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Kele Holdco, Inc. Distribution & Logistics First lien (5)(13) SOFR(M) 4.50 % 8.84 % 02/2020 02/2028 $ 14,635 $ 14,617 $ 14,635 First lien (5)(13) SOFR(M) 4.50 % 8.84 % 02/2024 02/2028 2,268 2,254 2,268 16,871 16,903 1.24 % Viper Bidco. Inc. Software First lien (3)(11)(13)(14) SO

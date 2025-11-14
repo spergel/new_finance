@@ -1,0 +1,6 @@
+Table 98 from NMFC
+Filing: 2025-11-03
+URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) Houghton Mifflin Harcourt Company Education SOFR(M) 5.25 % 9.71 % 04/2029 $ 8,069 $ 7,856 $ 7,961 Inizio Group Limited Healthcare SOFR(Q) 4.25 % 8.68 % 08/2028 4,500 4,470 4,449 Kestra Advisor Services Holdings A, Inc. Financial Services SOFR(M) 3.00 % 7.37 % 03/2031 10,022 10,001 10,046 LI Group Holdings, Inc. Software SOFR(M) 3.50 % 7.97 % 03/2028

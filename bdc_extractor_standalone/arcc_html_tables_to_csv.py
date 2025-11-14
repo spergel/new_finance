@@ -270,7 +270,7 @@ def main():
 	tables = extract_tables_with_schedule(soup)
 
 	# Save simplified tables
-	out_dir = os.path.join(os.path.dirname(__file__), "output")
+	out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 	os.makedirs(out_dir, exist_ok=True)
 	tables_dir = os.path.join(out_dir, "arcc_tables")
 	os.makedirs(tables_dir, exist_ok=True)

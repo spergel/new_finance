@@ -1,0 +1,6 @@
+Table 47 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Diversified Packaging Holdings LLC Second Lien Senior Secured Term Loan 11.0 % Cash, 1.5 % PIK 06/24 06/29 $ 729 $ 715 $ 717 0.1 % (7) Five Star Holding LLC Second Lien Senior Secured Term Loan SOFR + 7.25 %, 11.8 % Cash 05/22 05/30 13,692 13,489 13,198 1.1 % (7)(8)(13) Media Recovery, Inc. (SpotSee) First Lien Senior Secured Term Loan SOFR + 4.75 %, 9.5 % Cash 0

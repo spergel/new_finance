@@ -1,0 +1,6 @@
+Table 35 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Banking, Finance, Insurance, & Real Estate Eclipse Business Capital, LLC LLC Units 07/21 89,447,396 $ 93,052 $ 139,538 12.0 % (7) Rocade Holdings LLC Preferred LP Units SOFR + 6.00 %, 10.3 % PIK 02/23 71,000 89,564 89,559 7.7 % (7)(13)(30) Rocade Holdings LLC Common LP Units 02/23 23.8 — 1,198 0.1 % (7) Subtotal Banking, Finance, Insurance, & Real Estate ( 19.7 %)*

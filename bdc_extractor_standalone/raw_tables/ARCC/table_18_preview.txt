@@ -1,0 +1,6 @@
+Table 18 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 9.25 % SOFR (Q) 5.25 % 06/2025 04/2027 25.6 25.6 25.6 (2)(9) Class B units 04/2020 588,636 — 3.3 (2) 97.4 100.7 Proofpoint, Inc. (13) Cybersecurity solutions provider First lien senior secured loan 7.16 % SOFR (M) 3.00 % 06/2021 08/2028 1.0 0.9 1.0 (2)(9)(16) QBS Parent, Inc. (13) Provider of

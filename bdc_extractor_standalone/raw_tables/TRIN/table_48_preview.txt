@@ -1,0 +1,6 @@
+Table 48 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Finance and Insurance Beam Technologies, Inc. Secured Loan August 30, 2024 April 1, 2027 Variable interest rate PRIME + 2.8 % or Floor rate 11.0 %+PIK Fixed Interest Rate 1.5 %; EOT 2.0 % $ 34,956 $ 34,130 $ 34,579 (8)(15)(19) Bestow, Inc. Secured Loan August 1, 2024 December 1, 2027 Variable interest rate Pr

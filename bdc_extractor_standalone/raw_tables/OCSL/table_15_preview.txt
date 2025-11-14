@@ -1,0 +1,6 @@
+Table 15 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes IPC Corp. Application Software First Lien Term Loan SOFR+ 6.50 % 9.93 % 1.00 % 10/1/2026 $ 36,262 $ 36,021 $ 35,265 (6)(15) JN Bidco LLC Health Care Technology Common Stock 9,179 18,982 (15) Kaseya Inc. Systems Software Second Lien Term Loan SOFR+ 5.00 % 9.33 % 3/20/2033 10,876 10,822 10,915 (6) Kings Buyer, LLC Environmental & Facilities Ser

@@ -35,6 +35,11 @@ class WHFInvestment:
     floor_rate: Optional[str] = None
     pik_rate: Optional[str] = None
     context_ref: Optional[str] = None
+    shares_units: Optional[str] = None
+    percent_net_assets: Optional[str] = None
+    currency: Optional[str] = None
+    commitment_limit: Optional[float] = None
+    undrawn_commitment: Optional[float] = None
 
 
 class WHFExtractor:
@@ -107,7 +112,7 @@ class WHFExtractor:
             ind_br[inv.industry] += 1
             type_br[inv.investment_type] += 1
 
-        out_dir = 'output'
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
         os.makedirs(out_dir, exist_ok=True)
         out_file = os.path.join(out_dir, 'WHF_WhiteHorse_Finance_Inc_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
@@ -140,10 +145,35 @@ class WHFExtractor:
                 })
 
         logger.info(f"Saved to {out_file}")
+        # Convert to dict format
+        investment_dicts = []
+        for inv in investments:
+            investment_dicts.append({
+                'company_name': inv.company_name,
+                'industry': inv.industry,
+                'business_description': inv.business_description,
+                'investment_type': inv.investment_type,
+                'acquisition_date': inv.acquisition_date,
+                'maturity_date': inv.maturity_date,
+                'principal_amount': inv.principal_amount,
+                'cost': inv.cost,
+                'fair_value': inv.fair_value,
+                'interest_rate': inv.interest_rate,
+                'reference_rate': inv.reference_rate,
+                'spread': inv.spread,
+                'floor_rate': inv.floor_rate,
+                'pik_rate': inv.pik_rate,
+                'shares_units': inv.shares_units,
+                'percent_net_assets': inv.percent_net_assets,
+                'currency': inv.currency,
+                'commitment_limit': inv.commitment_limit,
+                'undrawn_commitment': inv.undrawn_commitment,
+            })
         return {
             'company_name': company_name,
             'cik': cik,
             'total_investments': len(investments),
+            'investments': investment_dicts,
             'total_principal': total_principal,
             'total_cost': total_cost,
             'total_fair_value': total_fair_value,
@@ -187,44 +217,106 @@ class WHFExtractor:
 
     def _parse_identifier(self, identifier: str) -> Dict[str, str]:
         res = {'company_name':'Unknown','industry':'Unknown','investment_type':'Unknown'}
-        if ',' in identifier:
-            last = identifier.rfind(',')
-            company = identifier[:last].strip()
-            tail = identifier[last+1:].strip()
-        else:
-            company = identifier.strip()
-            tail = ''
-        res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',')
-        patterns = [
-            r'First\s+lien\s+.*$', r'Second\s+lien\s+.*$', r'Unitranche\s*\d*$', r'Senior\s+secured\s*\d*$',
-            r'Secured\s+Debt\s*\d*$', r'Unsecured\s+Debt\s*\d*$', r'Preferred\s+Equity$', r'Preferred\s+Stock$',
-            r'Common\s+Stock\s*\d*$', r'Member\s+Units\s*\d*$', r'Warrants?$'
+        
+        # Investment type patterns - more comprehensive and ordered from specific to general
+        type_patterns = [
+            r'First\s+Lien\s+Secured\s+Delayed\s+Draw\s+Loan',
+            r'First\s+Lien\s+Secured\s+Revolving\s+Loan',
+            r'First\s+Lien\s+Secured\s+Term\s+Loan',
+            r'First\s+Lien\s+Secured\s+.*',
+            r'First\s+lien\s+.*',
+            r'Second\s+Lien\s+Secured\s+Term\s+Loan',
+            r'Second\s+Lien\s+Secured\s+.*',
+            r'Second\s+lien\s+.*',
+            r'Unitranche\s*\d*',
+            r'Senior\s+secured\s+\d*',
+            r'Secured\s+Debt\s*\d*',
+            r'Unsecured\s+Debt\s*\d*',
+            r'Preferred\s+Equity',
+            r'Preferred\s+Stock',
+            r'Common\s+Stock\s*\d*',
+            r'Member\s+Units\s*\d*',
+            r'Equity',
+            r'Interests',
+            r'Warrants?',
         ]
+        
+        # First, try to find investment type in the full identifier
         it = None
-        for p in patterns:
-            mm = re.search(p, tail, re.IGNORECASE)
+        it_match = None
+        for p in type_patterns:
+            mm = re.search(p, identifier, re.IGNORECASE)
             if mm:
-                it = mm.group(0)
+                it = mm.group(0).strip()
+                it_match = mm
                 break
-        if not it and tail:
-            it = tail
-        if it:
+        
+        # If found, extract company name by removing the investment type
+        if it and it_match:
+            # Remove investment type from identifier to get company name
+            company = identifier[:it_match.start()].strip()
+            # Also check if there's a comma - if so, use part before comma
+            if ',' in company:
+                last_comma = company.rfind(',')
+                company = company[:last_comma].strip()
+            res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',').strip()
             res['investment_type'] = it
+        else:
+            # Fallback: try comma-separated format
+            if ',' in identifier:
+                last = identifier.rfind(',')
+                company = identifier[:last].strip()
+                tail = identifier[last+1:].strip()
+            else:
+                company = identifier.strip()
+                tail = ''
+            
+            # Try patterns on tail
+            if tail:
+                for p in type_patterns:
+                    mm = re.search(p, tail, re.IGNORECASE)
+                    if mm:
+                        it = mm.group(0)
+                        break
+                if not it:
+                    it = tail
+            
+            res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',').strip()
+            if it:
+                res['investment_type'] = it
+        
         return res
 
     def _extract_facts(self, content: str) -> Dict[str, List[Dict]]:
         facts = defaultdict(list)
-        sp = re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*>([^<]*)</\1>', re.DOTALL)
-        for concept, cref, val in sp.findall(content):
+        # Extract standard XBRL facts and capture unitRef for currency
+        sp = re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*(?:unitRef="([^"]*)")?[^>]*>([^<]*)</\1>', re.DOTALL)
+        for match in sp.finditer(content):
+            concept = match.group(1)
+            cref = match.group(2)
+            unit_ref = match.group(3)
+            val = match.group(4)
             if val and cref:
-                facts[cref].append({'concept': concept, 'value': val.strip()})
-        ixp = re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
+                fact_entry = {'concept': concept, 'value': val.strip()}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match = re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match:
+                        fact_entry['currency'] = currency_match.group(1)
+                facts[cref].append(fact_entry)
+        ixp = re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:unitRef="([^"]*)")?[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
         for m in ixp.finditer(content):
-            name = m.group(1); cref = m.group(2); html = m.group(4)
+            name = m.group(1); cref = m.group(2); unit_ref = m.group(3); html = m.group(5)
             if not cref: continue
             txt = re.sub(r'<[^>]+>', '', html).strip()
             if txt:
-                facts[cref].append({'concept': name, 'value': txt})
+                fact_entry = {'concept': name, 'value': txt}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match = re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match:
+                        fact_entry['currency'] = currency_match.group(1)
+                facts[cref].append(fact_entry)
             start = max(0, m.start()-3000); end = min(len(content), m.end()+3000)
             window = content[start:end]
             ref = re.search(r'\b(SOFR\+|PRIME\+|LIBOR\+|Base Rate\+|EURIBOR\+)\b', window, re.IGNORECASE)
@@ -236,13 +328,30 @@ class WHFExtractor:
             pik = re.search(r'\bPIK\b[^\d%]{0,20}([\d\.]+)\s*%?', window, re.IGNORECASE)
             if pik:
                 facts[cref].append({'concept':'derived:PIKRate','value': pik.group(1)})
-            dates = re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', window)
+            # Try multiple date patterns
+            dates = []
+            dates.extend(re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{4}-\d{1,2}-\d{1,2}\b', window))
+            dates.extend(re.findall(r'\b[A-Za-z]+\s+\d{1,2},\s*\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{1,2}/\d{4}\b', window))
             if dates:
-                if len(dates)>=2:
-                    facts[cref].append({'concept':'derived:AcquisitionDate','value': dates[0]})
-                    facts[cref].append({'concept':'derived:MaturityDate','value': dates[-1]})
-                else:
-                    facts[cref].append({'concept':'derived:MaturityDate','value': dates[0]})
+                # Remove duplicates
+                seen = set()
+                unique_dates = []
+                for d in dates:
+                    if d not in seen:
+                        seen.add(d)
+                        unique_dates.append(d)
+                if len(unique_dates)>=2:
+                    facts[cref].append({'concept':'derived:AcquisitionDate','value': unique_dates[0]})
+                    facts[cref].append({'concept':'derived:MaturityDate','value': unique_dates[-1]})
+                elif len(unique_dates)==1:
+                    date_idx = window.find(unique_dates[0])
+                    date_context = window[max(0, date_idx-50):min(len(window), date_idx+50)]
+                    if re.search(r'\b(acquisition|origination|investment|purchase|initial)\s+date\b', date_context, re.IGNORECASE):
+                        facts[cref].append({'concept':'derived:AcquisitionDate','value': unique_dates[0]})
+                    else:
+                        facts[cref].append({'concept':'derived:MaturityDate','value': unique_dates[0]})
         return facts
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[WHFInvestment]:
@@ -255,35 +364,72 @@ class WHFExtractor:
             context_ref=context['id']
         )
         for f in facts:
-            c = f['concept']; v = f['value']; v = v.replace(',',''); cl=c.lower()
+            c = f['concept']; v = f['value']; v_clean = v.replace(',','').strip(); cl=c.lower()
             if any(k in cl for k in ['principalamount','ownedbalanceprincipalamount','outstandingprincipal']):
-                try: inv.principal_amount=float(v)
+                try: inv.principal_amount=float(v_clean)
                 except: pass; continue
-                continue
             if ('cost' in cl and ('amortized' in cl or 'basis' in cl)) or 'ownedatcost' in cl:
-                try: inv.cost=float(v)
+                try: inv.cost=float(v_clean)
                 except: pass; continue
-                continue
             if 'fairvalue' in cl or ('fair' in cl and 'value' in cl) or 'ownedatfairvalue' in cl:
-                try: inv.fair_value=float(v)
+                try: inv.fair_value=float(v_clean)
                 except: pass; continue
+            # Maturity date
+            if 'maturitydate' in cl or ('maturity' in cl and 'date' in cl) or cl=='derived:maturitydate':
+                inv.maturity_date = v.strip()
                 continue
-            if 'investmentbasisspreadvariablerate' in cl:
-                inv.spread = self._percent(v); continue
-            if 'investmentinterestrate' in cl:
-                inv.interest_rate = self._percent(v); continue
-            if cl=='derived:referenceratetoken':
-                inv.reference_rate = v.upper(); continue
-            if cl=='derived:floorrate':
-                inv.floor_rate = self._percent(v); continue
-            if cl=='derived:pikrate':
-                inv.pik_rate = self._percent(v); continue
-            if cl=='derived:acquisitiondate':
-                inv.acquisition_date = v; continue
-            if cl=='derived:maturitydate':
-                inv.maturity_date = v; continue
+            # Acquisition date
+            if 'acquisitiondate' in cl or 'investmentdate' in cl or cl=='derived:acquisitiondate':
+                inv.acquisition_date = v.strip()
+                continue
+            # Reference rate (check BEFORE interest rate)
+            if cl=='derived:referenceratetoken' or 'variableinterestratetype' in cl or ('reference' in cl and 'rate' in cl):
+                if 'sofr' in cl or 'sofr' in v.lower():
+                    inv.reference_rate = 'SOFR'
+                elif 'libor' in cl or 'libor' in v.lower():
+                    inv.reference_rate = 'LIBOR'
+                elif 'prime' in cl or 'prime' in v.lower():
+                    inv.reference_rate = 'PRIME'
+                elif v and not v.startswith('http'):
+                    inv.reference_rate = v.upper().strip()
+                continue
+            # Interest rate (skip if URL)
+            if 'interestrate' in cl and 'floor' not in cl:
+                if v and not v.startswith('http'):
+                    inv.interest_rate = self._percent(v_clean)
+                continue
+            # Spread
+            if 'spread' in cl or ('basis' in cl and 'spread' in cl) or 'investmentbasisspreadvariablerate' in cl:
+                inv.spread = self._percent(v_clean)
+                continue
+            # Floor rate
+            if 'floor' in cl and 'rate' in cl or cl=='derived:floorrate':
+                inv.floor_rate = self._percent(v_clean)
+                continue
+            # PIK rate
+            if 'pik' in cl and 'rate' in cl or cl=='derived:pikrate':
+                inv.pik_rate = self._percent(v_clean)
+                continue
+            # Extract shares/units for equity investments
+            if any(k in cl for k in ['numberofshares','sharesoutstanding','unitsoutstanding','sharesheld','unitsheld']):
+                try: 
+                    shares_val = v.strip().replace(',', '')
+                    float(shares_val)  # Validate
+                    inv.shares_units = shares_val
+                except: pass
+                continue
+            # Extract currency from fact metadata
+            if 'currency' in f:
+                inv.currency = f.get('currency')
         if not inv.acquisition_date and context.get('start_date'):
             inv.acquisition_date = context['start_date'][:10]
+        # Heuristic for commitment_limit and undrawn_commitment
+        if inv.fair_value and not inv.principal_amount:
+            inv.commitment_limit = inv.fair_value
+        elif inv.fair_value and inv.principal_amount:
+            if inv.fair_value > inv.principal_amount:
+                inv.commitment_limit = inv.fair_value
+                inv.undrawn_commitment = inv.fair_value - inv.principal_amount
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value):
             return inv
         return None
@@ -588,6 +734,9 @@ def main():
 
                 company_clean = strip_footnote_refs(company_for_row or last_company or "")
                 inv_type_clean = strip_footnote_refs(inv_type)
+                # Apply standardization to investment type
+                if inv_type_clean:
+                    inv_type_clean = standardize_investment_type(inv_type_clean)
                 industry_clean = strip_footnote_refs(last_industry or "")
                 records.append({
                     "company_name": company_clean,
@@ -622,7 +771,7 @@ def main():
     tables = extract_tables_under_heading(soup)
     records = parse_section_tables(tables)
 
-    out_dir = os.path.join(os.path.dirname(__file__), "output")
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
     os.makedirs(out_dir, exist_ok=True)
     out_csv = os.path.join(out_dir, "WHF_Schedule_Continued_latest.csv")
     fieldnames = [
@@ -673,20 +822,3 @@ def main():
 
 if __name__=='__main__':
     main()
-
-
-
-
-
-                    strip_attrs(child)
-            strip_attrs(simple)
-            with open(os.path.join(tables_dir, f"whf_table_{i}.html"), "w", encoding="utf-8") as fh:
-                fh.write(str(simple))
-    print(f"Saved {len(tables)} simplified tables to {tables_dir}")
-
-if __name__=='__main__':
-    main()
-
-
-
-

@@ -1,0 +1,6 @@
+Table 14 from ARCC
+Filing: 2025-10-28
+URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
+
+Preview (first 500 chars):
+Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Limited partner interests 06/2022 6,246,801 6.2 7.9 13.2 14.9 Extrahop Networks, Inc. (13) Provider of real-time wire data analytics solutions for application and infrastructure monitoring First lien senior secured loan 10.76 % SOFR (M) 6.50 % 07/2021 07/2027 35.2 35.2 35.2 (2)(9) First lien senior secured loan 10.76 % SOF

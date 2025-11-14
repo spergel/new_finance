@@ -1,0 +1,6 @@
+Table 42 from TRIN
+Filing: 2025-11-05
+URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (1) Type of Investment (2) Investment Date (3) Shares / Principal Series Cost Fair Value (6) Footnotes Equity Investments- Canada Construction Technology Nexii, Inc. Equity July 24, 2024 6,126 Preferred Series A-1 $ 3,049 $ 164 (10)(17)(23) Equity July 24, 2024 50,000 Preferred Series A-1 1,370 1,340 (10)(17)(23) Total Nexii, Inc. 4,419 1,504 Sub-Total:  Construction Technology ( 0.2 %)* $ 4,419 $ 1,504 Supply Chain Technology GoFor Delivers, Inc. Equity June 28, 2024 194,329 S

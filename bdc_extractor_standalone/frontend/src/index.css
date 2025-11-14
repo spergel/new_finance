@@ -1,18 +1,24 @@
+@reference "tailwindcss";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global body styles for terminal theme */
-:root {
-  --scanline: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
-}
-
+/* Global body styles for Windows 95 theme */
 html, body, #root {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
-  @apply bg-ink text-silver font-mono antialiased;
-  background-image: var(--scanline);
-  background-size: 100% 3px;
+  @apply bg-[#c0c0c0] text-black antialiased;
+  font-family: system-ui, -apple-system, "Segoe UI", "MS Sans Serif", sans-serif;
+  position: relative;
+}
+
+/* Excel cell selection - Windows 95 style */
+.cell-selected {
+  background-color: #316ac5;
+  color: #ffffff;
+  outline: 1px dotted #000000;
+  outline-offset: -1px;
 }

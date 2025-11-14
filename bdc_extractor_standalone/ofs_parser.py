@@ -25,6 +25,11 @@ class OFSInvestment:
     floor_rate: Optional[str] = None
     pik_rate: Optional[str] = None
     context_ref: Optional[str] = None
+    shares_units: Optional[str] = None
+    percent_net_assets: Optional[str] = None
+    currency: Optional[str] = None
+    commitment_limit: Optional[float] = None
+    undrawn_commitment: Optional[float] = None
 
 
 class OFSExtractor:
@@ -90,7 +95,7 @@ class OFSExtractor:
         for x in invs:
             ind[x.industry] += 1; ty[x.investment_type] += 1
 
-        out_dir = 'output'; os.makedirs(out_dir, exist_ok=True)
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output'); os.makedirs(out_dir, exist_ok=True)
         out_file = os.path.join(out_dir, 'OFS_OFS_Capital_Corp_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
             w = csv.DictWriter(f, fieldnames=['company_name','industry','business_description','investment_type','acquisition_date','maturity_date','principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate'])
@@ -103,7 +108,8 @@ class OFSExtractor:
                 
                 w.writerow({'company_name':x.company_name,'industry':standardized_industry,'business_description':x.business_description,'investment_type':standardized_inv_type,'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardized_ref_rate,'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate})
         logger.info(f"Saved to {out_file}")
-        return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}
+        inv_dicts = [{'company_name':x.company_name,'industry':standardize_industry(x.industry),'business_description':x.business_description,'investment_type':standardize_investment_type(x.investment_type),'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardize_reference_rate(x.reference_rate),'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate} for x in invs]
+        return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'investments':inv_dicts,'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}
 
     def _extract_typed_contexts(self, content: str) -> List[Dict]:
         res = []
@@ -142,15 +148,29 @@ class OFSExtractor:
 
     def _extract_facts(self, content: str) -> Dict[str,List[Dict]]:
         facts=defaultdict(list)
-        sp=re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*>([^<]*)</\1>', re.DOTALL)
-        for concept,cref,val in sp.findall(content):
-            if val and cref: facts[cref].append({'concept':concept,'value':val.strip()})
-        ixp=re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
+        # Extract standard XBRL facts and capture unitRef for currency
+        sp=re.compile(r'<([^>\s:]+:[^>\s]+)[^>]*contextRef="([^"]*)"[^>]*(?:unitRef="([^"]*)")?[^>]*>([^<]*)</\1>', re.DOTALL)
+        for match in sp.finditer(content):
+            concept=match.group(1); cref=match.group(2); unit_ref=match.group(3); val=match.group(4)
+            if val and cref:
+                fact_entry={'concept':concept,'value':val.strip()}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match=re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency']=currency_match.group(1)
+                facts[cref].append(fact_entry)
+        ixp=re.compile(r'<ix:nonFraction[^>]*?name="([^"]+)"[^>]*?contextRef="([^"]+)"[^>]*?(?:unitRef="([^"]*)")?[^>]*?(?:id="([^"]+)")?[^>]*>(.*?)</ix:nonFraction>', re.DOTALL|re.IGNORECASE)
         for m in ixp.finditer(content):
-            name=m.group(1); cref=m.group(2); html=m.group(4)
+            name=m.group(1); cref=m.group(2); unit_ref=m.group(3); html=m.group(5)
             if not cref: continue
             txt=re.sub(r'<[^>]+>','',html).strip()
-            if txt: facts[cref].append({'concept':name,'value':txt})
+            if txt:
+                fact_entry={'concept':name,'value':txt}
+                # Extract currency from unitRef if present
+                if unit_ref:
+                    currency_match=re.search(r'\b([A-Z]{3})\b', unit_ref.upper())
+                    if currency_match: fact_entry['currency']=currency_match.group(1)
+                facts[cref].append(fact_entry)
             start=max(0,m.start()-3000); end=min(len(content), m.end()+3000); window=content[start:end]
             ref=re.search(r'\b(SOFR\+|PRIME\+|LIBOR\+|Base Rate\+|EURIBOR\+)\b', window, re.IGNORECASE)
             if ref: facts[cref].append({'concept':'derived:ReferenceRateToken','value':ref.group(1).replace('+','').upper()})
@@ -158,42 +178,96 @@ class OFSExtractor:
             if floor: facts[cref].append({'concept':'derived:FloorRate','value':floor.group(1)})
             pik=re.search(r'\bPIK\b[^\d%]{0,20}([\d\.]+)\s*%?', window, re.IGNORECASE)
             if pik: facts[cref].append({'concept':'derived:PIKRate','value':pik.group(1)})
-            dates=re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', window)
+            # Try multiple date patterns
+            dates=[]
+            dates.extend(re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{4}-\d{1,2}-\d{1,2}\b', window))
+            dates.extend(re.findall(r'\b[A-Za-z]+\s+\d{1,2},\s*\d{4}\b', window))
+            dates.extend(re.findall(r'\b\d{1,2}/\d{4}\b', window))
             if dates:
-                if len(dates)>=2:
-                    facts[cref].append({'concept':'derived:AcquisitionDate','value':dates[0]})
-                    facts[cref].append({'concept':'derived:MaturityDate','value':dates[-1]})
-                else:
-                    facts[cref].append({'concept':'derived:MaturityDate','value':dates[0]})
+                # Remove duplicates
+                seen=set(); unique_dates=[]
+                for d in dates:
+                    if d not in seen: seen.add(d); unique_dates.append(d)
+                if len(unique_dates)>=2:
+                    facts[cref].append({'concept':'derived:AcquisitionDate','value':unique_dates[0]})
+                    facts[cref].append({'concept':'derived:MaturityDate','value':unique_dates[-1]})
+                elif len(unique_dates)==1:
+                    date_idx=window.find(unique_dates[0])
+                    date_context=window[max(0,date_idx-50):min(len(window),date_idx+50)]
+                    if re.search(r'\b(acquisition|origination|investment|purchase|initial)\s+date\b', date_context, re.IGNORECASE):
+                        facts[cref].append({'concept':'derived:AcquisitionDate','value':unique_dates[0]})
+                    else:
+                        facts[cref].append({'concept':'derived:MaturityDate','value':unique_dates[0]})
         return facts
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[OFSInvestment]:
         if context['company_name']=='Unknown': return None
         inv=OFSInvestment(company_name=context['company_name'],investment_type=context['investment_type'],industry=context['industry'],context_ref=context['id'])
         for f in facts:
-            c=f['concept']; v=f['value']; v=v.replace(',',''); cl=c.lower()
+            c=f['concept']; v=f['value']; v_clean=v.replace(',','').strip(); cl=c.lower()
             if any(k in cl for k in ['principalamount','ownedbalanceprincipalamount','outstandingprincipal']):
-                try: inv.principal_amount=float(v)
+                try: inv.principal_amount=float(v_clean)
                 except: pass; continue
-                continue
             if ('cost' in cl and ('amortized' in cl or 'basis' in cl)) or 'ownedatcost' in cl:
-                try: inv.cost=float(v)
+                try: inv.cost=float(v_clean)
                 except: pass; continue
-                continue
             if 'fairvalue' in cl or ('fair' in cl and 'value' in cl) or 'ownedatfairvalue' in cl:
-                try: inv.fair_value=float(v)
+                try: inv.fair_value=float(v_clean)
                 except: pass; continue
+            # Maturity date
+            if 'maturitydate' in cl or ('maturity' in cl and 'date' in cl) or cl=='derived:maturitydate':
+                inv.maturity_date=v.strip()
                 continue
-            if 'investmentbasisspreadvariablerate' in cl:
-                inv.spread=self._percent(v); continue
-            if 'investmentinterestrate' in cl:
-                inv.interest_rate=self._percent(v); continue
-            if cl=='derived:referenceratetoken': inv.reference_rate=v.upper(); continue
-            if cl=='derived:floorrate': inv.floor_rate=self._percent(v); continue
-            if cl=='derived:pikrate': inv.pik_rate=self._percent(v); continue
-            if cl=='derived:acquisitiondate': inv.acquisition_date=v; continue
-            if cl=='derived:maturitydate': inv.maturity_date=v; continue
+            # Acquisition date
+            if 'acquisitiondate' in cl or 'investmentdate' in cl or cl=='derived:acquisitiondate':
+                inv.acquisition_date=v.strip()
+                continue
+            # Reference rate (check BEFORE interest rate)
+            if cl=='derived:referenceratetoken' or 'variableinterestratetype' in cl or ('reference' in cl and 'rate' in cl):
+                if 'sofr' in cl or 'sofr' in v.lower():
+                    inv.reference_rate='SOFR'
+                elif 'libor' in cl or 'libor' in v.lower():
+                    inv.reference_rate='LIBOR'
+                elif 'prime' in cl or 'prime' in v.lower():
+                    inv.reference_rate='PRIME'
+                elif v and not v.startswith('http'):
+                    inv.reference_rate=v.upper().strip()
+                continue
+            # Interest rate (skip if URL)
+            if 'interestrate' in cl and 'floor' not in cl:
+                if v and not v.startswith('http'):
+                    inv.interest_rate=self._percent(v_clean)
+                continue
+            # Spread
+            if 'spread' in cl or ('basis' in cl and 'spread' in cl) or 'investmentbasisspreadvariablerate' in cl:
+                inv.spread=self._percent(v_clean)
+                continue
+            # Floor rate
+            if 'floor' in cl and 'rate' in cl or cl=='derived:floorrate':
+                inv.floor_rate=self._percent(v_clean)
+                continue
+            # PIK rate
+            if 'pik' in cl and 'rate' in cl or cl=='derived:pikrate':
+                inv.pik_rate=self._percent(v_clean)
+                continue
+            # Extract shares/units for equity investments
+            if any(k in cl for k in ['numberofshares','sharesoutstanding','unitsoutstanding','sharesheld','unitsheld']):
+                try: 
+                    shares_val=v.strip().replace(',','')
+                    float(shares_val)  # Validate
+                    inv.shares_units=shares_val
+                except: pass
+                continue
+            # Extract currency from fact metadata
+            if 'currency' in f: inv.currency=f.get('currency')
         if not inv.acquisition_date and context.get('start_date'): inv.acquisition_date=context['start_date'][:10]
+        # Heuristic for commitment_limit and undrawn_commitment
+        if inv.fair_value and not inv.principal_amount: inv.commitment_limit=inv.fair_value
+        elif inv.fair_value and inv.principal_amount:
+            if inv.fair_value>inv.principal_amount:
+                inv.commitment_limit=inv.fair_value
+                inv.undrawn_commitment=inv.fair_value-inv.principal_amount
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value): return inv
         return None
 
@@ -407,7 +481,7 @@ def main():
 	tables = extract_tables_under_heading(soup)
 	records = parse_section_tables(tables)
 
-	out_dir = os.path.join(os.path.dirname(__file__), "output")
+	out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 	os.makedirs(out_dir, exist_ok=True)
 	out_csv = os.path.join(out_dir, "OFS_Schedule_Continued_2025Q3.csv")
 	fieldnames = [
@@ -441,21 +515,3 @@ def main():
 
 if __name__=='__main__':
 	main()
-
-
-
-
-
-			if 'reference_rate' in rec:
-				rec['reference_rate'] = standardize_reference_rate(rec.get('reference_rate')) or ''
-			
-			writer.writerow(rec)
-	print(f"Saved {len(records)} rows to {out_csv}")
-
-
-if __name__=='__main__':
-	main()
-
-
-
-

@@ -16,28 +16,36 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     (r'First\s+Lien\s+Senior\s+Secured\s+Loan\s*-\s*Revolver', 'First Lien Debt - Revolver'),
     (r'First\s+Lien\s+Senior\s+Secured\s+Loan\s*-\s*Delayed\s+Draw', 'First Lien Debt - Delayed Draw'),
     (r'First\s+Lien\s+Revolver', 'First Lien Debt - Revolver'),
+    (r'First\s+Lien\s+Senior\s+Secured\s+Revolving\s+Loan(?:\s+\d+)?', 'First Lien Debt - Revolver'),
+    (r'First\s+Lien\s+Senior\s+Secured\s+Revolving\s+Credit\s+Facility', 'First Lien Debt - Revolver'),
+    (r'Senior\s+Secured\s+First\s+Lien\s+Revolving\s+Loan', 'First Lien Debt - Revolver'),
     (r'First\s+Lien\s+Delayed\s+Draw\s+Term\s+Loan', 'First Lien Debt - Delayed Draw'),
     (r'Unitranche\s+First\s+Lien\s+Delayed\s+Draw\s+Term\s+Loan', 'First Lien Debt - Delayed Draw'),
     (r'Senior\s+Secured\s+First\s+Lien\s+Revolver', 'First Lien Debt - Revolver'),
     (r'Senior\s+Secured\s+First\s+Lien\s+Delayed\s+Draw\s+Term\s+Loan', 'First Lien Debt - Delayed Draw'),
     
-    # Base types
+    # Base types - match "Senior Secured First Lien Debt" before more generic patterns
+    (r'Senior\s+Secured\s+First\s+Lien\s+Debt', 'First Lien Debt'),
     (r'First\s+Lien\s+Senior\s+Secured\s+Loan', 'First Lien Debt'),
     (r'First\s+Lien\s+Term\s+Loan', 'First Lien Debt'),
     (r'First\s+Lien\s+Senior\s+Secured\s+Term\s+Loan', 'First Lien Debt'),
     (r'Unitranche\s+First\s+Lien\s+Term\s+Loan', 'First Lien Debt'),
     (r'First\s+Lien\s+Secured\s+Debt', 'First Lien Debt'),
     (r'First\s+Lien\s+Debt', 'First Lien Debt'),
+    (r'First\s+Lien\s+Senior\s+Secured\s+Notes?', 'First Lien Debt'),
     (r'Senior\s+Secured\s+First\s+Lien\s+Term\s+Loan', 'First Lien Debt'),
     
     # Unitranche (only if explicitly stated, not just as part of first lien)
     (r'^Unitranche\s*$', 'Unitranche'),
     
     # Second Lien
+    (r'Second\s+Lien\s+Secured\s+Term\s+Loan', 'Second Lien Debt'),
+    (r'Second\s+Lien\s+Secured\s+.*', 'Second Lien Debt'),
     (r'Second\s+Lien\s+Senior\s+Secured\s+Loan', 'Second Lien Debt'),
     (r'Second\s+Lien\s+Term\s+Loan', 'Second Lien Debt'),
     (r'Second\s+Lien\s+Secured\s+Debt', 'Second Lien Debt'),
     (r'Second\s+Lien\s+Debt', 'Second Lien Debt'),
+    (r'Second\s+Lien\s+Senior\s+Secured\s+Notes?', 'Second Lien Debt'),
     
     # Subordinated
     (r'Subordinated\s+Debt', 'Subordinated Debt'),
@@ -56,10 +64,17 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     (r'Common\s+Stock', 'Common Equity'),
     (r'Member\s+Units', 'Common Equity'),
     (r'Common\s+Shares', 'Common Equity'),
+    (r'Ordinary\s+Shares?', 'Common Equity'),
+    (r'Member\s+Interests?', 'Common Equity'),
+    (r'^Interests?$', 'Common Equity'),  # Catch standalone "Interests" or "Interest"
+    (r'^Equity$', 'Common Equity'),  # Catch standalone "Equity"
     
     (r'Preferred\s+Equity', 'Preferred Equity'),
     (r'Preferred\s+Stock', 'Preferred Equity'),
-    (r'Preferred\s+Shares', 'Preferred Equity'),
+    (r'Preferred\s+Shares?', 'Preferred Equity'),
+    (r'Junior\s+Preferred\s+Shares?', 'Preferred Equity'),
+    (r'Class\s+[A-Z]+\s+Units?', 'Common Equity'),
+    (r'Units?\s*\([^)]+\)', 'Common Equity'),
     
     (r'Warrants?', 'Warrants'),
     (r'Stock\s+Warrants?', 'Warrants'),
@@ -67,6 +82,38 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     # Other
     (r'Promissory\s+Note', 'Promissory Note'),
     (r'Note\s+Payable', 'Promissory Note'),
+    (r'Limited\s+Partnership\s+Interest', 'Limited Partnership Interest'),
+    (r'Limited\s+Partner\s+Interests?', 'Limited Partnership Interest'),
+    (r'Partnership\s+Interest', 'Limited Partnership Interest'),
+    (r'Simple\s+Agreement\s+for\s+Future\s+Equity', 'Simple Agreement for Future Equity'),
+    
+    # Ares-specific patterns - handle cases where investment type might be missing
+    # These are often fund investments or summary rows
+    (r'Largest\s+Portfolio\s+Company\s+Investment', 'Unknown'),  # Summary row - keep as Unknown
+    (r'Top\s+Five\s+Largest\s+Portfolio\s+Company\s+Investments', 'Unknown'),  # Summary row
+    (r'Catalog\s+of\s+premier\s+music\s+intellectual\s+property', 'Unknown'),  # Descriptive text
+    
+    # BCSF/FDUS - Cash equivalents and summary rows
+    (r'Cash\s+Equivalents', 'Cash Equivalents'),
+    (r'Money\s+Market\s+Funds', 'Cash Equivalents'),
+    (r'Total\s+Co', 'Unknown'),  # Summary row
+    (r'Total\s+Affiliate\s+Investments', 'Unknown'),  # Summary row
+    (r'Investments\s+and\s+Money\s+Market\s+Funds', 'Unknown'),  # Summary row
+    (r'Non-control/Non-affiliate\s+Investments', 'Unknown'),  # Summary row
+    (r'HealthcareAndPharmaceuticalsMember', 'Unknown'),  # XBRL member - not an investment
+    
+    # GAIN - Handle HTML entities and patterns in company names
+    (r'Term\s+Debt', 'First Lien Debt'),
+    (r'TL\s*-\s*Term\s+Debt', 'First Lien Debt'),
+    (r'Line\s+of\s+Credit', 'First Lien Debt - Revolver'),
+    
+    # HTGC/CGBD - Special cases
+    (r'SPF\s+Borrower', 'Unknown'),  # Special purpose entity
+    (r'SPF\s+HoldCo', 'Unknown'),  # Special purpose entity
+    (r'Escrow\s+Receivables', 'Unknown'),  # Not an investment
+    (r'Pharmaceuticals', 'Unknown'),  # Industry, not investment type
+    (r'Medical\s+Devices', 'Unknown'),  # Industry, not investment type
+    (r'Sustainable\s+and\s+Renewable\s+Technology', 'Unknown'),  # Industry, not investment type
 ]
 
 
@@ -375,6 +422,59 @@ def standardize_spread(spread_val: Optional[str]) -> Optional[str]:
     except (ValueError, TypeError):
         # If can't parse, return as-is
         return str(spread_val) if spread_val else None
+
+
+def calculate_rate_formula(interest_rate: Optional[str], reference_rate: Optional[str], 
+                          spread: Optional[str], floor_rate: Optional[str]) -> str:
+    """
+    Calculate rate formula string to show how the interest rate is calculated.
+    
+    Args:
+        interest_rate: Current/effective interest rate (e.g., "12.3%")
+        reference_rate: Base reference rate (e.g., "SOFR", "LIBOR")
+        spread: Spread over reference rate (e.g., "8%")
+        floor_rate: Minimum rate floor (e.g., "2%")
+        
+    Returns:
+        Formula string like:
+        - "SOFR + 8% | Floor: 2%" for variable rates
+        - "12.3% Fixed" for fixed rates
+        - "SOFR + 9.0%" if interest_rate contains variable rate description
+        - "" if no rate information
+    """
+    # Clean up None/empty values
+    interest_rate = str(interest_rate or '').strip()
+    reference_rate = str(reference_rate or '').strip()
+    spread = str(spread or '').strip()
+    floor_rate = str(floor_rate or '').strip()
+    
+    # Clean up NaN values
+    if interest_rate.lower() in ['nan', 'none', '']:
+        interest_rate = ''
+    if reference_rate.lower() in ['nan', 'none', '']:
+        reference_rate = ''
+    if spread.lower() in ['nan', 'none', '']:
+        spread = ''
+    if floor_rate.lower() in ['nan', 'none', '']:
+        floor_rate = ''
+    
+    # If we have reference_rate and spread, it's variable
+    if reference_rate and spread:
+        formula_parts = [f"{reference_rate} + {spread}"]
+        if floor_rate:
+            formula_parts.append(f"Floor: {floor_rate}")
+        return " | ".join(formula_parts)
+    
+    # If we have just interest_rate, check if it's fixed or variable
+    if interest_rate:
+        # Check if it looks like a variable rate description
+        if any(term in interest_rate.upper() for term in ['SOFR', 'LIBOR', 'PRIME', 'EURIBOR', 'BASE RATE', '+']):
+            return interest_rate  # Keep as is if it mentions a reference rate or has a + sign
+        # Otherwise, it's likely a fixed rate
+        return f"{interest_rate} Fixed"
+    
+    return ""
+
 
 """
 Standardization module for BDC investment data.
@@ -393,6 +493,9 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     (r'First\s+Lien\s+Senior\s+Secured\s+Loan\s*-\s*Revolver', 'First Lien Debt - Revolver'),
     (r'First\s+Lien\s+Senior\s+Secured\s+Loan\s*-\s*Delayed\s+Draw', 'First Lien Debt - Delayed Draw'),
     (r'First\s+Lien\s+Revolver', 'First Lien Debt - Revolver'),
+    (r'First\s+Lien\s+Senior\s+Secured\s+Revolving\s+Loan(?:\s+\d+)?', 'First Lien Debt - Revolver'),
+    (r'First\s+Lien\s+Senior\s+Secured\s+Revolving\s+Credit\s+Facility', 'First Lien Debt - Revolver'),
+    (r'Senior\s+Secured\s+First\s+Lien\s+Revolving\s+Loan', 'First Lien Debt - Revolver'),
     (r'First\s+Lien\s+Delayed\s+Draw\s+Term\s+Loan', 'First Lien Debt - Delayed Draw'),
     (r'Unitranche\s+First\s+Lien\s+Delayed\s+Draw\s+Term\s+Loan', 'First Lien Debt - Delayed Draw'),
     (r'Senior\s+Secured\s+First\s+Lien\s+Revolver', 'First Lien Debt - Revolver'),
@@ -419,6 +522,7 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     # Subordinated
     (r'Subordinated\s+Debt', 'Subordinated Debt'),
     (r'Subordinated\s+Note', 'Subordinated Debt'),
+    (r'Subordinated\s+Revolving\s+Loan', 'Subordinated Debt'),
     (r'CLO\s+Mezzanine', 'Subordinated Debt'),
     (r'Junior\s+Debt', 'Subordinated Debt'),
     (r'Mezzanine\s+Debt', 'Subordinated Debt'),
@@ -437,6 +541,8 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     (r'Preferred\s+Equity', 'Preferred Equity'),
     (r'Preferred\s+Stock', 'Preferred Equity'),
     (r'Preferred\s+Shares', 'Preferred Equity'),
+    (r'Class\s+[A-Z]+\s+Units?', 'Common Equity'),
+    (r'Units?\s*\([^)]+\)', 'Common Equity'),
     
     (r'Warrants?', 'Warrants'),
     (r'Stock\s+Warrants?', 'Warrants'),
@@ -444,6 +550,8 @@ INVESTMENT_TYPE_MAPPINGS: List[Tuple[str, str]] = [
     # Other
     (r'Promissory\s+Note', 'Promissory Note'),
     (r'Note\s+Payable', 'Promissory Note'),
+    (r'Limited\s+Partnership\s+Interest', 'Limited Partnership Interest'),
+    (r'Partnership\s+Interest', 'Limited Partnership Interest'),
 ]
 
 
@@ -752,6 +860,22 @@ def standardize_spread(spread_val: Optional[str]) -> Optional[str]:
     except (ValueError, TypeError):
         # If can't parse, return as-is
         return str(spread_val) if spread_val else None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

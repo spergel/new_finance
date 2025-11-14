@@ -1,0 +1,6 @@
+Table 16 from OCSL
+Filing: 2025-08-05
+URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
+
+Preview (first 500 chars):
+Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Monotype Imaging Holdings Inc. Application Software First Lien Term Loan SOFR+ 5.50 % 9.80 % 2/28/2031 $ 824 $ 793 $ 824 (6)(15)(19) Monotype Imaging Holdings Inc. Application Software First Lien Revolver SOFR+ 5.50 % 2/28/2030 — ( 56 ) — (6)(15)(19) Mosaic Companies, LLC Home Improvement Retail First Lien Term Loan SOFR+ 8.25 % 7/2/2026 26,5

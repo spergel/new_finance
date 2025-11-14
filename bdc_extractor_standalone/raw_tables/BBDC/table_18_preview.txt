@@ -1,0 +1,6 @@
+Table 18 from BBDC
+Filing: 2025-11-06
+URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Safety Products Holdings, LLC First Lien Senior Secured Term Loan SOFR + 4.75 %, 8.9 % Cash 12/20 12/28 $ 14,697 $ 14,636 $ 14,697 1.3 % (7)(8)(13) Subtotal Consumer goods: Non-durable ( 3.9 %)* 45,266 45,459 44,943 Containers, Packaging, & Glass Brook & Whittle Holding Corp. First Lien Senior Secured Term Loan SOFR + 6.50 %, 10.7 % Cash 02/22 12/30 3,362 3,328 2

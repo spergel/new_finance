@@ -1,0 +1,6 @@
+Table 36 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Landing Holdings Inc. Warrant 3/12/2021 Common Stock 11,806 $ 116 $ 115 (15) Lendio, Inc. Warrant 3/29/2019 Preferred Series D 127,032 39 10 Plentific Ltd Warrant 10/3/2023 Ordinary Shares 27,298 60 38 (5)(10) Provi Warrant 12/22/2022 Common Stock 117,042 166 77 (15) Rhino Labs, Inc. Warrant 3/12/2021 Common Stock 13,106 470 — (15) SeatGeek, Inc. Warrant 6/12/2019 Common Stock 1,604,724 1,242 4,9

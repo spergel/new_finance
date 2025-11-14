@@ -1,0 +1,6 @@
+Table 39 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes VideoAmp, Inc. Warrant 1/21/2022 Common Stock 152,048 $ 1,275 $ 32 (15) Subtotal: Software ( 0.53 %)* 10,554 10,472 Space Technologies Capella Space Corp. Warrant 10/21/2021 Common Stock 176,200 207 10 (15) Subtotal: Space Technologies ( 0.00 %)* 207 10 Sustainable and Renewable Technology Ampion, PBC Warrant 4/15/2022 Common Stock 18,472 52 67 Electric Hydrogen Co. Warrant 3/27/2024 Common Stock

@@ -1,0 +1,6 @@
+Table 34 from HTGC
+Filing: 2025-10-30
+URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
+
+Preview (first 500 chars):
+Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Verge Analytics, Inc. Equity 9/6/2023 Preferred Series C 208,588 $ 1,500 $ 1,519 Viridian Therapeutics, Inc. Equity 11/6/2023 Common Stock 32,310 400 619 (4)(10) X4 Pharmaceuticals, Inc. Equity 11/26/2019 Common Stock 1,566,064 2,945 1,149 (4) Subtotal: Drug Discovery & Development ( 1.56 %)* 36,566 31,020 Electronics & Computer Hardware Locus Robotics Corp. Equity 11/17/2022 Preferred Series F 1
