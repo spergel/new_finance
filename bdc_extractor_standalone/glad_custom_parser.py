@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BCSF (Bain Capital Specialty Finance) Custom Investment Extractor
+GLAD (Gladstone Capital Corp) Custom Investment Extractor
 Parses investment data from HTML tables extracted from SEC filings.
 """
 
@@ -23,14 +23,14 @@ from standardization import standardize_investment_type, standardize_industry, s
 logger = logging.getLogger(__name__)
 
 
-class BCSFCustomExtractor:
-    """Custom extractor for BCSF that parses HTML tables from SEC filings."""
+class GLADCustomExtractor:
+    """Custom extractor for GLAD that parses HTML tables from SEC filings."""
     
     def __init__(self, user_agent: str = "BDC-Extractor/1.0 contact@example.com"):
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "BCSF") -> Dict:
+    def extract_from_ticker(self, ticker: str = "GLAD") -> Dict:
         """Extract investments from SEC filing HTML tables."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -93,7 +93,7 @@ class BCSFCustomExtractor:
         # Save to CSV
         output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
         os.makedirs(output_dir, exist_ok=True)
-        output_file = os.path.join(output_dir, 'BCSF_Bain_Capital_Specialty_Finance_Inc_investments.csv')
+        output_file = os.path.join(output_dir, 'GLAD_Gladstone_Capital_Corp_investments.csv')
         
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=[
@@ -123,7 +123,7 @@ class BCSFCustomExtractor:
         logger.info(f"Saved {len(all_investments)} investments to {output_file}")
         
         return {
-            'company_name': 'Bain Capital Specialty Finance Inc',
+            'company_name': 'Gladstone Capital Corp',
             'cik': cik,
             'total_investments': len(all_investments),
             'total_principal': total_principal,
@@ -234,22 +234,17 @@ class BCSFCustomExtractor:
                 logger.debug(f"Found header row at index {idx}, column map: {column_map}")
                 break
         
-        # If no header found, use default column positions based on BCSF structure
+        # If no header found, use default column positions based on GLAD structure
+        # GLAD format: Col 0=Company/Investment, Col 1=Industry, Col 2=Principal/Shares, Col 3=Cost
         if not column_map:
             column_map = {
                 'company': 0,
-                'business_description': 2,
-                'investment_type': 4,
-                'coupon': 6,
-                'reference_rate': 8,
-                'spread': 10,
-                'acquisition_date': 12,
-                'maturity_date': 14,
-                'shares_units': 16,
-                'principal': 18,
-                'cost': 20,
-                'fair_value': 22,
-                'percent_net_assets': 24
+                'industry': 1,
+                'business_description': 2,  # Actually principal/shares column
+                'investment_type': 0,  # Extracted from company name
+                'principal': 2,  # Principal/Shares column
+                'cost': 3,  # Cost column
+                'fair_value': 4,  # May not exist
             }
         
         # Parse data rows
@@ -438,23 +433,43 @@ class BCSFCustomExtractor:
         if len(cell_texts) > company_col:
             company_text = cell_texts[company_col].strip()
             if company_text and company_text != 'Unknown':
-                investment['company_name'] = company_text
+                # For GLAD, company_name contains full investment description
+                # Parse it to extract company name, investment type, rates, dates
+                parsed = self._parse_glad_company_description(company_text)
+                investment['company_name'] = parsed['company_name']
+                if parsed['investment_type']:
+                    investment['investment_type'] = parsed['investment_type']
+                if parsed['interest_rate']:
+                    investment['interest_rate'] = parsed['interest_rate']
+                if parsed['spread']:
+                    investment['spread'] = parsed['spread']
+                if parsed['reference_rate']:
+                    investment['reference_rate'] = parsed['reference_rate']
+                if parsed['maturity_date']:
+                    investment['maturity_date'] = parsed['maturity_date']
+                if parsed['pik_rate']:
+                    investment['pik_rate'] = parsed['pik_rate']
             elif current_company:
                 investment['company_name'] = current_company
         
-        # Get business description
+        # Get business description (contains principal/cost values for GLAD)
         biz_desc_col = column_map.get('business_description', 2)
+        biz_desc = ""
         if len(cell_texts) > biz_desc_col:
             biz_desc = cell_texts[biz_desc_col].strip()
-            if biz_desc:
+            if biz_desc and biz_desc not in ['—', '-', '']:
                 investment['business_description'] = biz_desc
         
-        # Get investment type
-        inv_type_col = column_map.get('investment_type', 4)
-        if len(cell_texts) > inv_type_col:
-            inv_type = cell_texts[inv_type_col].strip()
-            if inv_type:
-                investment['investment_type'] = standardize_investment_type(inv_type)
+        # Investment type should already be set from parsing company description
+        # Only use column if still unknown and it's not a numeric value
+        if investment['investment_type'] == 'Unknown':
+            inv_type_col = column_map.get('investment_type', 0)
+            if len(cell_texts) > inv_type_col:
+                inv_type = cell_texts[inv_type_col].strip()
+                # Skip if it looks like a number (cost value)
+                if inv_type and not re.match(r'^[\d,\.]+$', inv_type.replace(',', '')):
+                    if inv_type.lower() not in ['cost', 'principal/ shares/ units', 'company and investment']:
+                        investment['investment_type'] = standardize_investment_type(inv_type)
         
         # Get coupon/interest rate
         coupon_col = column_map.get('coupon', 6)
@@ -507,71 +522,182 @@ class BCSFCustomExtractor:
             if mat_text:
                 investment['maturity_date'] = mat_text
         
-        # Get principal amount (from XBRL tag)
-        principal_col = column_map.get('principal', 18)
-        if len(cells) > principal_col:
-            principal_cell = cells[principal_col]
-            principal_value = self._extract_numeric_value(principal_cell, 'us-gaap:InvestmentOwnedBalancePrincipalAmount')
+        # Get principal amount - try XBRL first (search all cells), then fall back to text extraction
+        principal_col = column_map.get('principal', 2)  # GLAD uses col 2 for principal
+        
+        # Try XBRL extraction first (search all cells for XBRL tags)
+        for cell in cells:
+            principal_value = self._extract_numeric_value(cell, 'us-gaap:InvestmentOwnedBalancePrincipalAmount')
             if principal_value is not None:
-                # Check scale - scale=6 means millions, scale=-5 means base units
-                # If value is already large (> 1000), assume it's already in base units
-                if principal_value > 1000:
+                # XBRL values in HTML tables are often in thousands, so multiply by 1000
+                # But if value is already large (> 1M), assume it's already in base units
+                if principal_value > 1000000:
                     investment['principal_amount'] = int(principal_value)
                 else:
-                    investment['principal_amount'] = int(principal_value * 1000000)
+                    investment['principal_amount'] = int(principal_value * 1000)
+                break
         
-        # Get cost (from XBRL tag) - look in the cost column
-        cost_col = column_map.get('cost', 20)
-        if len(cells) > cost_col:
-            cost_cell = cells[cost_col]
-            # Try multiple XBRL concepts for cost
-            cost_value = self._extract_numeric_value(cost_cell, 'us-gaap:InvestmentOwnedAtCost')
-            if cost_value is not None:
-                # Check scale - if value is already large (> 1000), assume it's already in base units
-                if cost_value > 1000:
-                    investment['cost'] = int(cost_value)
-                else:
-                    investment['cost'] = int(cost_value * 1000000)
-            else:
-                # Also check if there's a numeric value in the cost column
-                cost_text = self._extract_cell_text(cost_cell)
-                cost_match = re.search(r'(\d+\.?\d*)', cost_text.replace(',', ''))
-                if cost_match:
+        # If XBRL didn't work, try text extraction
+        if not investment.get('principal_amount') and len(cells) > principal_col:
+            principal_cell = cells[principal_col]
+            principal_text = self._extract_cell_text(principal_cell)
+            # Skip if it's a header, dash, or just "$"
+            if principal_text and principal_text not in ['—', '-', '$', 'Principal/ Shares/ Units (I)(J)', '']:
+                # Try to extract number (handle formats like "10,500", "1,000", etc.)
+                principal_match = re.search(r'([\d,]+\.?\d*)', principal_text.replace('—', '').replace('-', ''))
+                if principal_match:
                     try:
-                        cost_val = float(cost_match.group(1))
-                        # If value is already large, assume it's in base units
-                        if cost_val > 1000:
-                            investment['cost'] = int(cost_val)
-                        else:
-                            investment['cost'] = int(cost_val * 1000000)
+                        val = float(principal_match.group(1).replace(',', ''))
+                        if val > 0 and val < 1000000000:
+                            investment['principal_amount'] = int(val * 1000)  # Assume thousands
                     except ValueError:
                         pass
         
-        # Get fair value (from XBRL tag)
-        fv_col = column_map.get('fair_value', 22)
+        # Get cost - for GLAD, try multiple columns since structure may vary
+        # Check column 3 first (default cost column), then check other columns
+        cost_col = column_map.get('cost', 3)  # GLAD uses col 3 for cost
+        
+        # Try multiple columns for cost (3, 4, 5, etc.) since table structure may vary
+        for col_idx in [cost_col, 3, 4, 5, 6, 7]:
+            if len(cells) > col_idx:
+                cost_cell = cells[col_idx]
+                cost_text = self._extract_cell_text(cost_cell)
+                # Skip if it's a header, dash, empty, or looks like a percentage/rate
+                if cost_text and cost_text not in ['—', '-', 'Cost', '']:
+                    # Skip if it looks like a percentage (has % sign)
+                    if '%' in cost_text:
+                        continue
+                    # Skip if it looks like a rate (SOFR, LIBOR, etc.)
+                    if any(rate in cost_text.upper() for rate in ['SOFR', 'LIBOR', 'PRIME', '—']):
+                        continue
+                    
+                    cost_match = re.search(r'([\d,]+\.?\d*)', cost_text.replace('—', '').replace('-', ''))
+                    if cost_match:
+                        try:
+                            cost_val = float(cost_match.group(1).replace(',', ''))
+                            # Check if this is a reasonable cost value (not a fair value)
+                            if cost_val > 0:
+                                # Very large values (> 1B) in Unknown rows are likely fair values
+                                if cost_val > 1000000000 and investment.get('investment_type') == 'Unknown':
+                                    # Store as fair value instead
+                                    if not investment.get('fair_value'):
+                                        investment['fair_value'] = int(cost_val)
+                                    continue
+                                elif cost_val < 1000000000:  # Less than 1B, likely cost
+                                    # Check if this value makes sense as cost (should be similar to principal or reasonable)
+                                    principal_val = investment.get('principal_amount', 0) or 0
+                                    # If we have principal, cost should be within reasonable range
+                                    if principal_val > 0:
+                                        # Cost should be within 50% to 150% of principal (rough check)
+                                        if cost_val * 1000 >= principal_val * 0.5 and cost_val * 1000 <= principal_val * 1.5:
+                                            investment['cost'] = int(cost_val * 1000)  # Assume thousands
+                                            break
+                                    else:
+                                        # No principal, but value seems reasonable for cost
+                                        investment['cost'] = int(cost_val * 1000)  # Assume thousands
+                                        break
+                        except ValueError:
+                            pass
+        
+        # Also try XBRL extraction for cost (try all cells for XBRL tags)
+        if not investment.get('cost'):
+            # Try cost column first
+            if len(cells) > cost_col:
+                cost_cell = cells[cost_col]
+                cost_value = self._extract_numeric_value(cost_cell, 'us-gaap:InvestmentOwnedAtCost')
+                if cost_value is not None:
+                    # XBRL values in HTML tables are often in thousands
+                    if cost_value > 1000000:
+                        investment['cost'] = int(cost_value)
+                    else:
+                        investment['cost'] = int(cost_value * 1000)
+            # If not found, try other XBRL concepts for cost
+            if not investment.get('cost'):
+                for cell in cells:
+                    cost_value = self._extract_numeric_value(cell, 'us-gaap:InvestmentOwnedAtCost')
+                    if cost_value is not None:
+                        if cost_value > 1000000:
+                            investment['cost'] = int(cost_value)
+                        else:
+                            investment['cost'] = int(cost_value * 1000)
+                        break
+                    # Also try cost basis
+                    cost_value = self._extract_numeric_value(cell, 'us-gaap:CostBasis')
+                    if cost_value is not None:
+                        if cost_value > 1000000:
+                            investment['cost'] = int(cost_value)
+                        else:
+                            investment['cost'] = int(cost_value * 1000)
+                        break
+        
+        # Get fair value - try XBRL first (most reliable)
+        fv_col = column_map.get('fair_value', 4)  # GLAD might have fair value in col 4 or later
+        
+        # Try XBRL extraction first (check all cells)
         if len(cells) > fv_col:
             fv_cell = cells[fv_col]
             fv_value = self._extract_numeric_value(fv_cell, 'us-gaap:InvestmentOwnedAtFairValue')
             if fv_value is not None:
-                # Check scale - if value is already large (> 1000), assume it's already in base units
-                if fv_value > 1000:
+                # XBRL values in HTML tables are often in thousands
+                if fv_value > 1000000:
                     investment['fair_value'] = int(fv_value)
                 else:
-                    investment['fair_value'] = int(fv_value * 1000000)
-            else:
-                # Also check if there's a numeric value in the fair value column
-                fv_text = self._extract_cell_text(fv_cell)
-                fv_match = re.search(r'(\d+\.?\d*)', fv_text.replace(',', ''))
-                if fv_match:
-                    try:
-                        fv_val = float(fv_match.group(1))
-                        # If value is already large, assume it's in base units
-                        if fv_val > 1000:
-                            investment['fair_value'] = int(fv_val)
+                    investment['fair_value'] = int(fv_value * 1000)
+        
+        # If not found in fair value column, check all cells for XBRL tags
+        if not investment.get('fair_value'):
+            for cell in cells:
+                fv_value = self._extract_numeric_value(cell, 'us-gaap:InvestmentOwnedAtFairValue')
+                if fv_value is not None:
+                    if fv_value > 1000000:
+                        investment['fair_value'] = int(fv_value)
+                    else:
+                        investment['fair_value'] = int(fv_value * 1000)
+                    break
+        
+        # Fall back to text extraction if XBRL didn't work
+        if not investment.get('fair_value') and len(cells) > fv_col:
+            fv_cell = cells[fv_col]
+            fv_text = self._extract_cell_text(fv_cell)
+            fv_match = re.search(r'([\d,]+\.?\d*)', fv_text.replace(',', '').replace('—', ''))
+            if fv_match:
+                try:
+                    fv_val = float(fv_match.group(1).replace(',', ''))
+                    if fv_val > 0:
+                        if fv_val < 1000000000:
+                            investment['fair_value'] = int(fv_val * 1000)  # Assume thousands
                         else:
-                            investment['fair_value'] = int(fv_val * 1000000)
-                    except ValueError:
-                        pass
+                            investment['fair_value'] = int(fv_val)
+                except ValueError:
+                    pass
+        
+        # Clean up business description - remove if it's just a number or "$" (not a real description)
+        biz_desc = investment.get('business_description', '')
+        if biz_desc:
+            # Check if business_description is just a number (with or without commas)
+            biz_desc_clean = biz_desc.replace(',', '').replace('$', '').strip()
+            if re.match(r'^[\d\.]+$', biz_desc_clean) or biz_desc.strip() == '$':
+                # It's just a number or "$", not a real business description - clear it
+                investment['business_description'] = ''
+        
+        # Try to identify Unknown investment types based on context
+        if investment.get('investment_type') == 'Unknown':
+            # Check if it looks like equity (has cost/fair value but no principal, or very large values)
+            has_principal = bool(investment.get('principal_amount'))
+            has_cost = bool(investment.get('cost'))
+            has_fv = bool(investment.get('fair_value'))
+            cost_val = investment.get('cost', 0) or 0
+            fv_val = investment.get('fair_value', 0) or 0
+            
+            # If no principal but has cost/fair value, might be equity
+            if not has_principal and (has_cost or has_fv):
+                # Check if values are reasonable for equity (not too large)
+                if cost_val < 100000000 and fv_val < 100000000:
+                    # Could be equity - but we'll leave as Unknown for now
+                    pass
+                # Very large values (> 100M) are likely summary/total rows - skip them
+                elif cost_val > 100000000 or fv_val > 100000000:
+                    return None
         
         # Skip if no meaningful data (must have at least one financial value or valid investment type)
         has_financial_data = (investment.get('principal_amount') or 
@@ -587,19 +713,57 @@ class BCSFCustomExtractor:
             'interest receivable', 'receivable', 'payable', 'liabilities',
             'assets', 'other assets', 'due from', 'due to', 'collateral',
             'title of', 'trading symbol', 'exchange', 'registered',
-            'company and investment', 'principal/ shares/ units'
+            'company and investment', 'principal/ shares/ units',
+            'consolidated schedule', 'gladstone capital', 'dollar amounts',
+            'non-control', 'non-affiliate', 'control', 'affiliate investments',
+            'non control', 'non affiliate',  # Handle variations
+            'secured first lien', 'secured second lien', 'unsecured',
+            'aerospace and defense', 'software and services', 'healthcare',
+            'consumer goods', 'capital equipment', 'transportation',
+            'beverage', 'food', 'tobacco', 'chemicals', 'plastics', 'rubber',
+            'fire', 'finance', 'insurance', 'wholesale', 'retail', 'automotive',
+            'metals', 'mining', 'construction', 'building', 'diversified',
+            'machinery', 'healthcare, education', 'childcare'
         ]
+        # Skip if company name matches skip patterns
         if any(pattern in company_name for pattern in skip_patterns):
             return None
         
-        # For BCSF, values might be in thousands - check if they're too small
-        # If principal/cost/fair_value are less than 100, they're likely in thousands
-        if investment.get('principal_amount') and investment['principal_amount'] < 100:
-            investment['principal_amount'] = int(investment['principal_amount'] * 1000)
-        if investment.get('cost') and investment['cost'] < 100:
-            investment['cost'] = int(investment['cost'] * 1000)
-        if investment.get('fair_value') and investment['fair_value'] < 100:
-            investment['fair_value'] = int(investment['fair_value'] * 1000)
+        # Skip if company name is too short (less than 3 chars) or is just "non", "hh", etc.
+        if len(company_name) < 3 or company_name in ['non', 'hh', 'llc', 'inc', 'corp']:
+            return None
+        
+        # Skip if company name looks like a percentage/header
+        if re.match(r'^\d+\.?\d*\s*%$', company_name):
+            return None
+        
+        # Skip if investment type is a percentage (section header)
+        inv_type = investment.get('investment_type', '').lower()
+        if re.match(r'^\d+\.?\d*\s*%$', inv_type):
+            return None
+        
+        # Skip rows with "Unknown" investment type that are likely summary/total rows
+        if inv_type == 'unknown':
+            cost_val = investment.get('cost', 0) or 0
+            principal_val = investment.get('principal_amount', 0) or 0
+            fv_val = investment.get('fair_value', 0) or 0
+            
+            # If no principal and cost/fair value > 10M, it's likely a summary/total row
+            if not principal_val and (cost_val > 10000000 or fv_val > 10000000):
+                return None
+            
+            # If cost > 100M or principal > 100M, it's likely a summary row
+            if cost_val > 100000000 or principal_val > 100000000 or fv_val > 100000000:
+                return None
+            
+            # If business_description is empty or just $ and we have no principal, it's likely a duplicate/summary row
+            biz_desc = investment.get('business_description', '')
+            if (not biz_desc or biz_desc == '$') and not principal_val:
+                return None
+            
+            # If we have no financial data and unknown type, skip
+            if not has_financial_data:
+                return None
         
         if not has_financial_data and not has_valid_investment:
             return None
@@ -643,6 +807,66 @@ class BCSFCustomExtractor:
         
         return None
     
+    def _parse_glad_company_description(self, description: str) -> Dict[str, Optional[str]]:
+        """Parse GLAD's company description to extract company name, investment type, rates, dates."""
+        result = {
+            'company_name': description,
+            'investment_type': None,
+            'interest_rate': None,
+            'spread': None,
+            'reference_rate': None,
+            'maturity_date': None,
+            'pik_rate': None
+        }
+        
+        if not description:
+            return result
+        
+        # Extract company name (everything before the first "–" or " - ")
+        name_match = re.match(r'^([^–-]+?)(?:\s*[–-]\s*)', description)
+        if name_match:
+            result['company_name'] = name_match.group(1).strip()
+        else:
+            # Fallback: take first part before comma if no dash
+            parts = description.split(',')
+            if len(parts) > 0:
+                result['company_name'] = parts[0].strip()
+        
+        # Extract investment type (after the dash, before comma or parenthesis)
+        type_match = re.search(r'[–-]\s*([^,\(]+?)(?:,|\(|$)', description)
+        if type_match:
+            inv_type = type_match.group(1).strip()
+            result['investment_type'] = standardize_investment_type(inv_type)
+        
+        # Extract maturity date (Due MM/YYYY or Due YYYY)
+        maturity_match = re.search(r'Due\s+(\d{1,2}/\d{4}|\d{4})', description, re.IGNORECASE)
+        if maturity_match:
+            date_str = maturity_match.group(1)
+            # Convert to standard format if needed
+            if '/' in date_str:
+                result['maturity_date'] = date_str
+            else:
+                # Just year, add month
+                result['maturity_date'] = f"12/{date_str}"
+        
+        # Extract interest rate (X.X % Cash)
+        interest_match = re.search(r'(\d+\.?\d*)\s*%\s*Cash', description, re.IGNORECASE)
+        if interest_match:
+            result['interest_rate'] = f"{interest_match.group(1)}%"
+        
+        # Extract spread (S + X.X %)
+        spread_match = re.search(r'S\s*\+\s*(\d+\.?\d*)\s*%', description, re.IGNORECASE)
+        if spread_match:
+            result['spread'] = f"{spread_match.group(1)}%"
+            result['reference_rate'] = 'SOFR'  # S typically means SOFR
+        
+        # Extract PIK rate (X.X % PIK)
+        pik_match = re.search(r'(\d+\.?\d*)\s*%\s*PIK', description, re.IGNORECASE)
+        if pik_match:
+            result['pik_rate'] = f"{pik_match.group(1)}%"
+        
+        return result
+    
     def _clean_industry_name(self, industry: str) -> str:
         """Clean and standardize industry name."""
         if not industry:
@@ -662,9 +886,9 @@ def main():
     """Main entry point for testing."""
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
-    extractor = BCSFCustomExtractor()
+    extractor = GLADCustomExtractor()
     try:
-        result = extractor.extract_from_ticker("BCSF")
+        result = extractor.extract_from_ticker("GLAD")
         print(f"\n✓ Successfully extracted {result.get('total_investments', 0)} investments")
         print(f"Total principal: ${result.get('total_principal', 0):,.0f}")
         print(f"Total cost: ${result.get('total_cost', 0):,.0f}")
@@ -675,3 +899,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
