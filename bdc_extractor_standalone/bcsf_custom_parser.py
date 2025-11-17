@@ -30,7 +30,7 @@ class BCSFCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "BCSF") -> Dict:
+    def extract_from_ticker(self, ticker: str = "BCSF"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SEC filing HTML tables."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -42,10 +42,10 @@ class BCSFCustomExtractor:
         logger.info(f"Found CIK: {cik}")
         
         # Get latest 10-Q filing URL
-        filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not filing_index_url:
             # Try 10-K as fallback
-            filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-K", cik=cik)
+            filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-K", cik=cik, year=year, min_date=min_date)
             if not filing_index_url:
                 raise ValueError(f"Could not find 10-Q or 10-K filing for {ticker}")
         
@@ -99,7 +99,8 @@ class BCSFCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in all_investments:
@@ -118,6 +119,11 @@ class BCSFCustomExtractor:
                     'spread': inv.get('spread', ''),
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
+                    'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
         
         logger.info(f"Saved {len(all_investments)} investments to {output_file}")
@@ -178,8 +184,8 @@ class BCSFCustomExtractor:
                 text = prev.get_text().lower()
                 context_text += " " + text
                 if len(context_text) > 2000:
-                    break
-            
+                break
+        
             # Skip if it's a financial statement
             if any(kw in context_text for kw in financial_statement_keywords):
                 continue
@@ -298,7 +304,7 @@ class BCSFCustomExtractor:
                         desc_text = cell_texts[biz_desc_col].strip()
                         if desc_text:
                             current_business_desc = desc_text
-                    continue
+                continue
             
             # Parse investment row
             investment = self._parse_investment_row(cells, cell_texts, column_map, current_company, current_industry, current_business_desc)
@@ -431,6 +437,11 @@ class BCSFCustomExtractor:
             'spread': None,
             'floor_rate': None,
             'pik_rate': None,
+            'shares_units': None,
+            'percent_net_assets': None,
+            'currency': 'USD',
+            'commitment_limit': None,
+            'undrawn_commitment': None,
         }
         
         # Get company name (may be in this row or carried from previous)
@@ -572,6 +583,24 @@ class BCSFCustomExtractor:
                             investment['fair_value'] = int(fv_val * 1000000)
                     except ValueError:
                         pass
+        
+        # Extract commitment_limit and undrawn_commitment for revolvers
+        # Heuristic: If fair_value > principal_amount, it might be a revolver
+        if investment.get('fair_value') and investment.get('principal_amount'):
+            try:
+                fv = int(investment['fair_value'])
+                principal = int(investment['principal_amount'])
+                if fv > principal:
+                    investment['commitment_limit'] = fv
+                    investment['undrawn_commitment'] = fv - principal
+            except (ValueError, TypeError):
+                pass
+        elif investment.get('fair_value') and not investment.get('principal_amount'):
+            # If we have fair value but no principal, might be a revolver commitment
+            try:
+                investment['commitment_limit'] = int(investment['fair_value'])
+            except (ValueError, TypeError):
+                pass
         
         # Skip if no meaningful data (must have at least one financial value or valid investment type)
         has_financial_data = (investment.get('principal_amount') or 

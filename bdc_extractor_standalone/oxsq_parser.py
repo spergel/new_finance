@@ -37,12 +37,12 @@ class OXSQExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "OXSQ") -> Dict:
+    def extract_from_ticker(self, ticker: str = "OXSQ", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         m = re.search(r'/(\d{10}-\d{2}-\d{6})-index\.html', index_url)
@@ -129,7 +129,7 @@ class OXSQExtractor:
             same = None
             em = re.search(r'<xbrldi:explicitMember[^>]*dimension="us-gaap:EquitySecuritiesByIndustryAxis"[^>]*>([^<]+)</xbrldi:explicitMember>', html, re.DOTALL|re.IGNORECASE)
             if em: same = self._industry_member_to_name(em.group(1).strip())
-            res.append({'id':cid,'investment_identifier':ident,'company_name':parsed['company_name'],'industry':same or parsed['industry'],'investment_type':parsed['investment_type'],'instant':inst.group(1) if inst else None,'start_date':sd.group(1) if sd else None,'end_date':ed.group(1) if ed else None})
+            res.append({'id':cid,'investment_identifier':ident,'company_name':parsed['company_name'],'industry':same or parsed['industry'],'investment_type':parsed['investment_type'],'business_description':ident if 'CLO' in ident or 'Collateralized Loan Obligation' in ident else None,'instant':inst.group(1) if inst else None,'start_date':sd.group(1) if sd else None,'end_date':ed.group(1) if ed else None})
         return res
 
     def _parse_identifier(self, identifier: str) -> Dict[str,str]:
@@ -138,12 +138,68 @@ class OXSQExtractor:
         # OXSQ format: "Senior Secured Notes - Business Services - Access CIG"
         # Or: "Senior Secured Notes - Business Services" (aggregate, no company)
         # Or: "Senior Secured Notes - Healthcare - Performance Health Inc. - first lien senior secured notes"
+        # Or: "CLO Subordinated Notes - Collateralized Loan Obligation - Equity Investments - Structured Finance - Allegro CLO XII, Ltd"
         # Format: Investment Type - Industry - Company Name (optional) - Additional Details (optional)
         
         # Split by " - " (dash with spaces)
         parts = [p.strip() for p in identifier.split(' - ')]
         
-        if len(parts) >= 3:
+        # Special handling for CLO investments
+        if 'CLO' in identifier or 'Collateralized Loan Obligation' in identifier:
+            # CLO format: "CLO Subordinated Notes - Collateralized Loan Obligation - Equity Investments - Structured Finance - [CLO Name]"
+            # Or: "CLO Subordinated Notes - Collateralized Loan Obligation - Equity Investments - Structured Finance - Allegro CLO XII, Ltd"
+            # Find the CLO name (usually the last part that contains "CLO" or ends with "Ltd", "LLC", etc.)
+            clo_name = None
+            # Look for parts that look like CLO names (contain "CLO" and a number, or end with company suffix)
+            for i in range(len(parts) - 1, -1, -1):
+                part = parts[i]
+                # Check if it's a CLO name pattern
+                if any(suffix in part for suffix in ['Ltd', 'LLC', 'Inc', 'Corp', 'LP', 'L.P.', 'Ltd.', 'LLC.']):
+                    clo_name = part
+                    break
+                elif 'CLO' in part and i > 2:  # Not the first part, and contains "CLO"
+                    # Check if it looks like a CLO name (has CLO and possibly a number/year)
+                    if re.search(r'CLO\s+\d+|CLO\s+[A-Z]+', part, re.IGNORECASE):
+                        clo_name = part
+                        break
+                    # Or if it's the last part and has CLO
+                    elif i == len(parts) - 1:
+                        clo_name = part
+                        break
+            
+            # If we found a CLO name, use it
+            if clo_name:
+                # Extract investment type (first part)
+                investment_type = 'CLO Subordinated Notes'
+                # Industry is typically "Structured Finance"
+                industry = 'Structured Finance'
+                # Company name is the CLO name
+                company = clo_name
+            else:
+                # Try to extract from the last meaningful part
+                # Skip generic parts like "Collateralized Loan Obligation", "Equity Investments", "Structured Finance"
+                generic_parts = ['collateralized loan obligation', 'equity investments', 'structured finance', 'clo subordinated notes']
+                for i in range(len(parts) - 1, -1, -1):
+                    part_lower = parts[i].lower()
+                    if part_lower not in generic_parts and len(parts[i].strip()) > 3:
+                        clo_name = parts[i]
+                        break
+                
+                if clo_name:
+                    investment_type = 'CLO Subordinated Notes'
+                    industry = 'Structured Finance'
+                    company = clo_name
+                else:
+                    # Fall back to using the identifier as company name if it's not too generic
+                    if len(identifier) < 100:  # Not too long
+                        investment_type = 'CLO Subordinated Notes'
+                        industry = 'Structured Finance'
+                        company = identifier
+                    else:
+                        investment_type = 'CLO Subordinated Notes'
+                        industry = 'Structured Finance'
+                        company = 'Unknown'
+        elif len(parts) >= 3:
             # Format: Investment Type - Industry - Company Name (and possibly more)
             investment_type = parts[0]
             industry = parts[1]
@@ -154,7 +210,7 @@ class OXSQExtractor:
             if len(company_parts) > 1:
                 last_part = company_parts[-1].lower()
                 # If last part looks like investment type details, it's not part of company name
-                if any(keyword in last_part for keyword in ['first lien', 'second lien', 'senior secured', 'lien']):
+                if any(keyword in last_part for keyword in ['first lien', 'second lien', 'senior secured', 'lien', 'notes', 'loan']):
                     # Last part is investment type detail, not company name
                     company = ' - '.join(company_parts[:-1])
                     # Update investment type with detail if it's more specific
@@ -170,20 +226,48 @@ class OXSQExtractor:
             industry = parts[1]
             company = 'Unknown'  # Aggregate entry, no specific company
         else:
-            # Single part - just use as company name
-            company = identifier.strip()
-            industry = 'Unknown'
-            investment_type = 'Unknown'
+            # Single part - could be company name or investment type
+            # If it contains common company suffixes, treat as company name
+            if any(suffix in identifier for suffix in ['Ltd', 'LLC', 'Inc', 'Corp', 'LP', 'L.P.', 'LLP']):
+                company = identifier.strip()
+                industry = 'Unknown'
+                investment_type = 'Unknown'
+            else:
+                # Treat as investment type
+                investment_type = identifier.strip()
+                industry = 'Unknown'
+                company = 'Unknown'
         
         # Clean company name - remove HTML entities
         company = company.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
         company = re.sub(r'\s+', ' ', company).strip()
         
-        # Clean investment type
+        # Clean investment type - remove redundant parts
         investment_type = re.sub(r'\s+', ' ', investment_type).strip()
+        # Standardize CLO investment types
+        if investment_type.startswith('CLO Subordinated Notes'):
+            investment_type = 'CLO Subordinated Notes'
+        elif 'Collateralized Loan Obligation' in investment_type:
+            investment_type = 'CLO Subordinated Notes'
+        # Standardize other investment types
+        if 'Senior Secured Notes' in investment_type:
+            # Keep the full type if it has additional details like "first lien"
+            if 'first lien' in investment_type.lower() or 'second lien' in investment_type.lower():
+                # Keep as is, but clean up
+                investment_type = re.sub(r'\s+', ' ', investment_type).strip()
+            else:
+                investment_type = 'Senior Secured Notes'
         
         # Clean industry
         industry = re.sub(r'\s+', ' ', industry).strip()
+        
+        # For CLO subordinated notes, try to extract any rate information from identifier
+        # This is a fallback in case XBRL facts don't have the information
+        if 'CLO' in identifier or 'Collateralized Loan Obligation' in identifier:
+            # Look for yield or return patterns in the identifier
+            yield_match = re.search(r'(?:yield|return|rate)[\s:]+([\d\.]+)\s*%', identifier, re.IGNORECASE)
+            if yield_match:
+                res['yield_from_identifier'] = f"{float(yield_match.group(1)):.2f}%"
         
         res['company_name'] = company if company else 'Unknown'
         res['industry'] = industry if industry else 'Unknown'
@@ -247,8 +331,45 @@ class OXSQExtractor:
         return facts
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[OXSQInvestment]:
-        if context['company_name']=='Unknown': return None
+        # Skip aggregate entries (no company name) unless they have meaningful financial data
+        if context['company_name']=='Unknown':
+            # Skip aggregate entries - they're not individual investments
+            return None
+        
+        # Skip "Total" entries
+        company_lower = context['company_name'].lower()
+        if company_lower.startswith('total') or 'total ' in company_lower:
+            return None
         inv=OXSQInvestment(company_name=context['company_name'],investment_type=context['investment_type'],industry=context['industry'],context_ref=context['id'])
+        
+        # For CLO subordinated notes, store the full identifier in business_description for reference
+        if 'CLO' in context.get('investment_identifier', '') or 'Subordinated' in context.get('investment_type', ''):
+            # Store the full identifier so we can see the CLO name and details
+            inv.business_description = context.get('investment_identifier', '')
+            
+            # Try to extract CLO name more aggressively
+            identifier = context.get('investment_identifier', '')
+            if identifier and inv.company_name == 'CLO subordinated notes' or inv.company_name == 'Unknown':
+                # Try to extract CLO name from identifier
+                # Pattern: "CLO Subordinated Notes - ... - [CLO Name]"
+                parts = [p.strip() for p in identifier.split(' - ')]
+                # Look for parts that look like CLO names
+                for part in reversed(parts):
+                    part_lower = part.lower()
+                    # Skip generic parts
+                    if part_lower in ['clo subordinated notes', 'collateralized loan obligation', 'equity investments', 'structured finance']:
+                        continue
+                    # If it has a company suffix or contains CLO with a number/name, it's likely the CLO name
+                    if any(suffix in part for suffix in ['Ltd', 'LLC', 'Inc', 'Corp', 'LP', 'L.P.']) or \
+                       re.search(r'CLO\s+[A-Z0-9]+', part, re.IGNORECASE):
+                        inv.company_name = part
+                        break
+            
+            parsed_id = self._parse_identifier(context.get('investment_identifier', ''))
+            if 'yield_from_identifier' in parsed_id and not inv.interest_rate:
+                # Use yield from identifier as interest_rate if no interest rate found in facts
+                inv.interest_rate = parsed_id.get('yield_from_identifier')
+        
         for f in facts:
             c=f['concept']; v=f['value']; v_clean=v.replace(',','').strip(); cl=c.lower()
             if any(k in cl for k in ['principalamount','ownedbalanceprincipalamount','outstandingprincipal']):
@@ -284,6 +405,13 @@ class OXSQExtractor:
                 if v and not v.startswith('http'):
                     inv.interest_rate=self._percent(v_clean)
                 continue
+            # Yield or return rate (for equity-like investments like CLO subordinated notes)
+            if ('yield' in cl and 'rate' in cl) or ('return' in cl and 'rate' in cl) or 'investmentyield' in cl:
+                if v and not v.startswith('http'):
+                    # Use yield as interest_rate if interest_rate is not set
+                    if not inv.interest_rate:
+                        inv.interest_rate=self._percent(v_clean)
+                continue
             # Spread
             if 'spread' in cl or ('basis' in cl and 'spread' in cl) or 'investmentbasisspreadvariablerate' in cl:
                 inv.spread=self._percent(v_clean)
@@ -307,6 +435,12 @@ class OXSQExtractor:
             # Extract currency from fact metadata
             if 'currency' in f: inv.currency=f.get('currency')
         if not inv.acquisition_date and context.get('start_date'): inv.acquisition_date=context['start_date'][:10]
+        
+        # For CLO subordinated notes with 0% interest rate but significant write-downs,
+        # the 0% is likely accurate (distressed/non-performing positions)
+        # However, if we have cost and fair value, we could calculate an implied yield
+        # But for now, we'll trust the XBRL data - 0% means no yield is being generated
+        
         # Heuristic for commitment_limit and undrawn_commitment
         if inv.fair_value and not inv.principal_amount: inv.commitment_limit=inv.fair_value
         elif inv.fair_value and inv.principal_amount:
@@ -361,6 +495,8 @@ def main():
 
 if __name__=='__main__':
     main()
+
+
 
 
 

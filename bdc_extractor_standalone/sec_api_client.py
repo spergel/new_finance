@@ -200,14 +200,17 @@ class SECAPIClient:
             'sicDescription': self._company_tickers.get(ticker.upper(), {}).get('sicDescription', '')
         }
 
-    def get_filing_index_url(self, ticker: str, filing_type: str, cik: Optional[str] = None) -> Optional[str]:
+    def get_filing_index_url(self, ticker: str, filing_type: str, cik: Optional[str] = None, 
+                            year: Optional[int] = None, min_date: Optional[str] = None) -> Optional[str]:
         """
-        Get the URL for the most recent filing of a given type.
+        Get the URL for the most recent filing of a given type, optionally filtered by date.
         
         Args:
             ticker: Company ticker symbol
             filing_type: Type of filing (e.g., "10-K", "8-K")
             cik: Optional CIK number to use directly
+            year: Optional year to filter by (default: 2025). Set to None to get latest regardless of year.
+            min_date: Optional minimum date in YYYY-MM-DD format. If provided, overrides year filter.
             
         Returns:
             URL to the filing index page, or None if not found
@@ -225,17 +228,64 @@ class SECAPIClient:
 
             recent_filings = submissions['filings']['recent']
             
+            # Default to 2025 if year not specified
+            if year is None and min_date is None:
+                year = 2025
+            
+            # Build date filter
+            if min_date:
+                try:
+                    min_date_obj = datetime.strptime(min_date, '%Y-%m-%d').date()
+                except ValueError:
+                    logger.warning(f"Invalid min_date format: {min_date}. Expected YYYY-MM-DD")
+                    min_date = None
+            
+            matching_filings = []
+            
             for i, form in enumerate(recent_filings['form']):
                 if form == filing_type:
-                    accession_number = recent_filings['accessionNumber'][i]
-                    accession_number_no_hyphens = accession_number.replace('-', '')
+                    # Get report date
+                    report_date_str = recent_filings.get('reportDate', [None])[i]
+                    if not report_date_str:
+                        continue
                     
-                    filing_index_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_number_no_hyphens}/{accession_number}-index.html"
-                    logger.info(f"Found {filing_type} index for {ticker}: {filing_index_url}")
-                    return filing_index_url
+                    # Parse report date
+                    try:
+                        report_date = datetime.strptime(report_date_str, '%Y-%m-%d').date()
+                    except (ValueError, TypeError):
+                        # If date parsing fails, skip date filtering for this filing
+                        if year is None and min_date is None:
+                            matching_filings.append((i, None))
+                        continue
+                    
+                    # Apply date filters
+                    if min_date:
+                        if report_date < min_date_obj:
+                            continue
+                    elif year is not None:
+                        if report_date.year != year:
+                            continue
+                    
+                    accession_number = recent_filings['accessionNumber'][i]
+                    matching_filings.append((i, report_date))
             
-            logger.warning(f"No recent {filing_type} found for {ticker} (CIK: {cik})")
-            return None
+            if not matching_filings:
+                year_msg = f" for year {year}" if year else ""
+                min_date_msg = f" after {min_date}" if min_date else ""
+                logger.warning(f"No {filing_type} found for {ticker} (CIK: {cik}){year_msg}{min_date_msg}")
+                return None
+            
+            # Sort by date (most recent first) and return the first one
+            matching_filings.sort(key=lambda x: x[1] if x[1] else date.min, reverse=True)
+            i, report_date = matching_filings[0]
+            
+            accession_number = recent_filings['accessionNumber'][i]
+            accession_number_no_hyphens = accession_number.replace('-', '')
+            
+            filing_index_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_number_no_hyphens}/{accession_number}-index.html"
+            date_str = report_date.strftime('%Y-%m-%d') if report_date else 'unknown'
+            logger.info(f"Found {filing_type} index for {ticker} (date: {date_str}): {filing_index_url}")
+            return filing_index_url
             
         except Exception as e:
             logger.error(f"Error fetching filing URL for {ticker}: {e}")

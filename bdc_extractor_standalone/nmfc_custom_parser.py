@@ -31,7 +31,7 @@ class NMFCCustomExtractor:
         self.xbrl_extractor = TypedMemberExtractor(user_agent)
         self.html_parser = FlexibleTableParser(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "NMFC") -> Dict:
+    def extract_from_ticker(self, ticker: str = "NMFC", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from NMFC's latest 10-Q filing."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -39,7 +39,7 @@ class NMFCCustomExtractor:
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
         
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         
@@ -73,10 +73,15 @@ class NMFCCustomExtractor:
         xbrl_result = self.xbrl_extractor.extract_from_url(txt_url, company_name, cik)
         logger.info(f"XBRL extraction: {xbrl_result.total_investments} investments")
         
+        # Extract industries from XBRL
+        industry_map = self._extract_industries_from_xbrl(txt_url, cik)
+        if industry_map:
+            logger.info(f"Found {len(industry_map)} industry mappings from XBRL")
+        
         # Convert XBRL investments to dict format
         investments = []
         for inv in xbrl_result.investments:
-            investments.append({
+            inv_dict = {
                 'company_name': inv.get('company_name', ''),
                 'business_description': inv.get('business_description', ''),
                 'investment_type': inv.get('investment_type', ''),
@@ -92,8 +97,47 @@ class NMFCCustomExtractor:
                 'floor_rate': inv.get('floor_rate'),
                 'pik_rate': inv.get('pik_rate'),
                 'shares_units': inv.get('shares_units'),
-                'percent_net_assets': inv.get('percent_net_assets')
-            })
+                'percent_net_assets': inv.get('percent_net_assets'),
+                'currency': inv.get('currency', 'USD'),
+                'commitment_limit': inv.get('commitment_limit'),
+                'undrawn_commitment': inv.get('undrawn_commitment')
+            }
+            
+            # Enrich with industry from XBRL if missing
+            if (not inv_dict.get('industry') or inv_dict.get('industry') == 'Unknown') and industry_map:
+                company_key = self._normalize_company_name(inv_dict.get('company_name', ''))
+                # Try exact match
+                if company_key in industry_map:
+                    inv_dict['industry'] = industry_map[company_key]
+                else:
+                    # Try fuzzy matching
+                    for key, industry in industry_map.items():
+                        if company_key in key or key in company_key:
+                            inv_dict['industry'] = industry
+                            break
+            
+            investments.append(inv_dict)
+        
+        # Add commitment extraction logic for each investment
+        for inv in investments:
+            # Extract commitment_limit and undrawn_commitment for revolvers
+            if inv.get('fair_value') and inv.get('principal_amount'):
+                try:
+                    fv = int(inv['fair_value'])
+                    principal = int(inv['principal_amount'])
+                    if fv > principal:
+                        inv['commitment_limit'] = fv
+                        inv['undrawn_commitment'] = fv - principal
+                except (ValueError, TypeError):
+                    pass
+            elif inv.get('fair_value') and not inv.get('principal_amount'):
+                try:
+                    inv['commitment_limit'] = int(inv['fair_value'])
+                except (ValueError, TypeError):
+                    pass
+            # Ensure currency is set
+            if not inv.get('currency'):
+                inv['currency'] = 'USD'
         
         # Try to enhance with HTML data if available
         try:
@@ -235,13 +279,108 @@ class NMFCCustomExtractor:
         
         return True
     
+    def _extract_industries_from_xbrl(self, txt_url: str, cik: str) -> Dict[str, str]:
+        """Extract industry mappings from XBRL using EquitySecuritiesByIndustryAxis."""
+        industry_map = {}
+        
+        try:
+            logger.info(f"Downloading XBRL for industry enrichment: {txt_url}")
+            response = requests.get(txt_url, headers=self.headers)
+            response.raise_for_status()
+            content = response.text
+            
+            # Extract contexts with investment identifiers and industry axes
+            cp = re.compile(r'<context id="([^"]+)">(.*?)</context>', re.DOTALL)
+            tp = re.compile(
+                r'<xbrldi:typedMember[^>]*dimension="us-gaap:InvestmentIdentifierAxis"[^>]*>'
+                r'\s*<us-gaap:InvestmentIdentifierAxis\.domain>([^<]+)</us-gaap:InvestmentIdentifierAxis\.domain>'
+                r'\s*</xbrldi:typedMember>', re.DOTALL
+            )
+            ep = re.compile(
+                r'<xbrldi:explicitMember[^>]*dimension="us-gaap:EquitySecuritiesByIndustryAxis"[^>]*>([^<]+)</xbrldi:explicitMember>',
+                re.DOTALL | re.IGNORECASE
+            )
+            
+            context_count = 0
+            typed_member_count = 0
+            industry_member_count = 0
+            
+            for m in cp.finditer(content):
+                context_count += 1
+                cid = m.group(1)
+                chtml = m.group(2)
+                
+                # Find investment identifier
+                tm = tp.search(chtml)
+                if not tm:
+                    continue
+                
+                typed_member_count += 1
+                ident = tm.group(1).strip()
+                
+                # Parse identifier to get company name
+                # Simple parsing - company name is usually first part before comma or dash
+                company_name = ident
+                if ',' in ident:
+                    company_name = ident.split(',')[0].strip()
+                elif ' - ' in ident:
+                    company_name = ident.split(' - ')[0].strip()
+                elif '-' in ident and ' - ' not in ident:
+                    # Try to find where investment type starts
+                    parts = ident.split('-')
+                    if len(parts) >= 2:
+                        # Check if last part looks like investment type
+                        last_part = parts[-1].strip().lower()
+                        if any(kw in last_part for kw in ['lien', 'loan', 'equity', 'note', 'secured']):
+                            company_name = '-'.join(parts[:-1]).strip()
+                        else:
+                            company_name = ident
+                
+                # Clean company name
+                company_name = re.sub(r'\s+', ' ', company_name).strip()
+                if not company_name or company_name == 'Unknown':
+                    continue
+                
+                # Try to find industry from explicitMember
+                em = ep.search(chtml)
+                industry = None
+                if em:
+                    industry_member_count += 1
+                    industry_qname = em.group(1).strip()
+                    industry = self._industry_member_to_name(industry_qname)
+                
+                if industry:
+                    company_key = self._normalize_company_name(company_name)
+                    industry_map[company_key] = industry
+            
+            logger.info(f"XBRL parsing: {context_count} contexts, {typed_member_count} typed members, {industry_member_count} industry members")
+            
+        except Exception as e:
+            logger.warning(f"Failed to extract industries from XBRL: {e}")
+        
+        return industry_map
+    
+    def _industry_member_to_name(self, qname: str) -> Optional[str]:
+        """Convert XBRL industry QName to readable name."""
+        # Extract local name (part after colon)
+        local = qname.split(':', 1)[-1] if ':' in qname else qname
+        # Remove common suffixes
+        local = re.sub(r'Member$', '', local, flags=re.IGNORECASE)
+        if local.endswith('Sector'):
+            local = local[:-6]
+        # Convert camelCase to words
+        words = re.sub(r'(?<!^)([A-Z])', r' \1', local).strip()
+        words = re.sub(r'\bAnd\b', 'and', words, flags=re.IGNORECASE)
+        words = re.sub(r'\s+', ' ', words).strip()
+        return words if words else None
+    
     def _save_to_csv(self, investments: List[Dict], output_file: str):
         """Save investments to CSV file."""
         fieldnames = [
             'company_name', 'industry', 'business_description', 'investment_type',
             'acquisition_date', 'maturity_date', 'principal_amount', 'cost',
             'fair_value', 'interest_rate', 'reference_rate', 'spread', 'floor_rate',
-            'pik_rate'
+            'pik_rate', 'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
         ]
         
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
@@ -269,6 +408,11 @@ class NMFCCustomExtractor:
                     'spread': inv.get('spread'),
                     'floor_rate': inv.get('floor_rate'),
                     'pik_rate': inv.get('pik_rate'),
+                    'shares_units': inv.get('shares_units'),
+                    'percent_net_assets': inv.get('percent_net_assets'),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit'),
+                    'undrawn_commitment': inv.get('undrawn_commitment'),
                 })
 
 

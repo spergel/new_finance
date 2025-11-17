@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Custom parser for PSEC (Prospect Capital Corp) that extracts investment data from HTML tables in SEC filings."""
+"""Custom parser for OFS Capital Corp that extracts investment data from HTML tables in SEC filings."""
 
 import os
 import re
@@ -17,29 +17,17 @@ from standardization import standardize_investment_type, standardize_industry, s
 logger = logging.getLogger(__name__)
 
 
-class PSECCustomExtractor:
+class OFSCustomExtractor:
     """
-    Custom extractor for PSEC that parses HTML tables from SEC filings.
-    Similar to GBDC/OFS parsers but adapted for PSEC's specific table structure.
-    
-    PSEC structure:
-    - Col 0: Portfolio Company
-    - Col 1: Industry
-    - Col 2: Investments (Investment Type)
-    - Col 3: Acquisition Date
-    - Col 4: Coupon/Yield (interest rate with reference rate and spread)
-    - Col 5: Floor
-    - Col 6: Legal Maturity
-    - Col 7: Principal Value (with $ in Col 7, value in Col 8)
-    - Col 8: Amortized Cost (with $ in Col 10, value in Col 11)
-    - Col 9: Fair Value (with $ in Col 13, value in Col 14)
+    Custom extractor for OFS that parses HTML tables from SEC filings.
+    Similar to GBDC parser but adapted for OFS's specific table structure.
     """
     
     def __init__(self, user_agent: str = "BDC-Extractor/1.0 contact@example.com"):
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "PSEC", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "OFS", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """
         Extract investments from 10-Q filing.
         
@@ -144,6 +132,7 @@ class PSECCustomExtractor:
                 continue
             
             # Check if we've reached the schedule section
+            # Look in text before table AND in the table itself
             if not in_schedule_section:
                 # Check text before table
                 prev_text = ""
@@ -162,14 +151,17 @@ class PSECCustomExtractor:
                     in_schedule_section = True
                     logger.debug("Found investment schedule section in table")
             
-            # Check if this table has investment data
+            # Check if this table has investment data (either in schedule section OR has clear investment headers)
             has_headers = False
             header_row_idx = None
             for row_idx, row in enumerate(rows[:15]):
+                # Use get_text(' ', strip=True) to preserve spaces for multi-word keywords
                 row_text = row.get_text(' ', strip=True).lower()
-                header_keywords = ['portfolio company', 'industry', 'investment', 
-                                  'acquisition date', 'coupon', 'yield', 'maturity',
-                                  'principal', 'amortized cost', 'fair value']
+                # Need multiple investment-related headers
+                header_keywords = ['investment type', 'spread above', 'interest rate', 
+                                  'maturity date', 'acquisition date', 'principal', 
+                                  'amortized cost', 'portfolio company', 'fair value',
+                                  'company name', 'portfolio']
                 header_count = sum(1 for kw in header_keywords if kw in row_text)
                 
                 # Also check for actual column structure
@@ -185,16 +177,19 @@ class PSECCustomExtractor:
             
             # Include table if it has headers AND (we're in schedule section OR table has investment data)
             if has_headers:
+                # Also check if table has actual investment data (company names, financial values)
                 table_text = table.get_text().lower()
                 has_investment_data = any(indicator in table_text for indicator in [
                     'first lien', 'second lien', 'senior secured', 'subordinated',
-                    'preferred equity', 'common equity', 'term loan', 'revolving'
+                    'preferred equity', 'common equity', 'common stock', 'preferred stock',
+                    'warrants', 'units', 'revolver'
                 ])
                 
                 if in_schedule_section or has_investment_data:
                     investment_tables.append(table)
-                    logger.debug(f"Added table with {len(rows)} rows")
+                    logger.debug(f"Added table with {len(rows)} rows (header at row {header_row_idx}, in_section={in_schedule_section}, has_data={has_investment_data})")
             else:
+                # If we're in schedule section but this table doesn't match, might be end
                 if in_schedule_section:
                     table_text = table.get_text().lower()
                     if 'footnotes' in table_text[:500] or 'see notes' in table_text[:500]:
@@ -207,17 +202,17 @@ class PSECCustomExtractor:
     def _parse_html_table(self, table, current_industry: str, current_company: Optional[str]) -> List[Dict]:
         """Parse a single HTML table.
         
-        PSEC structure:
-        - Col 0: Portfolio Company (company name, or empty for continuation rows)
-        - Col 1: Industry (only in company name rows)
-        - Col 2: Investments (Investment Type)
-        - Col 3: Acquisition Date
-        - Col 4: Coupon/Yield (e.g., "15.25 % (PRIME + 7.75 %)")
-        - Col 5: Floor
-        - Col 6: Legal Maturity
-        - Col 7: Principal Value (with $ in Col 7, value in Col 8, scale=3)
-        - Col 8: Amortized Cost (with $ in Col 10, value in Col 11, scale=3)
-        - Col 9: Fair Value (with $ in Col 13, value in Col 14, scale=3)
+        OFS structure:
+        - Col 0: Company name (first row) OR Investment Type (subsequent rows)
+        - Col 2: Industry (only in company name row)
+        - Col 4: Interest Rate
+        - Col 6: Reference Rate (SOFR+, PRIME+, etc.)
+        - Col 7: Spread
+        - Col 9: Acquisition Date
+        - Col 11: Maturity Date
+        - Col 14: Principal Amount (scale=3, thousands)
+        - Col 18: Amortized Cost (scale=3, thousands)
+        - Col 19: Fair Value (scale=3, thousands)
         """
         rows = table.find_all('tr')
         if not rows:
@@ -245,19 +240,20 @@ class PSECCustomExtractor:
                 logger.debug(f"Found header row at index {idx}, column map: {column_map}")
                 break
         
-        # Default column positions for PSEC
+        # Default column positions for OFS
         if not column_map:
             column_map = {
                 'company': 0,
-                'industry': 1,
-                'investment_type': 2,
-                'acquisition_date': 3,
-                'coupon_yield': 4,
-                'floor': 5,
-                'maturity_date': 6,
-                'principal': 8,  # Value is in Col 8 (Col 7 has $)
-                'cost': 11,  # Value is in Col 11 (Col 10 has $)
-                'fair_value': 14  # Value is in Col 14 (Col 13 has $)
+                'industry': 2,
+                'investment_type': 0,  # Same as company column
+                'interest_rate': 4,
+                'reference_rate': 6,
+                'spread': 7,
+                'acquisition_date': 9,
+                'maturity_date': 11,
+                'principal': 14,
+                'cost': 18,
+                'fair_value': 19
             }
         
         # Parse data rows
@@ -283,47 +279,24 @@ class PSECCustomExtractor:
             if self._is_section_header(cell_texts):
                 continue
             
-            # Check if this is a company name row (has company name in Col 0 and industry in Col 1)
-            company_col = column_map.get('company', 0)
-            industry_col = column_map.get('industry', 1)
-            inv_type_col = column_map.get('investment_type', 2)
-            
-            # Check if Col 0 has a company name (and Col 1 has industry)
-            has_company_name = (len(cell_texts) > company_col and 
-                               cell_texts[company_col].strip() and
-                               len(cell_texts) > industry_col and 
-                               cell_texts[industry_col].strip())
-            
-            if has_company_name:
-                company_text = cell_texts[company_col].strip()
+            # Check if this is a company name row (has industry in Col 2)
+            industry_col = column_map.get('industry', 2)
+            if len(cell_texts) > industry_col and cell_texts[industry_col].strip():
+                industry_text = cell_texts[industry_col].strip()
+                company_text = cell_texts[0].strip() if len(cell_texts) > 0 else ""
+                
                 # Clean company name
-                company_text = re.sub(r'\([^)]+\)', '', company_text).strip()  # Remove footnotes
-                company_text = re.sub(r'[#~&*<>\+\^]+$', '', company_text).strip()
-                
-                # Check if it's actually a company name (not an investment type)
-                investment_type_keywords = ['first lien', 'second lien', 'preferred', 'common', 
-                                           'term loan', 'revolving', 'delayed draw', 'warrant',
-                                           'membership interest', 'units', 'shares', 'stock']
-                is_investment_type = any(keyword in company_text.lower() for keyword in investment_type_keywords)
-                
-                if company_text and len(company_text) > 1 and not is_investment_type:
-                    local_company = company_text
+                if company_text:
+                    company_text = re.sub(r'\([^)]+\)', '', company_text).strip()  # Remove footnotes
+                    company_text = re.sub(r'[#~&*<>\+\^]+$', '', company_text).strip()
                     
-                    # Get industry
-                    industry_text = cell_texts[industry_col].strip()
-                    local_industry = self._clean_industry_name(industry_text)
-                    logger.debug(f"Found company: {local_company}, industry: {local_industry}")
-                    
-                    # Check if this row also has investment type (it's both company header AND investment row)
-                    if len(cell_texts) > inv_type_col and cell_texts[inv_type_col].strip():
-                        # This row has both company name and investment type - parse it as investment
-                        investment = self._parse_investment_row(cells, cell_texts, column_map, local_company, local_industry)
-                        if investment:
-                            investments.append(investment)
-                    # Otherwise, it's just a company header row, continue to next row
-                    continue
+                    if company_text and len(company_text) > 1:
+                        local_company = company_text
+                        local_industry = self._clean_industry_name(industry_text)
+                        logger.debug(f"Found company: {local_company}, industry: {local_industry}")
+                continue
             
-            # This should be an investment row
+            # This should be an investment row (Col 0 has investment type, Col 2 is empty)
             investment = self._parse_investment_row(cells, cell_texts, column_map, local_company, local_industry)
             if investment:
                 investments.append(investment)
@@ -344,9 +317,9 @@ class PSECCustomExtractor:
     
     def _is_header_row(self, cell_texts: List[str]) -> bool:
         """Check if this is a header row."""
-        header_keywords = ['portfolio company', 'industry', 'investment', 
-                          'acquisition date', 'coupon', 'yield', 'maturity',
-                          'principal', 'amortized cost', 'fair value']
+        header_keywords = ['portfolio company', 'investment type', 'interest rate', 
+                          'spread above', 'acquisition date', 'maturity', 
+                          'principal amount', 'amortized cost', 'fair value', 'industry']
         
         text_combined = ' '.join(cell_texts).lower()
         matches = sum(1 for keyword in header_keywords if keyword in text_combined)
@@ -374,19 +347,18 @@ class PSECCustomExtractor:
         for idx, cell_text in enumerate(header_cells):
             cell_lower = cell_text.lower()
             
-            if 'portfolio company' in cell_lower:
+            if 'portfolio company' in cell_lower or ('company' in cell_lower and 'investment type' in cell_lower):
                 column_map['company'] = idx
+                column_map['investment_type'] = idx  # Same column in OFS
             elif 'industry' in cell_lower:
                 column_map['industry'] = idx
-            elif 'investment' in cell_lower and 'type' not in column_map:
-                column_map['investment_type'] = idx
+            elif 'interest rate' in cell_lower:
+                column_map['interest_rate'] = idx
+            elif 'spread above' in cell_lower or 'spread' in cell_lower:
+                column_map['spread'] = idx
             elif 'acquisition date' in cell_lower:
                 column_map['acquisition_date'] = idx
-            elif 'coupon' in cell_lower or 'yield' in cell_lower:
-                column_map['coupon_yield'] = idx
-            elif 'floor' in cell_lower:
-                column_map['floor'] = idx
-            elif 'maturity' in cell_lower or 'legal maturity' in cell_lower:
+            elif 'maturity' in cell_lower:
                 column_map['maturity_date'] = idx
             elif 'principal' in cell_lower:
                 column_map['principal'] = idx
@@ -426,96 +398,58 @@ class PSECCustomExtractor:
         if not current_company or current_company == 'Unknown':
             return None
         
-        # Get investment type from Col 2 (or Col 0 if it's a continuation row)
-        # Check if Col 0 has an investment type (continuation row)
-        company_col = column_map.get('company', 0)
-        inv_type_col = column_map.get('investment_type', 2)
-        
-        # Check if Col 0 has an investment type (continuation row where company name is empty)
-        if len(cell_texts) > company_col:
-            col0_text = cell_texts[company_col].strip()
-            # Check if Col 0 looks like an investment type (not a company name)
-            investment_type_keywords = ['first lien', 'second lien', 'preferred', 'common', 
-                                       'term loan', 'revolving', 'delayed draw', 'warrant',
-                                       'membership interest', 'units', 'shares', 'stock',
-                                       'class', 'series']
-            if col0_text and any(keyword in col0_text.lower() for keyword in investment_type_keywords):
-                # This is a continuation row - Col 0 has investment type
-                inv_type = re.sub(r'\([^)]+\)', '', col0_text).strip()
-                investment['investment_type'] = standardize_investment_type(inv_type)
-        
-        # Otherwise, get investment type from Col 2
-        if investment['investment_type'] == 'Unknown' and len(cell_texts) > inv_type_col:
+        # Get investment type from Col 0
+        inv_type_col = column_map.get('investment_type', 0)
+        if len(cell_texts) > inv_type_col:
             inv_type = cell_texts[inv_type_col].strip()
             if inv_type and inv_type != 'N/A':
                 # Clean investment type (remove footnotes)
                 inv_type = re.sub(r'\([^)]+\)', '', inv_type).strip()
                 investment['investment_type'] = standardize_investment_type(inv_type)
         
-        # Get coupon/yield from Col 4 (or Col 2 if continuation row) - contains interest rate, reference rate, and spread
-        # Format: "15.25 % (PRIME + 7.75 %)" or "11.28 % (3M SOFR + 7.00 %)" or "12.26 % PIK"
-        # Skip for Common Equity - it doesn't have interest rates
-        inv_type_lower = investment.get('investment_type', '').lower()
-        is_common_equity = 'common equity' in inv_type_lower
+        # Get interest rate (Col 4)
+        rate_col = column_map.get('interest_rate', 4)
+        if len(cell_texts) > rate_col:
+            rate_text = cell_texts[rate_col].strip()
+            if rate_text and rate_text.lower() not in ('n/m', 'n/a', ''):
+                rate_match = re.search(r'(\d+\.?\d*)\s*%', rate_text)
+                if rate_match:
+                    investment['interest_rate'] = f"{rate_match.group(1)}%"
         
-        if not is_common_equity:
-            coupon_col = column_map.get('coupon_yield', 4)
-            # For continuation rows, coupon might be in Col 2
-            for check_col in [2, coupon_col, 3, 4]:
-                if len(cell_texts) > check_col:
-                    coupon_text = cell_texts[check_col].strip()
-                    if coupon_text and coupon_text.lower() not in ('n/m', 'n/a', ''):
-                        # Extract interest rate (first percentage)
-                        rate_match = re.search(r'(\d+\.?\d*)\s*%', coupon_text)
-                        if rate_match:
-                            investment['interest_rate'] = f"{rate_match.group(1)}%"
-                        
-                        # Check for PIK rate
-                        pik_match = re.search(r'(\d+\.?\d*)\s*%\s*PIK', coupon_text, re.IGNORECASE)
-                        if pik_match:
-                            investment['pik_rate'] = f"{pik_match.group(1)}%"
-                        
-                        # Check for "X% plus Y% PIK" pattern
-                        pik_plus_match = re.search(r'(\d+\.?\d*)\s*%\s*plus\s*(\d+\.?\d*)\s*%\s*PIK', coupon_text, re.IGNORECASE)
-                        if pik_plus_match:
-                            investment['interest_rate'] = f"{pik_plus_match.group(1)}%"
-                            investment['pik_rate'] = f"{pik_plus_match.group(2)}%"
-                        
-                        # Extract reference rate and spread from parentheses
-                        # Pattern: "(PRIME + 7.75 %)" or "(3M SOFR + 7.00 %)" or "(1M SOFR + 7.25 %)"
-                        ref_spread_match = re.search(r'\(([^)]+)\s*\+\s*(\d+\.?\d*)\s*%\)', coupon_text)
-                        if ref_spread_match:
-                            ref_text = ref_spread_match.group(1).strip()
-                            spread_val = ref_spread_match.group(2)
-                            investment['spread'] = f"{spread_val}%"
-                            
-                            # Extract reference rate (SOFR, PRIME, LIBOR, etc.)
-                            if 'sofr' in ref_text.lower():
-                                investment['reference_rate'] = 'SOFR'
-                            elif 'prime' in ref_text.lower():
-                                investment['reference_rate'] = 'PRIME'
-                            elif 'libor' in ref_text.lower():
-                                investment['reference_rate'] = 'LIBOR'
-                            else:
-                                investment['reference_rate'] = standardize_reference_rate(ref_text)
-                        
-                        # If we found something, break
-                        if investment.get('interest_rate') or investment.get('pik_rate'):
-                            break
+        # Also check for PIK rate - can be in interest rate column or nearby
+        for check_col in [rate_col, rate_col + 1, rate_col + 2]:
+            if len(cell_texts) > check_col:
+                check_text = ' '.join(cell_texts[max(0, check_col-1):min(len(cell_texts), check_col+3)])
+                # Check for "cash/X% PIK" pattern
+                pik_match = re.search(r'cash/\s*(\d+\.?\d*)\s*%\s*PIK', check_text, re.IGNORECASE)
+                if pik_match:
+                    investment['pik_rate'] = f"{pik_match.group(1)}%"
+                    break
+                # Also check for just "X% PIK"
+                pik_match2 = re.search(r'(\d+\.?\d*)\s*%\s*PIK', check_text, re.IGNORECASE)
+                if pik_match2:
+                    investment['pik_rate'] = f"{pik_match2.group(1)}%"
+                    break
         
-        # Get floor rate from Col 5
-        floor_col = column_map.get('floor', 5)
-        if len(cell_texts) > floor_col:
-            floor_text = cell_texts[floor_col].strip()
-            if floor_text and floor_text not in ('—', '-', '–', 'N/A', ''):
-                floor_match = re.search(r'(\d+\.?\d*)', floor_text)
-                if floor_match:
-                    investment['floor_rate'] = f"{floor_match.group(1)}%"
+        # Get reference rate (Col 6) - e.g., "SOFR+", "PRIME+"
+        ref_col = column_map.get('reference_rate', 6)
+        if len(cell_texts) > ref_col:
+            ref_text = cell_texts[ref_col].strip()
+            if ref_text and ref_text != 'N/A':
+                investment['reference_rate'] = standardize_reference_rate(ref_text)
         
-        # Get acquisition date from Col 3 (or Col 1 if continuation row)
-        acq_col = column_map.get('acquisition_date', 3)
-        # For continuation rows, date might be in Col 1
-        for check_col in [1, acq_col, 2, 3, 4]:
+        # Get spread (Col 7)
+        spread_col = column_map.get('spread', 7)
+        if len(cell_texts) > spread_col:
+            spread_text = cell_texts[spread_col].strip()
+            if spread_text and spread_text != 'N/A':
+                spread_match = re.search(r'(\d+\.?\d*)\s*%', spread_text)
+                if spread_match:
+                    investment['spread'] = f"{spread_match.group(1)}%"
+        
+        # Get acquisition date (Col 9) - check both text and XBRL
+        acq_col = column_map.get('acquisition_date', 9)
+        for check_col in [acq_col, 8, 9, 10]:
             if len(cells) > check_col:
                 date_cell = cells[check_col]
                 date_text = self._extract_cell_text(date_cell).strip()
@@ -523,10 +457,9 @@ class PSECCustomExtractor:
                     investment['acquisition_date'] = date_text
                     break
         
-        # Get maturity date from Col 6 (or Col 4 if continuation row)
-        mat_col = column_map.get('maturity_date', 6)
-        # For continuation rows, maturity might be in Col 4
-        for check_col in [4, mat_col, 5, 6, 7]:
+        # Get maturity date (Col 11) - check both text and XBRL
+        mat_col = column_map.get('maturity_date', 11)
+        for check_col in [mat_col, 10, 11, 12]:
             if len(cells) > check_col:
                 date_cell = cells[check_col]
                 date_text = self._extract_cell_text(date_cell).strip()
@@ -534,76 +467,42 @@ class PSECCustomExtractor:
                     investment['maturity_date'] = date_text
                     break
         
-        # Get principal amount (Col 8, scale=3 means thousands)
-        # Structure: Col 7 has '$', Col 8 has the value
-        principal_col = column_map.get('principal', 8)
-        # Check the exact column first (Col 8), then nearby columns, but skip Col 5 (floor rate)
-        for check_col in [principal_col, 8, 7, 9]:
+        # Get principal amount (Col 14, scale=3 means thousands)
+        principal_col = column_map.get('principal', 14)
+        for check_col in [principal_col, 13, 14, 15]:
             if len(cells) > check_col:
                 principal_cell = cells[check_col]
                 cell_text = self._extract_cell_text(principal_cell).strip()
-                # Skip if it's just a dollar sign or empty
                 if cell_text in ('$', '—', '-', '–', ''):
                     continue
                 principal_value = self._extract_numeric_value(principal_cell)
-                if principal_value is not None and principal_value >= 1000:  # At least $1K (in actual dollars)
+                if principal_value is not None and principal_value != 0:
                     investment['principal_amount'] = principal_value
                     break
         
-        # Get cost (Col 11, scale=3 means thousands)
-        # Structure: Col 10 has '$', Col 11 has the value
-        # For continuation rows: Col 7 might have cost, Col 9 has '—' (empty)
-        cost_col = column_map.get('cost', 11)
-        # Check if this is a continuation row (equity investment) - Col 7 might have the value
-        is_equity = investment.get('investment_type', '').lower() in ['common equity', 'preferred equity', 'membership interest', 'warrant']
-        if is_equity:
-            # For equity, check Col 7 first (principal/cost), then Col 11
-            for check_col in [7, cost_col, 10, 11, 12]:
-                if len(cells) > check_col:
-                    cost_cell = cells[check_col]
-                    cell_text = self._extract_cell_text(cost_cell).strip()
-                    if cell_text in ('$', '—', '-', '–', '', 'N/A', 'n/a'):
-                        continue
-                    # Skip if it looks like a footnote reference
-                    if cell_text.startswith('(') and cell_text.endswith(')'):
-                        continue
-                    cost_value = self._extract_numeric_value(cost_cell)
-                    if cost_value is not None and cost_value >= 1000:  # At least $1K
-                        investment['cost'] = cost_value
-                        break
-        else:
-            # For debt investments, use standard columns
-            for check_col in [cost_col, 10, 11, 12]:
-                if len(cells) > check_col:
-                    cost_cell = cells[check_col]
-                    cell_text = self._extract_cell_text(cost_cell).strip()
-                    if cell_text in ('$', '—', '-', '–', '', 'N/A', 'n/a'):
-                        continue
-                    # Skip if it looks like a footnote reference
-                    if cell_text.startswith('(') and cell_text.endswith(')'):
-                        continue
-                    cost_value = self._extract_numeric_value(cost_cell)
-                    if cost_value is not None and cost_value >= 1000:  # At least $1K
-                        investment['cost'] = cost_value
-                        break
+        # Get cost (Col 18, scale=3 means thousands)
+        cost_col = column_map.get('cost', 18)
+        for check_col in [cost_col, 16, 17, 18, 19]:
+            if len(cells) > check_col:
+                cost_cell = cells[check_col]
+                cell_text = self._extract_cell_text(cost_cell).strip()
+                if cell_text in ('$', '—', '-', '–', ''):
+                    continue
+                cost_value = self._extract_numeric_value(cost_cell)
+                if cost_value is not None:
+                    investment['cost'] = cost_value
+                    break
         
-        # Get fair value (Col 14, scale=3 means thousands)
-        # Structure: Col 13 has '$', Col 14 has the value
-        # For continuation rows: Col 11 might have '—' (empty), Col 12 has footnote
-        fv_col = column_map.get('fair_value', 14)
-        for check_col in [fv_col, 13, 14, 15]:
+        # Get fair value (Col 19, scale=3 means thousands)
+        fv_col = column_map.get('fair_value', 19)
+        for check_col in [fv_col, 19, 20, 21]:
             if len(cells) > check_col:
                 fv_cell = cells[check_col]
                 cell_text = self._extract_cell_text(fv_cell).strip()
-                if cell_text in ('$', '—', '-', '–', '', 'N/A', 'n/a'):
-                    continue
-                # Skip if it looks like a footnote reference (e.g., "(14)", "-14")
-                if (cell_text.startswith('(') and cell_text.endswith(')')) or \
-                   (cell_text.startswith('-') and len(cell_text) <= 4 and cell_text.replace('-', '').isdigit()):
+                if cell_text in ('$', '—', '-', '–', ''):
                     continue
                 fv_value = self._extract_numeric_value(fv_cell)
                 if fv_value is not None:
-                    # For fair value, accept any value (could be negative or small)
                     investment['fair_value'] = fv_value
                     break
         
@@ -634,14 +533,15 @@ class PSECCustomExtractor:
                                investment.get('investment_type') != 'Unknown')
         
         # Filter out subtotal rows - these have "Unknown" investment type and aggregated values
+        # In OFS, subtotal rows typically have "Unknown" type and sum up multiple investments
         principal = investment.get('principal_amount') or 0
         cost = investment.get('cost') or 0
         fv = investment.get('fair_value') or 0
         if (investment.get('investment_type') == 'Unknown' and 
             has_financial_data and
-            (abs(principal) > 10000000 or  # > $10M suggests aggregate
-             abs(cost) > 10000000 or
-             abs(fv) > 10000000)):
+            (abs(principal) > 1000000 or  # > $1M suggests aggregate (lower threshold for OFS)
+             abs(cost) > 1000000 or
+             abs(fv) > 1000000)):
             # This looks like a subtotal row, skip it
             return None
         
@@ -713,7 +613,7 @@ class PSECCustomExtractor:
         
         output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
         os.makedirs(output_dir, exist_ok=True)
-        output_file = os.path.join(output_dir, 'PSEC_Prospect_Capital_Corp_investments.csv')
+        output_file = os.path.join(output_dir, 'OFS_OFS_Capital_Corp_investments.csv')
         
         fieldnames = [
             'company_name', 'industry', 'business_description', 'investment_type',
@@ -756,9 +656,9 @@ def main():
     """Main entry point for testing."""
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
-    extractor = PSECCustomExtractor()
+    extractor = OFSCustomExtractor()
     try:
-        result = extractor.extract_from_ticker("PSEC")
+        result = extractor.extract_from_ticker("OFS")
         print(f"\nSuccessfully extracted {result.get('total_investments', 0)} investments")
         print(f"  Total Principal: ${result.get('total_principal', 0):,.0f}")
         print(f"  Total Cost: ${result.get('total_cost', 0):,.0f}")
@@ -769,3 +669,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

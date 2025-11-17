@@ -129,24 +129,230 @@ class PFXExtractor:
             same = None
             em = re.search(r'<xbrldi:explicitMember[^>]*dimension="us-gaap:EquitySecuritiesByIndustryAxis"[^>]*>([^<]+)</xbrldi:explicitMember>', html, re.DOTALL|re.IGNORECASE)
             if em: same = self._industry_member_to_name(em.group(1).strip())
-            res.append({'id':cid,'investment_identifier':ident,'company_name':parsed['company_name'],'industry':same or parsed['industry'],'investment_type':parsed['investment_type'],'instant':inst.group(1) if inst else None,'start_date':sd.group(1) if sd else None,'end_date':ed.group(1) if ed else None})
+            # Prefer industry from identifier parsing over XBRL explicit member
+            industry = parsed.get('industry') or same
+            if industry == 'Unknown':
+                industry = same
+            res.append({'id':cid,'investment_identifier':ident,'company_name':parsed['company_name'],'industry':industry,'investment_type':parsed['investment_type'],'instant':inst.group(1) if inst else None,'start_date':sd.group(1) if sd else None,'end_date':ed.group(1) if ed else None})
         return res
 
     def _parse_identifier(self, identifier: str) -> Dict[str,str]:
         res={'company_name':'Unknown','industry':'Unknown','investment_type':'Unknown'}
-        if ',' in identifier:
-            last = identifier.rfind(','); company = identifier[:last].strip(); tail = identifier[last+1:].strip()
-        else:
-            company = identifier.strip(); tail = ''
-        res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',')
-        pats=[r'First\s+lien\s+.*$',r'Second\s+lien\s+.*$',r'Unitranche\s*\d*$',r'Senior\s+secured\s*\d*$',r'Secured\s+Debt\s*\d*$',r'Unsecured\s+Debt\s*\d*$',r'Preferred\s+Equity$',r'Preferred\s+Stock$',r'Common\s+Stock\s*\d*$',r'Member\s+Units\s*\d*$',r'Warrants?$']
-        it=None
-        for p in pats:
-            mm=re.search(p, tail, re.IGNORECASE)
-            if mm: it=mm.group(0); break
-        if not it and tail: it=tail
-        if it: res['investment_type']=it
+        if not identifier or identifier.strip() == '':
+            return res
+        
+        identifier = identifier.strip()
+        
+        # Extract industry if present (usually at the end after a dash, like " - Real Estate" or " - Business")
+        # Match industry patterns that come after the company name and investment type
+        industry_patterns = [
+            r'\s*-\s*(Real\s+Estate|Business|Consumer|Banking\s+&\s+Finance|Automotive|Construction\s+&\s+Building|Metals\s+&\s+Mining|Consumer\s+Discretionary|Aerospace\s+&\s+Defense|Broadcasting\s+&\s+Subscription)$',
+        ]
+        for pattern in industry_patterns:
+            match = re.search(pattern, identifier, re.IGNORECASE)
+            if match:
+                industry = match.group(1).strip()
+                res['industry'] = industry
+                identifier = identifier[:match.start()].strip()  # Remove industry from identifier
+                break
+        
+        # PFX format: "Company Name - Investment Type" or "Company Name, Investment Type"
+        # Also handles: "Affiliated Investments-Company Name-Investment Type"
+        
+        # Remove common prefixes like "Non-Controlled/Non-Affiliated Investments -" or "Controlled Investments -"
+        prefix_patterns = [
+            r'^Non-Controlled/Non-Affiliated\s+Investments\s*-\s*',
+            r'^Controlled\s+Investments\s*-\s*',
+            r'^Affiliated\s+Investments\s*-\s*',
+        ]
+        for pattern in prefix_patterns:
+            identifier = re.sub(pattern, '', identifier, flags=re.IGNORECASE).strip()
+        
+        # First, try to split on common separators
+        # Check for patterns like "Company - Investment Type" or "Company, Investment Type"
+        # Also handle "Affiliated Investments-Company Name-Investment Type" or "Controlled Investments-Company Name-Investment Type"
+        if ' - ' in identifier:
+            parts = identifier.split(' - ')
+            if len(parts) >= 2:
+                # Check if first part is a prefix like "Affiliated Investments" or "Controlled Investments"
+                first_part = parts[0].strip()
+                is_prefix = first_part.lower() in ['affiliated investments', 'controlled investments']
+                
+                if is_prefix and len(parts) >= 3:
+                    # Format: "Affiliated Investments - Company Name - Investment Type"
+                    company = parts[1].strip()  # Middle part is the actual company
+                    inv_type = parts[-1].strip()
+                else:
+                    # Format: "Company Name - Investment Type"
+                    # Check if last part is an investment type
+                    last_part = parts[-1].strip()
+                    if self._looks_like_investment_type(last_part):
+                        company = ' - '.join(parts[:-1]).strip()
+                        inv_type = last_part
+                    else:
+                        # Last part might be part of company name
+                        company = ' - '.join(parts).strip()
+                        inv_type = 'Unknown'
+                
+                res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',')
+                res['investment_type'] = self._extract_investment_type_from_string(inv_type)
+                return res
+        elif '-' in identifier and ' - ' not in identifier:
+            # Handle single dashes (no spaces): "Company-Investment Type"
+            parts = identifier.split('-')
+            if len(parts) >= 2:
+                # Check if first part is a prefix
+                first_part = parts[0].strip()
+                is_prefix = first_part.lower() in ['affiliated investments', 'controlled investments']
+                
+                if is_prefix and len(parts) >= 3:
+                    # Format: "Affiliated Investments-Company Name-Investment Type"
+                    company = parts[1].strip()
+                    inv_type = '-'.join(parts[2:]).strip()  # Join remaining parts as investment type
+                else:
+                    # Format: "Company-Investment Type"
+                    # Try to find where investment type starts by matching patterns
+                    inv_type_match = None
+                    for i in range(1, len(parts)):
+                        candidate = '-'.join(parts[i:])
+                        if any(re.search(p, candidate, re.IGNORECASE) for p in [
+                            r'First\s+Lien', r'Senior\s+Secured', r'Equity', r'Term\s+Loan', r'Revolving'
+                        ]):
+                            company = '-'.join(parts[:i]).strip()
+                            inv_type = candidate
+                            inv_type_match = True
+                            break
+                    
+                    if not inv_type_match:
+                        # Default: last part is investment type
+                        company = '-'.join(parts[:-1]).strip()
+                        inv_type = parts[-1].strip()
+                
+                res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',')
+                res['investment_type'] = self._extract_investment_type_from_string(inv_type)
+                return res
+        elif ',' in identifier:
+            # Try splitting on comma
+            last_comma = identifier.rfind(',')
+            company = identifier[:last_comma].strip()
+            tail = identifier[last_comma+1:].strip()
+            res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',')
+            res['investment_type'] = self._extract_investment_type_from_string(tail)
+            return res
+        
+        # If no clear separator, try to extract investment type from the end
+        # Common patterns in PFX identifiers
+        inv_type_patterns = [
+            r'First\s+Lien\s+(?:Delayed\s+Draw\s+)?(?:Term\s+Loan\s*[A-Z]?|Super\s+Priority\s+(?:Delayed\s+Draw\s+)?Term\s+Loan)',
+            r'Second\s+Lien\s+.*$',
+            r'Unitranche\s*\d*$',
+            r'Senior\s+Secured\s+(?:Revolving\s+Note|Term\s+Loan\s*[A-Z]?|Promissory\s+Note)',
+            r'Secured\s+Debt\s*\d*$',
+            r'Unsecured\s+Debt\s*\d*$',
+            r'Preferred\s+Equity$',
+            r'Preferred\s+Stock$',
+            r'Common\s+Equity$',
+            r'Common\s+Stock\s*\d*$',
+            r'Member\s+Units\s*\d*$',
+            r'Equity\s+Interest$',
+            r'Equity$',
+            r'Warrants?$',
+            r'Revolving\s+Note',
+            r'Term\s+Loan\s*[A-Z]?',
+        ]
+        
+        for pattern in inv_type_patterns:
+            match = re.search(pattern, identifier, re.IGNORECASE)
+            if match:
+                inv_type = match.group(0).strip()
+                company = identifier[:match.start()].strip()
+                # Clean up company name - remove trailing dashes, commas, etc.
+                company = re.sub(r'[-\s,]+$', '', company).strip()
+                res['company_name'] = re.sub(r'\s+',' ', company).rstrip(',')
+                res['investment_type'] = self._extract_investment_type_from_string(inv_type)
+                return res
+        
+        # If no investment type found, use the whole identifier as company name
+        res['company_name'] = re.sub(r'\s+',' ', identifier).rstrip(',')
         return res
+    
+    def _looks_like_investment_type(self, s: str) -> bool:
+        """Check if a string looks like an investment type."""
+        if not s:
+            return False
+        s_lower = s.lower()
+        investment_type_keywords = [
+            'equity', 'term loan', 'first lien', 'senior secured', 'revolving',
+            'warrant', 'preferred', 'common', 'note', 'debt', 'secured', 'unsecured'
+        ]
+        return any(keyword in s_lower for keyword in investment_type_keywords)
+    
+    def _extract_investment_type_from_string(self, s: str) -> str:
+        """Extract and standardize investment type from a string."""
+        if not s:
+            return "Unknown"
+        
+        s = s.strip()
+        
+        # Map common variations to standard types
+        s_lower = s.lower()
+        
+        # Term Loans
+        if 'term loan' in s_lower:
+            if 'term loan a' in s_lower or 'term a loan' in s_lower:
+                return "Term Loan A"
+            elif 'term loan b' in s_lower or 'term b loan' in s_lower:
+                return "Term Loan B"
+            elif 'term loan c' in s_lower or 'term c loan' in s_lower:
+                return "Term Loan C"
+            elif 'delayed draw' in s_lower:
+                return "Term Loan"
+            elif 'super priority' in s_lower:
+                return "Term Loan"
+            else:
+                return "Term Loan"
+        
+        # First Lien
+        if 'first lien' in s_lower:
+            if 'term loan' in s_lower:
+                if 'delayed draw' in s_lower:
+                    return "First Lien Term Loan"
+                elif 'super priority' in s_lower:
+                    return "First Lien Term Loan"
+                else:
+                    return "First Lien Term Loan"
+            else:
+                return "First Lien"
+        
+        # Senior Secured
+        if 'senior secured' in s_lower:
+            if 'revolving' in s_lower or 'revolver' in s_lower:
+                return "Revolver"
+            elif 'term loan' in s_lower:
+                return "Term Loan"
+            elif 'promissory note' in s_lower:
+                return "Senior Secured Note"
+            else:
+                return "Senior Secured"
+        
+        # Equity types
+        if 'preferred equity' in s_lower or 'preferred stock' in s_lower:
+            return "Preferred Equity"
+        if 'common equity' in s_lower or 'common stock' in s_lower:
+            return "Common Equity"
+        if 'equity interest' in s_lower or (s_lower == 'equity' and 'preferred' not in s_lower):
+            return "Common Equity"
+        
+        # Revolving
+        if 'revolving' in s_lower or 'revolver' in s_lower:
+            return "Revolver"
+        
+        # Warrants
+        if 'warrant' in s_lower:
+            return "Warrants"
+        
+        # Return cleaned version
+        return re.sub(r'\s+', ' ', s).strip()
 
     def _extract_facts(self, content: str) -> Dict[str,List[Dict]]:
         facts=defaultdict(list)
@@ -205,7 +411,71 @@ class PFXExtractor:
 
     def _build_investment(self, context: Dict, facts: List[Dict]) -> Optional[PFXInvestment]:
         if context['company_name']=='Unknown': return None
-        inv=PFXInvestment(company_name=context['company_name'],investment_type=context['investment_type'],industry=context['industry'],context_ref=context['id'])
+        
+        # Clean company name - remove investment type suffixes if they're still embedded
+        company_name = context['company_name']
+        inv_type = context['investment_type']
+        
+        # If investment type is still in company name, try to remove it
+        if inv_type != 'Unknown' and inv_type.lower() in company_name.lower():
+            # Try to remove the investment type from the end of company name
+            pattern = r'\s*[-,\s]+\s*' + re.escape(inv_type) + r'\s*$'
+            company_name = re.sub(pattern, '', company_name, flags=re.IGNORECASE).strip()
+        
+        # Also clean common patterns like "- Equity", "- Senior Secured", etc.
+        company_name = re.sub(r'\s*[-,\s]+\s*(Equity|Senior\s+Secured|First\s+Lien|Term\s+Loan.*?|Revolving\s+Note.*?)$', '', company_name, flags=re.IGNORECASE).strip()
+        
+        # Remove industry suffixes that might still be in company name
+        # Match with or without HTML entities like &amp;
+        industry_suffixes = [
+            r'\s*-\s*Real\s+Estate',
+            r'\s*-\s*Business',
+            r'\s*-\s*Consumer(?:\s+Discretionary)?',
+            r'\s*-\s*Banking(?:\s*&\s*Finance)?',
+            r'\s*-\s*Automotive',
+            r'\s*-\s*Construction\s*&\s*Building',
+            r'\s*-\s*Metals\s*&\s*Mining',
+            r'\s*-\s*Consumer\s+Discretionary',
+            r'\s*-\s*Aerospace\s*&\s*Defense',
+            r'\s*-\s*Broadcasting\s*&\s*Subscription',
+        ]
+        for pattern in industry_suffixes:
+            company_name = re.sub(pattern + r'$', '', company_name, flags=re.IGNORECASE).strip()
+            # Also handle HTML entities
+            company_name = re.sub(pattern.replace('&', r'&amp;') + r'$', '', company_name, flags=re.IGNORECASE).strip()
+        
+        # Remove any remaining " - Banking" or " - Business" patterns (more general)
+        # This catches patterns like " - Banking - Fund Investment" or " - High Tech Industries"
+        company_name = re.sub(r'\s*-\s*(Banking|Business|Consumer|Real\s+Estate|Automotive|Construction|Metals|Aerospace|Broadcasting|High\s+Tech\s+Industries)(?:\s*-\s*.*)?$', '', company_name, flags=re.IGNORECASE).strip()
+        
+        # Remove any remaining " - [Industry-like text]" patterns
+        # Common industry-like suffixes that might appear
+        industry_like_patterns = [
+            r'\s*-\s*High\s+Tech\s+Industries$',
+            r'\s*-\s*Fund\s+Investment$',
+            r'\s*-\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s*-\s*Fund\s+Investment$',  # " - Industry - Fund Investment"
+        ]
+        for pattern in industry_like_patterns:
+            company_name = re.sub(pattern, '', company_name, flags=re.IGNORECASE).strip()
+        
+        # Remove trailing dashes and commas
+        company_name = re.sub(r'[-\s,]+$', '', company_name).strip()
+        
+        # Clean up any remaining HTML entities in company name
+        company_name = company_name.replace('&amp;', '&')
+        
+        # Fix cases where company name got split incorrectly (e.g., "Advocates for Disabled Vets" with "LLC (dba Reps for Vets)" as investment type)
+        if inv_type and inv_type != 'Unknown':
+            # If investment type looks like part of a company name (contains "LLC", "Inc", etc.), merge it back
+            if re.search(r'\b(LLC|Inc\.?|Corp\.?|L\.P\.?|LP)\b', inv_type, re.IGNORECASE):
+                company_name = f"{company_name} {inv_type}".strip()
+                inv_type = 'Unknown'  # Will be inferred later
+        
+        # Infer investment type if still Unknown
+        if inv_type == 'Unknown':
+            inv_type = self._infer_investment_type(company_name, facts)
+        
+        inv=PFXInvestment(company_name=company_name,investment_type=inv_type,industry=context['industry'],context_ref=context['id'])
         for f in facts:
             c=f['concept']; v=f['value']; v_clean=v.replace(',','').strip(); cl=c.lower()
             if any(k in cl for k in ['principalamount','ownedbalanceprincipalamount','outstandingprincipal']):
@@ -272,6 +542,36 @@ class PFXExtractor:
                 inv.undrawn_commitment=inv.fair_value-inv.principal_amount
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value): return inv
         return None
+    
+    def _infer_investment_type(self, company_name: str, facts: List[Dict]) -> str:
+        """Infer investment type from facts when it's Unknown."""
+        # Check for shares/units - indicates equity
+        for f in facts:
+            c = f.get('concept', '').lower()
+            if any(k in c for k in ['numberofshares', 'sharesoutstanding', 'unitsoutstanding', 'sharesheld', 'unitsheld']):
+                # Check if there's an interest rate - if yes, might be preferred equity
+                has_interest = any('interestrate' in fact.get('concept', '').lower() for fact in facts)
+                if has_interest:
+                    return "Preferred Equity"
+                return "Common Equity"
+        
+        # Check if there's principal amount but no interest rate - might be equity
+        has_principal = any('principalamount' in f.get('concept', '').lower() or 'outstandingprincipal' in f.get('concept', '').lower() for f in facts)
+        has_interest = any('interestrate' in f.get('concept', '').lower() for f in facts)
+        
+        if has_principal and not has_interest:
+            # Has principal but no interest - likely equity
+            return "Common Equity"
+        
+        # Check company name for hints
+        company_lower = company_name.lower()
+        if 'equity' in company_lower:
+            if 'preferred' in company_lower:
+                return "Preferred Equity"
+            return "Common Equity"
+        
+        # Default to Unknown if we can't infer
+        return "Unknown"
 
     def _percent(self, s: str) -> str:
         try: v=float(s)

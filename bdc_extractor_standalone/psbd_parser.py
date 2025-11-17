@@ -37,12 +37,12 @@ class PSBDExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "PSBD") -> Dict:
+    def extract_from_ticker(self, ticker: str = "PSBD"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         m = re.search(r'/(\d{10}-\d{2}-\d{6})-index\.html', index_url)
@@ -404,12 +404,12 @@ class PSBDExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "PSBD") -> Dict:
+    def extract_from_ticker(self, ticker: str = "PSBD"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         m = re.search(r'/(\d{10}-\d{2}-\d{6})-index\.html', index_url)
@@ -728,6 +728,7 @@ def main():
 
 if __name__=='__main__':
     main()
+
 
 
 

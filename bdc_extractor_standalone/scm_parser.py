@@ -23,7 +23,7 @@ class SCMExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "SCM") -> Dict:
+    def extract_from_ticker(self, ticker: str = "SCM"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SCM's latest 10-Q filing using HTML tables."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -35,10 +35,10 @@ class SCMExtractor:
         logger.info(f"Found CIK: {cik}")
         
         # Get latest 10-Q filing URL
-        filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not filing_index_url:
             # Try 10-K as fallback
-            filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-K", cik=cik)
+            filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-K", cik=cik, year=year, min_date=min_date)
             if not filing_index_url:
                 raise ValueError(f"Could not find 10-Q or 10-K filing for {ticker}")
         
@@ -67,6 +67,10 @@ class SCMExtractor:
         
         logger.info(f"Downloaded and parsed HTML")
         
+        # Extract filing date to filter prior period tables
+        filing_date = self._extract_filing_date(soup)
+        logger.info(f"Extracted filing date: {filing_date}")
+        
         # Find Consolidated Schedule of Investments tables
         tables = self._find_schedule_tables(soup)
         logger.info(f"Found {len(tables)} schedule tables")
@@ -75,11 +79,25 @@ class SCMExtractor:
             logger.warning("No schedule tables found, falling back to XBRL extraction")
             return self._fallback_to_xbrl(html_url, company_name, cik)
         
+        # Filter out prior period tables (e.g., December 31, 2024)
+        current_period_tables = []
+        for table in tables:
+            if self._is_current_period_table(table, filing_date):
+                current_period_tables.append(table)
+            else:
+                logger.debug(f"Skipping prior period table")
+        
+        logger.info(f"Filtered to {len(current_period_tables)} current period tables (skipped {len(tables) - len(current_period_tables)} prior period tables)")
+        
+        if not current_period_tables:
+            logger.warning("No current period tables found after filtering")
+            return self._fallback_to_xbrl(html_url, company_name, cik)
+        
         # Save simplified tables for QA
-        self._save_simplified_tables(tables, cik)
+        self._save_simplified_tables(current_period_tables, cik)
         
         # Parse tables to extract investments
-        records = self._parse_html_tables(tables)
+        records = self._parse_html_tables(current_period_tables)
         
         logger.info(f"Built {len(records)} investment records from HTML")
         
@@ -89,12 +107,20 @@ class SCMExtractor:
             logger.info(f"Found {len(industry_map)} industry mappings from XBRL")
             enriched_count = 0
             for rec in records:
-                if not rec.get('industry') and rec.get('company_name'):
-                    # Try to match company name (normalize for matching)
-                    company_key = self._normalize_company_name(rec['company_name'])
-                    if company_key in industry_map:
-                        rec['industry'] = industry_map[company_key]
-                        enriched_count += 1
+                if not rec.get('industry') or rec.get('industry') == 'Unknown':
+                    if rec.get('company_name'):
+                        # Try to match company name (normalize for matching)
+                        company_key = self._normalize_company_name(rec['company_name'])
+                        if company_key in industry_map:
+                            rec['industry'] = industry_map[company_key]
+                            enriched_count += 1
+                        else:
+                            # Try fuzzy matching - check if any key contains the company name or vice versa
+                            for key, industry in industry_map.items():
+                                if company_key in key or key in company_key:
+                                    rec['industry'] = industry
+                                    enriched_count += 1
+                                    break
             logger.info(f"Enriched {enriched_count} records with industry from XBRL")
         
         # Calculate totals
@@ -142,7 +168,12 @@ class SCMExtractor:
                 if 'industry' in rec and rec['industry']:
                     rec['industry'] = standardize_industry(rec['industry'])
                 if 'reference_rate' in rec and rec['reference_rate']:
+                    # Already cleaned by _clean_reference_rate, but apply standardization
                     rec['reference_rate'] = standardize_reference_rate(rec['reference_rate']) or ''
+                
+                # Skip rows with empty company names and no financial data
+                if not rec.get('company_name') and not (rec.get('principal_amount') or rec.get('amortized_cost') or rec.get('fair_value')):
+                    continue
                 
                 # Write row with only the fields we want
                 writer.writerow({
@@ -172,6 +203,65 @@ class SCMExtractor:
             'industry_breakdown': dict(industry_breakdown),
             'investment_type_breakdown': dict(investment_type_breakdown)
         }
+    
+    def _extract_filing_date(self, soup: BeautifulSoup) -> Optional[str]:
+        """Extract filing date from document."""
+        text = soup.get_text()
+        # Look for "as of" or date patterns
+        date_match = re.search(r'as of\s+([A-Z][a-z]+\s+\d{1,2},\s+\d{4})', text, re.IGNORECASE)
+        if date_match:
+            return date_match.group(1)
+        # Look for "March 31, 2025" or "September 30, 2025" pattern
+        date_match = re.search(r'([A-Z][a-z]+\s+\d{1,2},\s+\d{4})', text)
+        if date_match:
+            return date_match.group(1)
+        return None
+    
+    def _is_current_period_table(self, table, filing_date: Optional[str]) -> bool:
+        """Check if table is for current period (not prior period like December 31, 2024)."""
+        table_text = table.get_text(' ', strip=True).lower()
+        
+        # Check for explicit prior period indicators
+        prior_period_patterns = [
+            r'fair value at\s+(december\s+31|march\s+31|september\s+30|june\s+30),\s+2024',
+            r'as of\s+(december\s+31|march\s+31|september\s+30|june\s+30),\s+2024',
+            r'(december\s+31|march\s+31|september\s+30|june\s+30),\s+2024',
+        ]
+        
+        for pattern in prior_period_patterns:
+            if re.search(pattern, table_text, re.IGNORECASE):
+                # Check if current year (2025) is also present - if so, it's a comparison table
+                if filing_date:
+                    year_match = re.search(r'(\d{4})', filing_date)
+                    if year_match:
+                        current_year = year_match.group(1)
+                        if current_year in table_text:
+                            # This is a comparison table with both periods, include it
+                            continue
+                # Otherwise, it's a prior period table, skip it
+                logger.debug(f"Skipping prior period table with pattern: {pattern}")
+                return False
+        
+        # If we have a filing date, check for prior period dates
+        if filing_date:
+            # Extract year from filing date
+            year_match = re.search(r'(\d{4})', filing_date)
+            if year_match:
+                current_year = year_match.group(1)
+                # Check for prior year dates
+                prior_years = [str(int(current_year) - 1), str(int(current_year) - 2)]
+                for prior_year in prior_years:
+                    if prior_year in table_text and ('march 31' in table_text or 'december 31' in table_text or 'september 30' in table_text or 'june 30' in table_text):
+                        # Check if it's explicitly a comparison column
+                        if current_year in table_text:
+                            # This is a comparison table, include it
+                            continue
+                        # Otherwise skip if it's only prior period
+                        if prior_year in table_text and current_year not in table_text:
+                            logger.debug(f"Skipping prior period table with year {prior_year}")
+                            return False
+        
+        return True
     
     def _find_schedule_tables(self, soup: BeautifulSoup) -> List[BeautifulSoup]:
         """Find tables under Consolidated Schedule of Investments heading."""
@@ -532,9 +622,21 @@ class SCMExtractor:
                         return None
                 
                 company_clean = strip_footnote_refs(company_for_row or last_company or "")
+                # Clean company name - remove investment dates and other metadata
+                company_clean = self._clean_company_name(company_clean)
+                
                 inv_type_clean = strip_footnote_refs(inv_type)
+                # Clean and standardize investment type
+                inv_type_clean = self._clean_investment_type(inv_type_clean)
+                # Infer investment type if Unknown
+                if not inv_type_clean or inv_type_clean.lower() == 'unknown':
+                    inv_type_clean = self._infer_investment_type(company_clean, row)
+                
                 ind_candidate = strip_footnote_refs(last_industry or "")
                 industry_clean = ind_candidate if is_industry_like(ind_candidate) else ""
+                
+                # Clean reference rate - remove URLs and standardize
+                ref_token_clean = self._clean_reference_rate(ref_token)
                 
                 # Only add if we have meaningful data
                 if company_clean or (principal or cost or fair_value):
@@ -543,7 +645,7 @@ class SCMExtractor:
                         "investment_type": inv_type_clean,
                         "industry": industry_clean,
                         "interest_rate": interest_rate,
-                        "reference_rate": ref_token,
+                        "reference_rate": ref_token_clean,
                         "spread": spread_val,
                         "acquisition_date": acq,
                         "maturity_date": mat,
@@ -747,6 +849,140 @@ class SCMExtractor:
         
         return words if words else None
     
+    def _clean_investment_type(self, inv_type: str) -> str:
+        """Clean and standardize investment type."""
+        if not inv_type:
+            return "Unknown"
+        
+        # Remove SBIC suffixes and other metadata
+        inv_type = re.sub(r'\s*\(SBIC\s*I*I*\)', '', inv_type, flags=re.IGNORECASE)
+        inv_type = re.sub(r'\s*\(SBIC\)', '', inv_type, flags=re.IGNORECASE)
+        inv_type = re.sub(r'\s*\(SBIC\s*II\s*\)', '', inv_type, flags=re.IGNORECASE)
+        
+        # Standardize common variations
+        inv_type_lower = inv_type.lower()
+        if 'term loan' in inv_type_lower:
+            if 'term loan a' in inv_type_lower:
+                return "Term Loan A"
+            elif 'term loan b' in inv_type_lower:
+                return "Term Loan B"
+            else:
+                return "Term Loan"
+        elif 'revolver' in inv_type_lower:
+            return "Revolver"
+        elif 'delayed draw' in inv_type_lower or 'delay draw' in inv_type_lower:
+            return "Term Loan"
+        elif 'priority revolver' in inv_type_lower:
+            return "Revolver"
+        elif 'super priority' in inv_type_lower:
+            return "Term Loan"
+        
+        # Clean up and return
+        inv_type = re.sub(r'\s+', ' ', inv_type).strip()
+        return inv_type if inv_type else "Unknown"
+    
+    def _clean_company_name(self, name: str) -> str:
+        """Clean company name by removing investment dates and other metadata."""
+        if not name:
+            return ""
+        
+        # Remove investment date patterns like ",  Investment Date, December 02, 2024"
+        name = re.sub(r',\s*Investment\s+Date[,\s]+[^,]+', '', name, flags=re.IGNORECASE)
+        # Remove date patterns at the end
+        name = re.sub(r',\s*\d{1,2}/\d{1,2}/\d{4}$', '', name)
+        name = re.sub(r',\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}$', '', name, flags=re.IGNORECASE)
+        
+        # Remove trailing commas and clean up
+        name = name.rstrip(',').strip()
+        name = re.sub(r'\s+', ' ', name)
+        
+        return name
+    
+    def _infer_investment_type(self, company_name: str, row: List[str]) -> str:
+        """Infer investment type from company name and row data."""
+        if not company_name:
+            return "Unknown"
+        
+        name_lower = company_name.lower()
+        row_text = ' '.join(row).lower()
+        
+        # Check for equity indicators
+        if any(pattern in name_lower for pattern in ['class a units', 'class b units', 'class c units', 'class d units', 'class y units', 'class z units']):
+            if 'preferred' in name_lower or 'preferred' in row_text:
+                return "Preferred Equity"
+            return "Common Equity"
+        
+        if any(pattern in name_lower for pattern in ['common stock', 'common equity', 'common units']):
+            return "Common Equity"
+        
+        if any(pattern in name_lower for pattern in ['preferred stock', 'preferred equity', 'preferred units', 'series']):
+            return "Preferred Equity"
+        
+        if 'warrant' in name_lower:
+            return "Warrants"
+        
+        if 'partnership interest' in name_lower or 'partner interest' in name_lower:
+            return "Partnership Interest"
+        
+        # Check for debt indicators
+        if 'revolver' in name_lower:
+            return "Revolver"
+        
+        if 'term loan' in name_lower or 'term a loan' in name_lower or 'term b loan' in name_lower:
+            return "Term Loan"
+        
+        if 'delayed draw' in name_lower or 'delay draw' in name_lower:
+            return "Term Loan"
+        
+        if 'priority revolver' in name_lower:
+            return "Revolver"
+        
+        # Check row text for investment type keywords
+        if 'term loan' in row_text:
+            return "Term Loan"
+        if 'revolver' in row_text:
+            return "Revolver"
+        
+        return "Unknown"
+    
+    def _clean_reference_rate(self, ref_rate: Optional[str]) -> Optional[str]:
+        """Clean reference rate by removing URLs and standardizing."""
+        if not ref_rate:
+            return None
+        
+        # Remove URLs
+        if ref_rate.startswith('http://') or ref_rate.startswith('https://'):
+            # Extract the rate name from URL fragment
+            match = re.search(r'#([^#]+)(?:Member)?$', ref_rate)
+            if match:
+                ref_rate = match.group(1)
+            else:
+                return None
+        
+        # Standardize common rate names
+        ref_lower = ref_rate.lower()
+        if 'three month term secured overnight financing rate' in ref_lower or '3m sofr' in ref_lower:
+            return "SOFR"
+        elif 'one month term secured overnight financing rate' in ref_lower or '1m sofr' in ref_lower:
+            return "SOFR"
+        elif 'six month term secured overnight financing rate' in ref_lower or '6m sofr' in ref_lower:
+            return "SOFR"
+        elif 'one month secured overnight financing rate' in ref_lower:
+            return "SOFR"
+        elif 'sofr' in ref_lower:
+            return "SOFR"
+        elif 'libor' in ref_lower:
+            return "LIBOR"
+        elif 'prime' in ref_lower:
+            return "PRIME"
+        elif 'euribor' in ref_lower:
+            return "EURIBOR"
+        elif 'corra' in ref_lower:
+            return "CORRA"
+        
+        # Return cleaned version
+        return ref_rate.strip()
+    
     def _fallback_to_xbrl(self, html_url: str, company_name: str, cik: str) -> Dict:
         """Fallback to XBRL extraction if HTML tables not found."""
         # Extract accession number from HTML URL
@@ -795,6 +1031,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 

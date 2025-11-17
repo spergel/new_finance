@@ -28,7 +28,7 @@ class SSSSCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "SSSS") -> Dict:
+    def extract_from_ticker(self, ticker: str = "SSSS", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SEC filing."""
         logger.info(f"Extracting investments for {ticker} from SEC filings")
         
@@ -38,7 +38,7 @@ class SSSSCustomExtractor:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
         
         # Get the latest 10-Q filing
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         
@@ -85,7 +85,8 @@ class SSSSCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in investments:
@@ -104,6 +105,11 @@ class SSSSCustomExtractor:
                     'spread': inv.get('spread', ''),
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
+                    'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
         
         logger.info(f"Saved {len(investments)} investments to {output_file}")
@@ -169,6 +175,25 @@ class SSSSCustomExtractor:
         # Find investment schedule tables using the approach from the existing SSSS parser
         investments = self._parse_inline_xbrl_tables(soup)
         
+        # Extract commitment_limit and undrawn_commitment for revolvers
+        # Heuristic: If fair_value > principal_amount, it might be a revolver
+        if investment.get('fair_value') and investment.get('principal_amount'):
+            try:
+                fv = int(investment['fair_value'])
+                principal = int(investment['principal_amount'])
+                if fv > principal:
+                    investment['commitment_limit'] = fv
+                    investment['undrawn_commitment'] = fv - principal
+            except (ValueError, TypeError):
+                pass
+        elif investment.get('fair_value') and not investment.get('principal_amount'):
+            # If we have fair value but no principal, might be a revolver commitment
+            try:
+                investment['commitment_limit'] = int(investment['fair_value'])
+            except (ValueError, TypeError):
+                pass
+        
+
         return investments
     
     def _parse_inline_xbrl_tables(self, soup: BeautifulSoup) -> List[Dict]:

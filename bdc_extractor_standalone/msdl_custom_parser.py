@@ -40,7 +40,7 @@ class MSDLCustomExtractor:
         
         logger.info(f"Found CIK: {cik}")
         
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise RuntimeError("Could not locate latest 10-Q index for MSDL")
         
@@ -117,8 +117,32 @@ class MSDLCustomExtractor:
                 'floor_rate': inv.get('floor_rate'),
                 'pik_rate': pik_rate,
                 'shares_units': inv.get('shares_units'),
-                'percent_net_assets': inv.get('percent_net_assets')
+                'percent_net_assets': inv.get('percent_net_assets'),
+                'currency': inv.get('currency', 'USD'),
+                'commitment_limit': inv.get('commitment_limit'),
+                'undrawn_commitment': inv.get('undrawn_commitment')
             })
+        
+        # Add commitment extraction logic for each investment
+        for inv in investments:
+            # Extract commitment_limit and undrawn_commitment for revolvers
+            if inv.get('fair_value') and inv.get('principal_amount'):
+                try:
+                    fv = int(inv['fair_value'])
+                    principal = int(inv['principal_amount'])
+                    if fv > principal:
+                        inv['commitment_limit'] = fv
+                        inv['undrawn_commitment'] = fv - principal
+                except (ValueError, TypeError):
+                    pass
+            elif inv.get('fair_value') and not inv.get('principal_amount'):
+                try:
+                    inv['commitment_limit'] = int(inv['fair_value'])
+                except (ValueError, TypeError):
+                    pass
+            # Ensure currency is set
+            if not inv.get('currency'):
+                inv['currency'] = 'USD'
         
         # Try to enhance with HTML data if available
         try:
@@ -467,7 +491,7 @@ class MSDLCustomExtractor:
             'company_name', 'industry', 'business_description', 'investment_type',
             'acquisition_date', 'maturity_date', 'principal_amount', 'cost_basis',
             'fair_value', 'interest_rate', 'reference_rate', 'spread', 'floor_rate',
-            'pik_rate', 'shares_units', 'percent_net_assets'
+            'pik_rate', 'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
         ]
         
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
@@ -496,7 +520,10 @@ class MSDLCustomExtractor:
                     'floor_rate': inv.get('floor_rate'),
                     'pik_rate': inv.get('pik_rate'),
                     'shares_units': inv.get('shares_units'),
-                    'percent_net_assets': inv.get('percent_net_assets')
+                    'percent_net_assets': inv.get('percent_net_assets'),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit'),
+                    'undrawn_commitment': inv.get('undrawn_commitment')
                 })
 
 

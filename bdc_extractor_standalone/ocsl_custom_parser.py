@@ -30,7 +30,7 @@ class OCSLCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "OCSL") -> Dict:
+    def extract_from_ticker(self, ticker: str = "OCSL"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SEC filings."""
         logger.info(f"Extracting investments for {ticker} from SEC filings")
         
@@ -42,7 +42,7 @@ class OCSLCustomExtractor:
         logger.info(f"Found CIK: {cik}")
         
         # Get latest 10-Q filing
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         
@@ -83,7 +83,8 @@ class OCSLCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate', 'shares_units'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in all_investments:
@@ -103,6 +104,10 @@ class OCSLCustomExtractor:
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
                     'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
         
         logger.info(f"Saved {len(all_investments)} investments to {output_file}")
@@ -171,6 +176,27 @@ class OCSLCustomExtractor:
         """Check if table is for current period (not prior period)."""
         table_text = table.get_text(' ', strip=True).lower()
         
+        # Check for explicit prior period indicators in table headers/rows
+        # Look for patterns like "Fair Value at October 1, 2024" or "September 30, 2024"
+        prior_period_patterns = [
+            r'fair value at\s+(october|september|march|december|june)\s+\d{1,2},\s+202[0-4]',
+            r'(october|september|march|december|june)\s+\d{1,2},\s+202[0-4]',
+            r'as of\s+(october|september|march|december|june)\s+\d{1,2},\s+202[0-4]',
+        ]
+        
+        for pattern in prior_period_patterns:
+            if re.search(pattern, table_text, re.IGNORECASE):
+                # Check if current period is also mentioned (comparison table)
+                if filing_date:
+                    year_match = re.search(r'(\d{4})', filing_date)
+                    if year_match:
+                        current_year = year_match.group(1)
+                        # If current year is also in the table, it's a comparison (include it)
+                        if current_year in table_text:
+                            continue
+                        # Otherwise it's only prior period (skip it)
+                        return False
+        
         # If we have a filing date, check for prior period dates
         if filing_date:
             # Extract year from filing date
@@ -180,9 +206,9 @@ class OCSLCustomExtractor:
                 # Check for prior year dates
                 prior_years = [str(int(current_year) - 1), str(int(current_year) - 2)]
                 for prior_year in prior_years:
-                    if prior_year in table_text and ('march 31' in table_text or 'december 31' in table_text):
+                    if prior_year in table_text and ('march 31' in table_text or 'december 31' in table_text or 'september 30' in table_text or 'june 30' in table_text):
                         # Check if it's explicitly a comparison column
-                        if 'march 31' in table_text and current_year in table_text:
+                        if current_year in table_text:
                             # This is a comparison table, include it
                             continue
                         # Otherwise skip if it's only prior period
@@ -190,14 +216,19 @@ class OCSLCustomExtractor:
                             return False
         
         # Look for "March 31" or "December 31" without current year - likely prior period
-        if 'march 31' in table_text or 'december 31' in table_text:
+        if 'march 31' in table_text or 'december 31' in table_text or 'september 30' in table_text:
             # If we see current year too, it's a comparison table (include it)
-            if filing_date and any(year in table_text for year in ['2025', '2024']):
-                return True
-            # If only old dates, skip
-            if '2023' in table_text or '2022' in table_text:
-                if '2024' not in table_text and '2025' not in table_text:
-                    return False
+            if filing_date:
+                year_match = re.search(r'(\d{4})', filing_date)
+                if year_match:
+                    current_year = year_match.group(1)
+                    if current_year in table_text:
+                        return True
+                    # If only old dates, skip
+                    prior_years = [str(int(current_year) - 1), str(int(current_year) - 2)]
+                    if any(prior_year in table_text for prior_year in prior_years):
+                        if current_year not in table_text:
+                            return False
         
         return True
     
@@ -242,7 +273,12 @@ class OCSLCustomExtractor:
                 'gross additions',
                 'gross reductions',
                 '% of total investments',
-                '% of net assets'
+                '% of net assets',
+                'amount of interest, fees or dividends credited',
+                'fair value at october 1, 2024',
+                'fair value at september 30, 2024',
+                'fair value at march 31, 2024',
+                'fair value at december 31, 2024'
             ]
             has_skip_keywords = any(keyword in table_text.lower() for keyword in skip_keywords)
             
@@ -543,6 +579,10 @@ class OCSLCustomExtractor:
             'floor_rate': None,
             'pik_rate': None,
             'shares_units': None,
+            'percent_net_assets': None,
+            'currency': 'USD',
+            'commitment_limit': None,
+            'undrawn_commitment': None,
         }
         
         # Get company name (may be in this row or carried from previous)
@@ -566,6 +606,40 @@ class OCSLCustomExtractor:
             'consolidated', 'balance sheet', 'statement', 'schedule', 'exhibit',
             'control investments', 'total non-control', 'total portfolio'
         ]):
+            return None
+        
+        # Check raw cells for financial data BEFORE extracting (to catch empty rows early)
+        has_financial_data = False
+        for cell in cells:
+            cell_text = self._extract_cell_text(cell).strip()
+            # Skip empty cells, dates, percentages, and text-only cells
+            if not cell_text or cell_text in ['—', '-', '']:
+                continue
+            # Check for dollar amounts or numeric values (but not dates or percentages)
+            if re.search(r'\$[\d,]+|^[\d,]+\.?\d*$', cell_text):
+                # Make sure it's not a date or percentage
+                if not re.match(r'^\d{1,2}/\d{1,2}/\d{4}$', cell_text) and '%' not in cell_text:
+                    # Check if it's a meaningful number (not just a small number like "6" which might be shares)
+                    # For shares, we'll allow small numbers, but for principal/cost/fair value, we need larger numbers
+                    try:
+                        num_val = float(cell_text.replace('$', '').replace(',', ''))
+                        # If it's a large number (>= 1000) or shares column, it's financial data
+                        if num_val >= 1000:
+                            has_financial_data = True
+                            break
+                    except:
+                        pass
+        
+        # Also check for shares/units in the shares column specifically
+        shares_col = column_map.get('shares_units', 8)
+        if shares_col is not None and len(cell_texts) > shares_col:
+            shares_text = cell_texts[shares_col].strip()
+            if shares_text and shares_text not in ['—', '-', '']:
+                # Even small share counts count as financial data
+                has_financial_data = True
+        
+        # If no financial data at all, skip this row
+        if not has_financial_data:
             return None
         
         # Get industry
@@ -772,6 +846,24 @@ class OCSLCustomExtractor:
                 else:
                     # Has interest rate but no principal - might be preferred equity or other
                     investment['investment_type'] = 'Preferred Equity'
+        
+        # Extract commitment_limit and undrawn_commitment for revolvers
+        # Heuristic: If fair_value > principal_amount, it might be a revolver
+        if investment.get('fair_value') and investment.get('principal_amount'):
+            try:
+                fv = int(investment['fair_value'])
+                principal = int(investment['principal_amount'])
+                if fv > principal:
+                    investment['commitment_limit'] = fv
+                    investment['undrawn_commitment'] = fv - principal
+            except (ValueError, TypeError):
+                pass
+        elif investment.get('fair_value') and not investment.get('principal_amount'):
+            # If we have fair value but no principal, might be a revolver commitment
+            try:
+                investment['commitment_limit'] = int(investment['fair_value'])
+            except (ValueError, TypeError):
+                pass
         
         return investment
     

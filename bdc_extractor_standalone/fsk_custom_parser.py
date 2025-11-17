@@ -29,7 +29,7 @@ class FSKCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "FSK") -> Dict:
+    def extract_from_ticker(self, ticker: str = "FSK"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from FSK's latest 10-Q filing."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -39,7 +39,7 @@ class FSKCustomExtractor:
         
         logger.info(f"Found CIK: {cik}")
         
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise RuntimeError("Could not locate latest 10-Q index for FSK")
         
@@ -108,7 +108,8 @@ class FSKCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in investments:
@@ -127,6 +128,11 @@ class FSKCustomExtractor:
                     'spread': inv.get('spread', ''),
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
+                    'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
         
         logger.info(f"Saved {len(investments)} investments to {output_file}")

@@ -29,7 +29,7 @@ class TPVGCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "TPVG") -> Dict:
+    def extract_from_ticker(self, ticker: str = "TPVG", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from TPVG's latest 10-Q filing."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -39,7 +39,7 @@ class TPVGCustomExtractor:
         
         logger.info(f"Found CIK: {cik}")
         
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise RuntimeError("Could not locate latest 10-Q index for TPVG")
         
@@ -92,7 +92,8 @@ class TPVGCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in investments:
@@ -111,6 +112,11 @@ class TPVGCustomExtractor:
                     'spread': inv.get('spread', ''),
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
+                    'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
         
         logger.info(f"Saved {len(investments)} investments to {output_file}")
@@ -174,6 +180,38 @@ class TPVGCustomExtractor:
             return ""
         cleaned = re.sub(r"(?:\s*\(\s*\d+\s*\))+", "", text)
         return self._normalize_text(cleaned)
+    
+    def _normalize_date(self, date_str: Optional[str]) -> Optional[str]:
+        """Convert date from MM/DD/YYYY or MM/DD/YY to ISO format YYYY-MM-DD."""
+        if not date_str:
+            return None
+        
+        date_str = date_str.strip()
+        
+        # Try MM/DD/YYYY format
+        match = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})$", date_str)
+        if match:
+            month, day, year = match.groups()
+            return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+        
+        # Try MM/DD/YY format (2-digit year)
+        match = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{2})$", date_str)
+        if match:
+            month, day, year = match.groups()
+            # Assume years 00-30 are 2000-2030, 31-99 are 1931-1999
+            year_int = int(year)
+            if year_int <= 30:
+                year = f"20{year}"
+            else:
+                year = f"19{year}"
+            return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+        
+        # If already in ISO format, return as-is
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+            return date_str
+        
+        # If we can't parse it, return as-is
+        return date_str
     
     def _extract_tables_under_heading(self, soup: BeautifulSoup) -> List:
         """Extract tables that are schedule of investments tables."""
@@ -396,18 +434,80 @@ class TPVGCustomExtractor:
         """Parse a detail row into an investment record."""
         try:
             inv_type = row[0].strip() if row else ""
-            interest_rate = next((c for c in row if re.search(r"\d(\.\d+)?%", c)), None)
             
-            spread_val = None
-            for i, c in enumerate(row):
-                cu = c.upper()
-                if any(cu.startswith(tok) for tok in ["SOFR+","PRIME+","LIBOR+","BASE RATE+"]):
-                    if i+1 < len(row):
-                        nxt = row[i+1]
-                        spread_val = nxt if nxt.endswith('%') else (nxt+'%' if re.match(r"^\d+(\.\d+)?$", nxt) else nxt)
-                        break
+            # Enhanced percentage extraction - search all cells comprehensively
+            row_text = ' '.join(row).upper()
             
+            # Extract reference rate and spread from patterns like "PRIME + 2.50%", "SOFR + 6.00%"
             ref_token = None
+            spread_val = None
+            interest_rate = None
+            floor_rate_val = None
+            pik_rate_val = None
+            
+            # Pattern 1: "PRIME + 2.50%" or "SOFR + 6.00%" in a single cell or across cells
+            ref_spread_pattern = re.search(
+                r'\b(SOFR|LIBOR|PRIME|PRIME\s+RATE|BASE\s+RATE|EURIBOR)(?:\s*\([^)]*\))?\s*\+\s*([\d\.]+)\s*%',
+                row_text, re.IGNORECASE
+            )
+            if ref_spread_pattern:
+                ref_base = ref_spread_pattern.group(1).strip().upper()
+                # Normalize reference rate names
+                ref_map = {'PRIME RATE': 'PRIME', 'BASE RATE': 'BASE RATE', 'BASE': 'BASE RATE'}
+                ref_base = ref_map.get(ref_base, ref_base)
+                ref_token = ref_base
+                spread_val = f"{float(ref_spread_pattern.group(2)):.2f}%"
+            
+            # Pattern 2: Look for reference rate and spread in separate cells
+            if not ref_token or not spread_val:
+                for i, c in enumerate(row):
+                    cu = c.upper().strip()
+                    # Check for reference rate tokens
+                    if not ref_token:
+                        ref_match = re.match(r'^(SOFR|LIBOR|PRIME|PRIME\s+RATE|BASE\s+RATE|EURIBOR)(?:\s*\([^)]*\))?$', cu, re.IGNORECASE)
+                        if ref_match:
+                            ref_base = ref_match.group(1).strip().upper()
+                            ref_map = {'PRIME RATE': 'PRIME', 'BASE RATE': 'BASE RATE', 'BASE': 'BASE RATE'}
+                            ref_token = ref_map.get(ref_base, ref_base)
+                    
+                    # Check for spread patterns like "SOFR+", "PRIME+"
+                    if not spread_val and any(cu.startswith(tok) for tok in ["SOFR+", "PRIME+", "LIBOR+", "BASE RATE+"]):
+                        if i+1 < len(row):
+                            nxt = row[i+1].strip()
+                            if nxt.endswith('%'):
+                                spread_val = nxt
+                            elif re.match(r'^\d+(\.\d+)?$', nxt):
+                                spread_val = f"{nxt}%"
+                        # Also check if spread is in the same cell
+                        spread_in_cell = re.search(r'\+?\s*([\d\.]+)\s*%', c, re.IGNORECASE)
+                        if spread_in_cell:
+                            spread_val = f"{float(spread_in_cell.group(1)):.2f}%"
+            
+            # Extract interest rate - look for percentage values that are reasonable interest rates
+            if not interest_rate:
+                for c in row:
+                    # Look for patterns like "11.75%", "2.50%", etc.
+                    rate_match = re.search(r'([\d\.]+)\s*%', c)
+                    if rate_match:
+                        rate_val = float(rate_match.group(1))
+                        # Reasonable interest rate range (0.1% to 30%)
+                        if 0.1 <= rate_val <= 30:
+                            # Check if this cell doesn't already contain reference rate or spread keywords
+                            c_upper = c.upper()
+                            if not any(kw in c_upper for kw in ['PIK', 'FLOOR', 'EOT', 'CASH', 'INTEREST']):
+                                interest_rate = f"{rate_val:.2f}%"
+                                break
+            
+            # Extract floor rate
+            floor_match = re.search(r'floor\s*[:\s]*([\d\.]+)\s*%', row_text, re.IGNORECASE)
+            if floor_match:
+                floor_rate_val = f"{float(floor_match.group(1)):.2f}%"
+            
+            # Extract PIK rate
+            pik_match = re.search(r'pik\s*(?:interest\s*)?[:\s]*([\d\.]+)\s*%', row_text, re.IGNORECASE)
+            if pik_match:
+                pik_rate_val = f"{float(pik_match.group(1)):.2f}%"
+            
             company_for_row = last_company or ""
             acq = None
             mat = None
@@ -443,8 +543,10 @@ class TPVGCustomExtractor:
                 if ref_cell:
                     ref_token = ref_cell
                 
-                acq = acq_cell if (acq_cell and re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", acq_cell)) else None
-                mat = mat_cell if (mat_cell and re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", mat_cell)) else None
+                acq_raw = acq_cell if (acq_cell and re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", acq_cell)) else None
+                mat_raw = mat_cell if (mat_cell and re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", mat_cell)) else None
+                acq = self._normalize_date(acq_raw)
+                mat = self._normalize_date(mat_raw)
                 
                 nameish_cc = bool(company_cell) and ("," in company_cell or re.search(r"\b(inc\.?|llc\.?|ltd\.?|corp\.?|co\.?|holdings|group|s\.à\s*r\.l\.|limited|plc)\b", company_cell, re.IGNORECASE))
                 is_instrument_cc = bool(company_cell) and any(k in self._normalize_key(company_cell) for k in ["loan","revolver","convertible","warrant","equity","note"])
@@ -457,9 +559,9 @@ class TPVGCustomExtractor:
                 money = [prin_cell, cost_cell, fv_cell]
             else:
                 company_for_row = last_company or ""
-                dates = [c for c in row if re.match(r"^\d{1,2}/\d{1,2}/\d{4}$", c)]
-                acq = dates[0] if dates else None
-                mat = dates[1] if len(dates) > 1 else None
+                dates_raw = [c for c in row if re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", c)]
+                acq = self._normalize_date(dates_raw[0]) if dates_raw else None
+                mat = self._normalize_date(dates_raw[1]) if len(dates_raw) > 1 else None
                 money = [c for c in row if c.startswith('$') or re.match(r"^\$?\d[\d,]*$", c)]
                 
                 for tok in row:
@@ -492,6 +594,7 @@ class TPVGCustomExtractor:
                     res["eot"] = f"{m.group(1)}%"
                 return res
             
+            # Parse terms from investment type text (fallback)
             terms = parse_terms_from_type(inv_type) if inv_type else {}
             if not ref_token and terms.get("ref"):
                 ref_token = terms["ref"]
@@ -499,8 +602,10 @@ class TPVGCustomExtractor:
                 spread_val = terms["spread"]
             if not interest_rate and terms.get("fixed"):
                 interest_rate = terms["fixed"]
-            floor_rate_val = terms.get("floor")
-            pik_rate_val = terms.get("pik")
+            if not floor_rate_val and terms.get("floor"):
+                floor_rate_val = terms.get("floor")
+            if not pik_rate_val and terms.get("pik"):
+                pik_rate_val = terms.get("pik")
             
             # Parse numbers
             def parse_number_local(text: Optional[str]) -> Optional[float]:
@@ -549,21 +654,47 @@ class TPVGCustomExtractor:
             inv_type_clean = self._strip_footnote_refs(inv_type_norm)
             
             # Extract company name and investment type from combined string if needed
+            # Handle patterns like "Company Name, Equity Investments" or "Company Name, Warrants"
             if ',' in company_clean:
+                # Try to split on comma and extract investment type
                 parts = company_clean.split(',')
-                company_clean = parts[0].strip()
+                base_company = parts[0].strip()
                 type_part = ','.join(parts[1:]).strip()
                 type_part = self._strip_footnote_refs(type_part)
-                if type_part and not inv_type_clean:
-                    inv_type_clean = type_part
+                
+                # Check if the part after comma looks like an investment type
+                type_part_lower = type_part.lower()
+                if any(keyword in type_part_lower for keyword in [
+                    'equity investment', 'equity investments', 'warrant investment', 
+                    'warrant investments', 'warrants', 'warrant', 'equity', 'loan',
+                    'revolver', 'note', 'convertible', 'preferred', 'common'
+                ]):
+                    # This is an investment type, extract it
+                    company_clean = base_company
+                    if not inv_type_clean or inv_type_clean == "Unknown":
+                        # Normalize the investment type
+                        if 'equity investment' in type_part_lower:
+                            inv_type_clean = 'Equity'
+                        elif 'warrant investment' in type_part_lower or 'warrants' in type_part_lower:
+                            inv_type_clean = 'Warrants'
+                        elif 'warrant' in type_part_lower:
+                            inv_type_clean = 'Warrants'
+                        else:
+                            inv_type_clean = type_part
+                else:
+                    # Might be part of company name (e.g., "Inc., LLC")
+                    # Keep the full name but check if it contains investment type keywords
+                    pass
             
             # If still no investment type, try to infer from company name
             if not inv_type_clean or inv_type_clean == "Unknown":
-                orig_name_lower = (last_company or company_clean).lower()
+                orig_name_lower = (company_clean or last_company or "").lower()
                 if 'equity investment' in orig_name_lower or ', equity' in orig_name_lower:
                     inv_type_clean = 'Equity'
-                elif 'warrant' in orig_name_lower:
-                    inv_type_clean = 'Warrant'
+                elif 'warrant investment' in orig_name_lower or ', warrant' in orig_name_lower:
+                    inv_type_clean = 'Warrants'
+                elif 'warrants' in orig_name_lower:
+                    inv_type_clean = 'Warrants'
                 elif any(kw in orig_name_lower for kw in ['loan', 'revolver', 'note']):
                     inv_type_clean = 'Loan'
                 else:
@@ -584,13 +715,17 @@ class TPVGCustomExtractor:
             industry_clean = standardize_industry(industry_clean)
             ref_token = standardize_reference_rate(ref_token) if ref_token else None
             
+            # Normalize dates to ISO format
+            acq_normalized = self._normalize_date(acq) if acq else None
+            mat_normalized = self._normalize_date(mat) if mat else None
+            
             return {
                 'company_name': company_clean,
                 'business_description': "",
                 'investment_type': inv_type_clean,
                 'industry': industry_clean,
-                'acquisition_date': acq,
-                'maturity_date': mat,
+                'acquisition_date': acq_normalized,
+                'maturity_date': mat_normalized,
                 'interest_rate': interest_rate,
                 'reference_rate': ref_token,
                 'spread': spread_val,
@@ -607,6 +742,36 @@ class TPVGCustomExtractor:
     
     def _post_process_investments(self, investments: List[Dict]) -> List[Dict]:
         """Post-process investments to fix continuation rows and carry-forward data."""
+        # First pass: extract investment types from company names and clean them
+        for inv in investments:
+            company_name = (inv.get('company_name') or '').strip()
+            inv_type = (inv.get('investment_type') or '').strip()
+            
+            # If investment type is Unknown but company name has investment type info, extract it
+            if (not inv_type or inv_type == "Unknown") and ',' in company_name:
+                parts = company_name.split(',')
+                base_company = parts[0].strip()
+                type_part = ','.join(parts[1:]).strip()
+                type_part_lower = type_part.lower()
+                
+                # Check if the part after comma is an investment type
+                if any(keyword in type_part_lower for keyword in [
+                    'equity investment', 'equity investments', 'warrant investment', 
+                    'warrant investments', 'warrants', 'warrant'
+                ]):
+                    # Extract investment type
+                    if 'equity investment' in type_part_lower:
+                        inv['investment_type'] = 'Equity'
+                    elif 'warrant investment' in type_part_lower or 'warrants' in type_part_lower:
+                        inv['investment_type'] = 'Warrants'
+                    elif 'warrant' in type_part_lower:
+                        inv['investment_type'] = 'Warrants'
+                    else:
+                        inv['investment_type'] = type_part
+                    
+                    # Clean company name
+                    inv['company_name'] = base_company
+        
         # Fix continuation rows
         last_good_company = None
         for inv in investments:
@@ -623,10 +788,11 @@ class TPVGCustomExtractor:
             elif not is_bad:
                 last_good_company = name
         
-        # Carry-forward industry and dates
+        # Carry-forward industry, dates, and percentage values
         last_company = None
         last_industry_by_company = {}
         last_dates_by_company = {}
+        last_rates_by_company = {}
         
         for inv in investments:
             cname = inv.get('company_name') or ''
@@ -646,6 +812,12 @@ class TPVGCustomExtractor:
             # Dates carry-forward
             acq = inv.get('acquisition_date') or ''
             mat = inv.get('maturity_date') or ''
+            # Normalize dates if they're not already in ISO format
+            if acq and not re.match(r"^\d{4}-\d{2}-\d{2}$", acq):
+                acq = self._normalize_date(acq) or ''
+            if mat and not re.match(r"^\d{4}-\d{2}-\d{2}$", mat):
+                mat = self._normalize_date(mat) or ''
+            
             if acq or mat:
                 last_dates_by_company[last_company] = {
                     'acq': acq or last_dates_by_company.get(last_company, {}).get('acq'),
@@ -658,6 +830,32 @@ class TPVGCustomExtractor:
                         inv['acquisition_date'] = prev.get('acq')
                     if not mat and prev.get('mat'):
                         inv['maturity_date'] = prev.get('mat')
+            
+            # Percentage values carry-forward (for same company, same investment type)
+            # Only carry forward if current values are missing
+            if last_company in last_rates_by_company:
+                prev_rates = last_rates_by_company[last_company]
+                if not inv.get('interest_rate') and prev_rates.get('interest_rate'):
+                    inv['interest_rate'] = prev_rates.get('interest_rate')
+                if not inv.get('reference_rate') and prev_rates.get('reference_rate'):
+                    inv['reference_rate'] = prev_rates.get('reference_rate')
+                if not inv.get('spread') and prev_rates.get('spread'):
+                    inv['spread'] = prev_rates.get('spread')
+                if not inv.get('floor_rate') and prev_rates.get('floor_rate'):
+                    inv['floor_rate'] = prev_rates.get('floor_rate')
+                if not inv.get('pik_rate') and prev_rates.get('pik_rate'):
+                    inv['pik_rate'] = prev_rates.get('pik_rate')
+            
+            # Update last rates for this company if we have any new values
+            if any([inv.get('interest_rate'), inv.get('reference_rate'), inv.get('spread'), 
+                   inv.get('floor_rate'), inv.get('pik_rate')]):
+                last_rates_by_company[last_company] = {
+                    'interest_rate': inv.get('interest_rate') or last_rates_by_company.get(last_company, {}).get('interest_rate'),
+                    'reference_rate': inv.get('reference_rate') or last_rates_by_company.get(last_company, {}).get('reference_rate'),
+                    'spread': inv.get('spread') or last_rates_by_company.get(last_company, {}).get('spread'),
+                    'floor_rate': inv.get('floor_rate') or last_rates_by_company.get(last_company, {}).get('floor_rate'),
+                    'pik_rate': inv.get('pik_rate') or last_rates_by_company.get(last_company, {}).get('pik_rate')
+                }
         
         # Deduplicate
         seen = set()

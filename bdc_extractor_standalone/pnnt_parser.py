@@ -53,12 +53,20 @@ class PNNTExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "PNNT") -> Dict:
+    def extract_from_ticker(self, ticker: str = "PNNT", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+        """
+        Extract investments from 10-Q filing.
+        
+        Args:
+            ticker: Company ticker symbol
+            year: Year to filter filings (default: 2025). Set to None to get latest regardless of year.
+            min_date: Minimum date in YYYY-MM-DD format (overrides year if provided)
+        """
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError("Could not find 10-Q filing")
         m = re.search(r'/(\d{10}-\d{2}-\d{6})-index\.html', index_url)
@@ -242,9 +250,13 @@ class PNNTExtractor:
             res['maturity_date'] = mat.group(1)
 
         # Industry
-        ind = re.search(r'Industry\s+([A-Za-z,&\s]+?)(?:\s+Current Coupon\b|\s+Basis Point|$)', text)
+        ind = re.search(r'Industry\s+([A-Za-z,&\s/]+?)(?:\s+Current Coupon\b|\s+Basis Point|$)', text)
         if ind:
-            res['industry'] = ind.group(1).strip()
+            industry_text = ind.group(1).strip()
+            # Clean up industry name - remove trailing periods, extra spaces
+            industry_text = re.sub(r'\.+$', '', industry_text)
+            industry_text = re.sub(r'\s+', ' ', industry_text).strip()
+            res['industry'] = industry_text
 
         # Current Coupon (may contain PIK)
         coup = re.search(r'Current\s+Coupon\s+([\d\.]+)%', text)
@@ -310,15 +322,30 @@ class PNNTExtractor:
             c = f['concept']; v = f['value']; v = v.replace(',', '')
             cl = c.lower()
             if any(k in cl for k in ['principalamount', 'ownedbalanceprincipalamount', 'outstandingprincipal']):
-                try: inv.principal_amount = float(v)
+                try: 
+                    val = float(v)
+                    if val > 0:  # Only accept positive principal amounts
+                        inv.principal_amount = val
                 except: pass; continue
                 continue
             if ('cost' in cl and ('amortized' in cl or 'basis' in cl)) or 'ownedatcost' in cl:
-                try: inv.cost = float(v)
+                try: 
+                    val = float(v)
+                    if val > 0:  # Only accept positive cost values
+                        inv.cost = val
                 except: pass; continue
                 continue
             if 'fairvalue' in cl or ('fair' in cl and 'value' in cl) or 'ownedatfairvalue' in cl:
-                try: inv.fair_value = float(v)
+                try: 
+                    val = float(v)
+                    # For unfunded commitments, fair value might be negative (liability)
+                    # Set to None if negative, as it's not a meaningful fair value
+                    if val >= 0:
+                        inv.fair_value = val
+                    # If negative and we have principal, this might be an unfunded commitment
+                    elif val < 0 and inv.principal_amount:
+                        # Negative fair value for unfunded commitments - set to None
+                        inv.fair_value = None
                 except: pass; continue
                 continue
             # Extract shares/units for equity investments
@@ -333,12 +360,23 @@ class PNNTExtractor:
             if 'currency' in f: inv.currency = f.get('currency')
         if not inv.acquisition_date and context.get('start_date'):
             inv.acquisition_date = context['start_date'][:10]
+        
+        # Handle unfunded commitments - if we have principal but negative or zero fair value,
+        # this is likely an unfunded commitment
+        is_unfunded = 'unfunded' in inv.company_name.lower() or 'unfunded' in (inv.investment_type or '').lower()
+        if is_unfunded and inv.principal_amount and (not inv.fair_value or inv.fair_value <= 0):
+            # For unfunded commitments, fair value should be None or 0, not negative
+            inv.fair_value = None
+        
         # Heuristic for commitment_limit and undrawn_commitment
-        if inv.fair_value and not inv.principal_amount: inv.commitment_limit = inv.fair_value
+        if inv.fair_value and not inv.principal_amount: 
+            inv.commitment_limit = inv.fair_value
         elif inv.fair_value and inv.principal_amount:
             if inv.fair_value > inv.principal_amount:
                 inv.commitment_limit = inv.fair_value
                 inv.undrawn_commitment = inv.fair_value - inv.principal_amount
+        
+        # Skip investments with no meaningful financial data
         if inv.company_name and (inv.principal_amount or inv.cost or inv.fair_value):
             return inv
         return None

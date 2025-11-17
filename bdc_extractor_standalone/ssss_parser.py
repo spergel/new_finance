@@ -49,11 +49,11 @@ class SSSSExtractor:
         self.sec_client = SECAPIClient(user_agent=user_agent)
         self.table_parser = FlexibleTableParser()
 
-    def extract_from_ticker(self, ticker: str = "SSSS") -> Dict:
+    def extract_from_ticker(self, ticker: str = "SSSS"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         cik = self.sec_client.get_cik(ticker)
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         acc = re.search(r'/(\d{10}-\d{2}-\d{6})-index\.html', index_url)

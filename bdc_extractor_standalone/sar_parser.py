@@ -463,7 +463,7 @@ class SARExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "SAR") -> Dict:
+    def extract_from_ticker(self, ticker: str = "SAR"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from ticker symbol."""
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         client = self.sec_client

@@ -30,7 +30,7 @@ class GBDCCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "GBDC") -> Dict:
+    def extract_from_ticker(self, ticker: str = "GBDC", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from GBDC's latest 10-Q filing."""
         logger.info(f"Extracting investments for {ticker} from SEC filings")
         
@@ -40,7 +40,7 @@ class GBDCCustomExtractor:
         
         logger.info(f"Found CIK: {cik}")
         
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         
@@ -432,6 +432,11 @@ class GBDCCustomExtractor:
             'spread': None,
             'floor_rate': None,
             'pik_rate': None,
+            'shares_units': None,
+            'percent_net_assets': None,
+            'currency': 'USD',
+            'commitment_limit': None,
+            'undrawn_commitment': None,
         }
         
         # Get company name - based on actual structure: Col 1 (not Col 0)
@@ -566,7 +571,26 @@ class GBDCCustomExtractor:
                     investment['fair_value'] = fv_value
                     break
         
-        # Skip if no meaningful data at all
+        
+        # Extract commitment_limit and undrawn_commitment for revolvers
+        # Heuristic: If fair_value > principal_amount, it might be a revolver
+        if investment.get('fair_value') and investment.get('principal_amount'):
+            try:
+                fv = int(investment['fair_value'])
+                principal = int(investment['principal_amount'])
+                if fv > principal:
+                    investment['commitment_limit'] = fv
+                    investment['undrawn_commitment'] = fv - principal
+            except (ValueError, TypeError):
+                pass
+        elif investment.get('fair_value') and not investment.get('principal_amount'):
+            # If we have fair value but no principal, might be a revolver commitment
+            try:
+                investment['commitment_limit'] = int(investment['fair_value'])
+            except (ValueError, TypeError):
+                pass
+        
+# Skip if no meaningful data at all
         # But don't skip if we have a valid company name and investment type (even if no financial data)
         has_financial_data = (investment.get('principal_amount') or 
                              investment.get('cost') or 
@@ -694,6 +718,11 @@ class GBDCCustomExtractor:
                     'spread': inv.get('spread', ''),
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
+                    'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
 
 

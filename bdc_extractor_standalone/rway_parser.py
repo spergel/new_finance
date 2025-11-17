@@ -48,12 +48,12 @@ class RWAYExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "RWAY") -> Dict:
+    def extract_from_ticker(self, ticker: str = "RWAY", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
             raise ValueError(f"Could not find CIK for ticker {ticker}")
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         m = re.search(r'/(\d{10}-\d{2}-\d{6})-index\.html', index_url)
@@ -118,8 +118,10 @@ class RWAYExtractor:
         out_file = os.path.join(out_dir, 'RWAY_Runway_Growth_Finance_Corp_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=[
-                'company_name','industry','business_description','investment_type','acquisition_date','maturity_date',
-                'principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate'
+                'company_name', 'industry', 'business_description', 'investment_type',
+                'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in investments:
@@ -131,18 +133,23 @@ class RWAYExtractor:
                 writer.writerow({
                     'company_name': inv.company_name,
                     'industry': standardized_industry,
-                    'business_description': inv.business_description,
+                    'business_description': inv.business_description or '',
                     'investment_type': standardized_inv_type,
-                    'acquisition_date': inv.acquisition_date,
-                    'maturity_date': inv.maturity_date,
-                    'principal_amount': inv.principal_amount,
-                    'cost': inv.cost,
-                    'fair_value': inv.fair_value,
-                    'interest_rate': inv.interest_rate,
-                    'reference_rate': standardized_ref_rate,
-                    'spread': inv.spread,
-                    'floor_rate': inv.floor_rate,
-                    'pik_rate': inv.pik_rate,
+                    'acquisition_date': inv.acquisition_date or '',
+                    'maturity_date': inv.maturity_date or '',
+                    'principal_amount': inv.principal_amount or '',
+                    'cost': inv.cost or '',
+                    'fair_value': inv.fair_value or '',
+                    'interest_rate': inv.interest_rate or '',
+                    'reference_rate': standardized_ref_rate or '',
+                    'spread': inv.spread or '',
+                    'floor_rate': inv.floor_rate or '',
+                    'pik_rate': inv.pik_rate or '',
+                    'shares_units': inv.shares_units or '',
+                    'percent_net_assets': inv.percent_net_assets or '',
+                    'currency': inv.currency or 'USD',
+                    'commitment_limit': inv.commitment_limit or '',
+                    'undrawn_commitment': inv.undrawn_commitment or '',
                 })
 
         logger.info(f"Saved to {out_file}")
@@ -195,25 +202,101 @@ class RWAYExtractor:
     def _parse_identifier(self, identifier: str) -> Dict[str, str]:
         res: Dict[str, Optional[str]] = {'company_name':'Unknown','industry':'Unknown','investment_type':'Unknown'}
         text = html.unescape(identifier)
+        
         # Remove leading classification phrases
         text = re.sub(r'^(Non-?Control/Non-?Affiliate Investments|Control/Non-?Affiliate Investments|Debt Investments|Equity Investments|Warrants)\s+', '', text, flags=re.IGNORECASE)
-        # Industry often appears as a phrase before the company (we capture it loosely)
+        
         # Try to find "Investment Type" as an anchor; company typically precedes it
         it_anchor = re.search(r'\bInvestment\s+Type\b', text, re.IGNORECASE)
         company_segment = text
         if it_anchor:
             company_segment = text[:it_anchor.start()].strip()
-        # After removing industry categories like "Application Software", the company is usually the last comma-separated name
-        # Split on commas and take the last segment that contains a capitalized word sequence
-        segs = [s.strip() for s in company_segment.split(',') if s.strip()]
-        if segs:
-            guessed = self._guess_company_from_text(company_segment)
-            res['company_name'] = guessed
-        # Industry: try to take the preceding phrase before company segment if it looks like an industry
-        if len(segs) >= 2:
-            possible_industry = segs[-2]
-            if len(possible_industry.split()) <= 6:
-                res['industry'] = possible_industry
+        
+        # Pattern: "Industry Category Company Name" or "Industry Category, Company Name"
+        # Examples:
+        # - "Application Software Piano Software" -> Company: "Piano Software", Industry: "Application Software"
+        # - "Technology Hardware & Equipment RealWear" -> Company: "RealWear", Industry: "Technology Hardware & Equipment"
+        # - "Financial Services Autobooks" -> Company: "Autobooks", Industry: "Financial Services"
+        # - "Warrants Commercial & Professional Services FiscalNote, Inc" -> Company: "FiscalNote, Inc", Industry: "Commercial & Professional Services"
+        
+        # Remove any remaining "Warrants", "Debt Investments", "Equity Investments" prefixes
+        company_segment = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', company_segment, flags=re.IGNORECASE)
+        
+        # Try to extract company name (last capitalized word/phrase before "Investment Type")
+        # Look for company name with proper entity suffix - prioritize these
+        # Pattern 1: Company names ending with proper entity suffixes (Inc, LLC, Corp, etc.)
+        company_matches = list(re.finditer(r'([A-Z][A-Za-z0-9\s&,\-\.]+?(?:Inc\.?|LLC|Ltd\.?|Corp\.?|Corporation|LP|L\.P\.|Holdings|Holdco|Limited|Company|Co\.|SE|N\.V\.))\b', company_segment))
+        if company_matches:
+            # Take the last match (company name is usually at the end)
+            company_match = company_matches[-1]
+            company_name = company_match.group(1).strip().rstrip(',').strip()
+            
+            # Extract industry (text before company name)
+            company_pos = company_match.start()
+            if company_pos > 0:
+                industry_text = company_segment[:company_pos].strip().rstrip(',').strip()
+                # Remove any remaining investment type prefixes
+                industry_text = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', industry_text, flags=re.IGNORECASE)
+                # Clean industry text to remove company names and invalid tokens
+                industry_text = self._clean_industry(industry_text)
+                # Common industry patterns
+                if industry_text and len(industry_text.split()) <= 6:
+                    res['industry'] = industry_text
+            
+            # Company name is already clean (ends with proper entity suffix)
+            res['company_name'] = company_name
+        else:
+            # Pattern 2: Try to find company names with other suffixes (Group, Technologies, Software, Systems, Solutions)
+            # But be more careful - these are less reliable
+            company_matches = list(re.finditer(r'([A-Z][A-Za-z0-9\s&,\-\.]+?(?:Group|Technologies|Technology|Software|Systems|Solutions))\b', company_segment))
+            if company_matches:
+                # Take the last match
+                company_match = company_matches[-1]
+                company_name = company_match.group(1).strip().rstrip(',').strip()
+                
+                # Only accept if it looks like a real company name (not just "Software" or "Systems")
+                if len(company_name.split()) >= 2 or (len(company_name) > 8 and not company_name.lower() in ['software', 'systems', 'technology', 'technologies', 'solutions']):
+                    # Extract industry (text before company name)
+                    company_pos = company_match.start()
+                    if company_pos > 0:
+                        industry_text = company_segment[:company_pos].strip().rstrip(',').strip()
+                        industry_text = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', industry_text, flags=re.IGNORECASE)
+                        industry_text = self._clean_industry(industry_text)
+                        if industry_text and len(industry_text.split()) <= 6:
+                            res['industry'] = industry_text
+                    
+                    res['company_name'] = company_name
+                else:
+                    # Fallback: try to guess company from text
+                    guessed = self._guess_company_from_text(company_segment)
+                    if guessed and guessed != 'Unknown':
+                        guessed = self._clean_company_name(guessed)
+                        if guessed and guessed != 'Unknown':
+                            res['company_name'] = guessed
+                            # Try to extract industry from remaining text
+                            company_pos = company_segment.find(guessed)
+                            if company_pos > 0:
+                                industry_text = company_segment[:company_pos].strip().rstrip(',').strip()
+                                industry_text = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', industry_text, flags=re.IGNORECASE)
+                                industry_text = self._clean_industry(industry_text)
+                                if industry_text and len(industry_text.split()) <= 6:
+                                    res['industry'] = industry_text
+            else:
+                # Fallback: try to guess company from text
+                guessed = self._guess_company_from_text(company_segment)
+                if guessed and guessed != 'Unknown':
+                    guessed = self._clean_company_name(guessed)
+                    if guessed and guessed != 'Unknown':
+                        res['company_name'] = guessed
+                        # Try to extract industry from remaining text
+                        company_pos = company_segment.find(guessed)
+                        if company_pos > 0:
+                            industry_text = company_segment[:company_pos].strip().rstrip(',').strip()
+                            industry_text = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', industry_text, flags=re.IGNORECASE)
+                            industry_text = self._clean_industry(industry_text)
+                            if industry_text and len(industry_text.split()) <= 6:
+                                res['industry'] = industry_text
+        
         # Investment type from the text around anchor
         tail = text[it_anchor.end():] if it_anchor else text
         inv_type = None
@@ -382,6 +465,10 @@ class RWAYExtractor:
         if not text:
             return out
         s = html.unescape(text)
+        
+        # Remove leading classification phrases
+        s = re.sub(r'^(Non-?Control/Non-?Affiliate Investments|Control/Non-?Affiliate Investments|Debt Investments|Equity Investments|Warrants)\s+', '', s, flags=re.IGNORECASE)
+        
         # Dates
         acq = re.search(r'Initial\s+Acquisition\s+Date\s+(\d{1,2}/\d{1,2}/\d{4})', s, re.IGNORECASE)
         if acq:
@@ -413,13 +500,84 @@ class RWAYExtractor:
         it = re.search(r'Investment\s+Type\s+([^,]+)', s, re.IGNORECASE)
         if it:
             out['investment_type'] = it.group(1).strip()
-        # Company name heuristic: part before Investment Type, after industry phrase
+        
+        # Company name and industry: part before Investment Type
         before_it = s.split('Investment Type', 1)[0] if 'Investment Type' in s else s
-        segs = [seg.strip() for seg in before_it.split(',') if seg.strip()]
-        if segs:
-            out['company_name'] = self._guess_company_from_text(before_it)
-        if len(segs) >= 2:
-            out['industry'] = segs[-2]
+        before_it = before_it.strip()
+        
+        # Remove any remaining "Warrants", "Debt Investments", "Equity Investments" prefixes
+        before_it = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', before_it, flags=re.IGNORECASE)
+        
+        # Try to extract company name with proper entity suffix first (prioritize these)
+        company_matches = list(re.finditer(r'([A-Z][A-Za-z0-9\s&,\-\.]+?(?:Inc\.?|LLC|Ltd\.?|Corp\.?|Corporation|LP|L\.P\.|Holdings|Holdco|Limited|Company|Co\.|SE|N\.V\.))\b', before_it))
+        if company_matches:
+            # Take the last match
+            company_match = company_matches[-1]
+            company_name = company_match.group(1).strip().rstrip(',').strip()
+            
+            # Extract industry (text before company name)
+            company_pos = company_match.start()
+            if company_pos > 0:
+                industry_text = before_it[:company_pos].strip().rstrip(',').strip()
+                industry_text = re.sub(r'^(Debt Investments|Equity Investments|Warrants)\s+', '', industry_text, flags=re.IGNORECASE)
+                industry_text = self._clean_industry(industry_text)
+                if industry_text and len(industry_text.split()) <= 6:
+                    out['industry'] = industry_text
+            
+            # Company name is already clean
+            out['company_name'] = company_name
+        else:
+            # Try other suffixes but be more careful
+            company_matches = list(re.finditer(r'([A-Z][A-Za-z0-9\s&,\-\.]+?(?:Group|Technologies|Technology|Software|Systems|Solutions))\b', before_it))
+            if company_matches:
+                company_match = company_matches[-1]
+                company_name = company_match.group(1).strip().rstrip(',').strip()
+                
+                # Only accept if it looks like a real company name
+                if len(company_name.split()) >= 2 or (len(company_name) > 8 and not company_name.lower() in ['software', 'systems', 'technology', 'technologies', 'solutions']):
+                    company_pos = company_match.start()
+                    if company_pos > 0:
+                        industry_text = before_it[:company_pos].strip().rstrip(',').strip()
+                        industry_text = re.sub(r'^(Debt Investments|Equity Investments|Warrants)\s+', '', industry_text, flags=re.IGNORECASE)
+                        industry_text = self._clean_industry(industry_text)
+                        if industry_text and len(industry_text.split()) <= 6:
+                            out['industry'] = industry_text
+                    
+                    out['company_name'] = company_name
+                else:
+                    # Fallback: guess company from text
+                    guessed = self._guess_company_from_text(before_it)
+                    if guessed and guessed != 'Unknown':
+                        guessed = self._clean_company_name(guessed)
+                        if guessed and guessed != 'Unknown':
+                            out['company_name'] = guessed
+                            # Try to extract industry
+                            original_guessed = self._guess_company_from_text(before_it)
+                            company_pos = before_it.find(original_guessed) if original_guessed else -1
+                            if company_pos > 0:
+                                industry_text = before_it[:company_pos].strip().rstrip(',').strip()
+                                industry_text = re.sub(r'^(Debt Investments|Equity Investments|Warrants)\s+', '', industry_text, flags=re.IGNORECASE)
+                                industry_text = self._clean_industry(industry_text)
+                                if industry_text and len(industry_text.split()) <= 6:
+                                    out['industry'] = industry_text
+            else:
+                # Fallback: guess company from text
+                guessed = self._guess_company_from_text(before_it)
+                if guessed and guessed != 'Unknown':
+                    guessed = self._clean_company_name(guessed)
+                    if guessed and guessed != 'Unknown':
+                        out['company_name'] = guessed
+                        # Try to extract industry
+                        original_guessed = self._guess_company_from_text(before_it)
+                        company_pos = before_it.find(original_guessed) if original_guessed else -1
+                        if company_pos > 0:
+                            industry_text = before_it[:company_pos].strip().rstrip(',').strip()
+                            industry_text = re.sub(r'^(Debt Investments|Equity Investments|Warrants)\s+', '', industry_text, flags=re.IGNORECASE)
+                            industry_text = self._clean_industry(industry_text)
+                            if industry_text and len(industry_text.split()) <= 6:
+                                out['industry'] = industry_text
+        
+        # Clean up
         if out['company_name']:
             out['company_name'] = re.sub(r'\s+', ' ', out['company_name']).strip().rstrip(',')
         if out['industry']:
@@ -428,15 +586,44 @@ class RWAYExtractor:
 
     def _guess_company_from_text(self, text: str) -> str:
         t = re.sub(r"\s+", " ", text).strip().strip(',')
+        
+        # Remove common industry prefixes that might be confused with company names
+        industry_prefixes = [
+            r'^Application\s+Software\s+',
+            r'^Technology\s+Hardware\s+&\s+Equipment\s+',
+            r'^Financial\s+Services\s+',
+            r'^Commercial\s+&\s+Professional\s+Services\s+',
+            r'^Consumer\s+Staples\s+Distribution\s+&\s+Retail\s+',
+            r'^Media\s+&\s+Entertainment\s+',
+            r'^Insurance\s+',
+            r'^Household\s+and\s+Personal\s+Products\s+',
+        ]
+        for prefix in industry_prefixes:
+            t = re.sub(prefix, '', t, flags=re.IGNORECASE)
+        
         # Prefer matches ending with common entity suffixes
-        m = re.search(r'([A-Z][\w.&()\- ]{2,}?(?:Inc\.?|Corporation|Corp\.?|Ltd\.?|LLC|L\.L\.C\.|SE|Limited|Holdings?|Group|Company|Technologies|Technology|Bio|Insurance|Labs))\b', t)
+        m = re.search(r'([A-Z][\w.&()\- ]{2,}?(?:Inc\.?|Corporation|Corp\.?|Ltd\.?|LLC|L\.L\.C\.|SE|N\.V\.|Limited|Holdings?|Group|Company|Technologies|Technology|Bio|Insurance|Labs|Software|Systems|Solutions|Holdco))\b', t)
         if m:
             return m.group(1).strip()
-        # Fallback: last two or three capitalized words
+        
+        # Look for company name patterns: "Company Name Inc" or "Company Name LLC"
+        # Try to find the last capitalized phrase that looks like a company
         caps = re.findall(r'(?:\b[A-Z][a-zA-Z0-9.&()\-]+\b)', t)
         if len(caps) >= 2:
+            # Take last 2-3 words that form a company name
+            # Skip if it's just "Investment Type" or similar
+            filtered = [c for c in caps if c.lower() not in ['investment', 'type', 'debt', 'equity', 'warrants']]
+            if len(filtered) >= 2:
+                return ' '.join(filtered[-2:])
+            elif len(filtered) >= 1:
+                return filtered[-1]
             return ' '.join(caps[-2:])
-        return t
+        
+        # If we have a single capitalized word that's not too short, use it
+        if len(caps) == 1 and len(caps[0]) > 3:
+            return caps[0]
+        
+        return t if t and len(t) > 3 else 'Unknown'
 
     def _percent(self, s: str) -> str:
         raw = str(s).strip().rstrip('%')
@@ -471,13 +658,92 @@ class RWAYExtractor:
         out = f"{v:.4f}".rstrip('0').rstrip('.')
         return f"{out}%"
 
+    def _clean_industry(self, industry: str) -> Optional[str]:
+        """Clean industry text by removing company names, fragments, and invalid tokens."""
+        if not industry:
+            return None
+        
+        s = html.unescape(industry)
+        s = re.sub(r"\s+", " ", s).strip()
+        
+        # Remove company names (anything with entity suffixes like Inc, LLC, Corp, etc.)
+        # This pattern matches company names within the industry text
+        s = re.sub(r'[A-Z][A-Za-z0-9\s&,\-\.]+?(?:Inc\.?|LLC|Ltd\.?|Corp\.?|Corporation|LP|L\.P\.|Holdings|Holdco|Limited|Company|Co\.|SE|N\.V\.|Group|Technologies|Technology|Software|Systems|Solutions|Holdco|Holdings)\b', '', s)
+        
+        # Remove fragments like "(fka", "fka", "(formerly", etc.
+        s = re.sub(r'\([^)]*fka[^)]*\)', '', s, flags=re.IGNORECASE)
+        s = re.sub(r'\([^)]*formerly[^)]*\)', '', s, flags=re.IGNORECASE)
+        s = re.sub(r'\bfka\b', '', s, flags=re.IGNORECASE)
+        s = re.sub(r'\bformerly\b', '', s, flags=re.IGNORECASE)
+        
+        # Remove incomplete parentheses
+        s = re.sub(r'\([^)]*$', '', s)  # Remove unclosed opening paren
+        s = re.sub(r'^[^(]*\)', '', s)  # Remove unclosed closing paren
+        
+        # Remove standalone entity suffixes that might be left over
+        s = re.sub(r'\b(Inc\.?|LLC|Ltd\.?|Corp\.?|Corporation|LP|L\.P\.|Holdings|Holdco|Limited|Company|Co\.|SE|N\.V\.)\b', '', s, flags=re.IGNORECASE)
+        
+        # Remove leading/trailing punctuation and clean up
+        s = re.sub(r'^[,\s\.\-]+', '', s)
+        s = re.sub(r'[,\s\.\-]+$', '', s)
+        s = re.sub(r'\s+', ' ', s).strip()
+        
+        # If what's left is too short or looks like a company name fragment, return None
+        if len(s) < 3:
+            return None
+        
+        # Check if it looks like a valid industry (not just a single word that's a common company word)
+        words = s.split()
+        if len(words) == 1 and words[0].lower() in ['software', 'systems', 'technology', 'solutions', 'services', 'holdings', 'group']:
+            return None
+        
+        # If it contains numbers or looks like a date/rate, it's probably not an industry
+        if re.search(r'\d', s):
+            return None
+        
+        return s if s else None
+
     def _clean_company_name(self, name: str) -> str:
         if not name:
             return name
         s = html.unescape(name)
         s = re.sub(r"\s+" , " ", s).strip().strip(',')
-        s = re.sub(r'^(and|&|services|service|systems|application|applications|commercial|professional|supplies)\b\s+', '', s, flags=re.IGNORECASE)
+        
+        # Remove investment type prefixes at the start
+        s = re.sub(r'^(Warrants|Debt Investments|Equity Investments)\s+', '', s, flags=re.IGNORECASE)
+        
+        # Remove industry prefixes that might be at the start
+        industry_prefixes = [
+            r'^Application\s+Software\s+',
+            r'^Technology\s+Hardware\s+&\s+Equipment\s+',
+            r'^Financial\s+Services\s+',
+            r'^Commercial\s+&\s+Professional\s+Services\s+',
+            r'^Consumer\s+Staples\s+Distribution\s+&\s+Retail\s+',
+            r'^Media\s+&\s+Entertainment\s+',
+            r'^Insurance\s+',
+            r'^Household\s+and\s+Personal\s+Products\s+',
+            r'^Health\s+Care\s+Equipment\s+&\s+Services\s+',
+            r'^Systems\s+',
+            r'^Technology\s+',
+        ]
+        for prefix in industry_prefixes:
+            s = re.sub(prefix, '', s, flags=re.IGNORECASE)
+        
+        # Remove common prefixes that aren't part of company name
+        s = re.sub(r'^(and|&|services|service|systems|application|applications|commercial|professional|supplies|software|technology|hardware|equipment|financial|insurance|media|entertainment|consumer|staples|distribution|retail|household|personal|products)\b\s+', '', s, flags=re.IGNORECASE)
+        
+        # Remove investment-related suffixes
         s = re.sub(r'\b(Common|Preferred)\s+Stock\b$', '', s, flags=re.IGNORECASE).strip().strip(',')
+        s = re.sub(r'\b(Investment|Investments|Debt|Equity|Warrants)\b$', '', s, flags=re.IGNORECASE).strip().strip(',')
+        
+        # Remove if it's just "Inc", "LLC", etc.
+        if s.strip() in ['Inc', 'LLC', 'Ltd', 'Corp', 'Inc.', 'LLC.', 'Ltd.', 'Corp.', 'Software', 'Systems', 'Technology']:
+            return 'Unknown'
+        
+        # If the name is too short or doesn't look like a company name, return Unknown
+        if len(s.strip()) < 3:
+            return 'Unknown'
+        
         return s
 
     def _build_industry_index(self, content: str) -> Dict[str,str]:
@@ -518,3 +784,5 @@ def main():
 
 if __name__=='__main__':
     main()
+
+

@@ -30,7 +30,7 @@ class CSWCCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "CSWC") -> Dict:
+    def extract_from_ticker(self, ticker: str = "CSWC"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SEC filings."""
         logger.info(f"Extracting investments for {ticker} from SEC filings")
         
@@ -42,7 +42,7 @@ class CSWCCustomExtractor:
         logger.info(f"Found CIK: {cik}")
         
         # Get latest 10-Q filing
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise ValueError(f"Could not find 10-Q filing for {ticker}")
         
@@ -83,7 +83,8 @@ class CSWCCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate', 'shares_units'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment', 'shares_units'
             ])
             writer.writeheader()
             for inv in all_investments:
@@ -349,6 +350,25 @@ class CSWCCustomExtractor:
                 if investment.get('business_description'):
                     current_business_desc = investment['business_description']
         
+        # Extract commitment_limit and undrawn_commitment for revolvers
+        # Heuristic: If fair_value > principal_amount, it might be a revolver
+        if investment.get('fair_value') and investment.get('principal_amount'):
+            try:
+                fv = int(investment['fair_value'])
+                principal = int(investment['principal_amount'])
+                if fv > principal:
+                    investment['commitment_limit'] = fv
+                    investment['undrawn_commitment'] = fv - principal
+            except (ValueError, TypeError):
+                pass
+        elif investment.get('fair_value') and not investment.get('principal_amount'):
+            # If we have fair value but no principal, might be a revolver commitment
+            try:
+                investment['commitment_limit'] = int(investment['fair_value'])
+            except (ValueError, TypeError):
+                pass
+        
+
         return investments
     
     def _extract_cell_text(self, cell) -> str:

@@ -51,7 +51,7 @@ class KBDCCustomExtractor:
         
         logger.info(f"Found CIK: {cik}")
         
-        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
             raise RuntimeError("Could not locate latest 10-Q index for KBDC")
         
@@ -710,7 +710,7 @@ class KBDCCustomExtractor:
             'company_name', 'industry', 'business_description', 'investment_type',
             'acquisition_date', 'maturity_date', 'principal_amount', 'cost_basis',
             'fair_value', 'interest_rate', 'reference_rate', 'spread', 'floor_rate',
-            'pik_rate', 'shares_units', 'percent_net_assets'
+            'pik_rate', 'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
         ]
         
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
@@ -739,7 +739,10 @@ class KBDCCustomExtractor:
                     'floor_rate': inv.get('floor_rate'),
                     'pik_rate': inv.get('pik_rate'),
                     'shares_units': inv.get('shares_units'),
-                    'percent_net_assets': inv.get('percent_net_assets')
+                    'percent_net_assets': inv.get('percent_net_assets'),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit'),
+                    'undrawn_commitment': inv.get('undrawn_commitment')
                 })
 
 

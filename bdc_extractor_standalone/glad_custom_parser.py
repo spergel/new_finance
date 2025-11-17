@@ -30,7 +30,7 @@ class GLADCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "GLAD") -> Dict:
+    def extract_from_ticker(self, ticker: str = "GLAD"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SEC filing HTML tables."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -42,10 +42,10 @@ class GLADCustomExtractor:
         logger.info(f"Found CIK: {cik}")
         
         # Get latest 10-Q filing URL
-        filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
+        filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not filing_index_url:
             # Try 10-K as fallback
-            filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-K", cik=cik)
+            filing_index_url = self.sec_client.get_filing_index_url(ticker, "10-K", cik=cik, year=year, min_date=min_date)
             if not filing_index_url:
                 raise ValueError(f"Could not find 10-Q or 10-K filing for {ticker}")
         
@@ -99,7 +99,8 @@ class GLADCustomExtractor:
             writer = csv.DictWriter(f, fieldnames=[
                 'company_name', 'industry', 'business_description', 'investment_type',
                 'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
-                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate'
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in all_investments:
@@ -118,6 +119,11 @@ class GLADCustomExtractor:
                     'spread': inv.get('spread', ''),
                     'floor_rate': inv.get('floor_rate', ''),
                     'pik_rate': inv.get('pik_rate', ''),
+                    'shares_units': inv.get('shares_units', ''),
+                    'percent_net_assets': inv.get('percent_net_assets', ''),
+                    'currency': inv.get('currency', 'USD'),
+                    'commitment_limit': inv.get('commitment_limit', ''),
+                    'undrawn_commitment': inv.get('undrawn_commitment', ''),
                 })
         
         logger.info(f"Saved {len(all_investments)} investments to {output_file}")
@@ -426,6 +432,11 @@ class GLADCustomExtractor:
             'spread': None,
             'floor_rate': None,
             'pik_rate': None,
+            'shares_units': None,
+            'percent_net_assets': None,
+            'currency': 'USD',
+            'commitment_limit': None,
+            'undrawn_commitment': None,
         }
         
         # Get company name (may be in this row or carried from previous)
@@ -698,6 +709,24 @@ class GLADCustomExtractor:
                 # Very large values (> 100M) are likely summary/total rows - skip them
                 elif cost_val > 100000000 or fv_val > 100000000:
                     return None
+        
+        # Extract commitment_limit and undrawn_commitment for revolvers
+        # Heuristic: If fair_value > principal_amount, it might be a revolver
+        if investment.get('fair_value') and investment.get('principal_amount'):
+            try:
+                fv = int(investment['fair_value'])
+                principal = int(investment['principal_amount'])
+                if fv > principal:
+                    investment['commitment_limit'] = fv
+                    investment['undrawn_commitment'] = fv - principal
+            except (ValueError, TypeError):
+                pass
+        elif investment.get('fair_value') and not investment.get('principal_amount'):
+            # If we have fair value but no principal, might be a revolver commitment
+            try:
+                investment['commitment_limit'] = int(investment['fair_value'])
+            except (ValueError, TypeError):
+                pass
         
         # Skip if no meaningful data (must have at least one financial value or valid investment type)
         has_financial_data = (investment.get('principal_amount') or 

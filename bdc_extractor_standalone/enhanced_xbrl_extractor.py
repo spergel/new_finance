@@ -285,3 +285,4 @@ class EnhancedXBRLExtractor:
         
         return inv
 
+
