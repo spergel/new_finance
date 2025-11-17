@@ -48,7 +48,7 @@ class PFLTExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "PFLT"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "PFLT", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
@@ -123,8 +123,10 @@ class PFLTExtractor:
         out_file = os.path.join(out_dir, 'PFLT_PennantPark_Floating_Rate_Capital_Ltd_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=[
-                'company_name','industry','business_description','investment_type','acquisition_date','maturity_date',
-                'principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate'
+                'company_name', 'industry', 'business_description', 'investment_type',
+                'acquisition_date', 'maturity_date', 'principal_amount', 'cost', 'fair_value',
+                'interest_rate', 'reference_rate', 'spread', 'floor_rate', 'pik_rate',
+                'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
             ])
             writer.writeheader()
             for inv in investments:
@@ -136,18 +138,23 @@ class PFLTExtractor:
                 writer.writerow({
                     'company_name': inv.company_name,
                     'industry': standardized_industry,
-                    'business_description': inv.business_description,
+                    'business_description': inv.business_description or '',
                     'investment_type': standardized_inv_type,
-                    'acquisition_date': inv.acquisition_date,
-                    'maturity_date': inv.maturity_date,
-                    'principal_amount': inv.principal_amount,
-                    'cost': inv.cost,
-                    'fair_value': inv.fair_value,
-                    'interest_rate': inv.interest_rate,
-                    'reference_rate': standardized_ref_rate,
-                    'spread': inv.spread,
-                    'floor_rate': inv.floor_rate,
-                    'pik_rate': inv.pik_rate,
+                    'acquisition_date': inv.acquisition_date or '',
+                    'maturity_date': inv.maturity_date or '',
+                    'principal_amount': inv.principal_amount or '',
+                    'cost': inv.cost or '',
+                    'fair_value': inv.fair_value or '',
+                    'interest_rate': inv.interest_rate or '',
+                    'reference_rate': standardized_ref_rate or '',
+                    'spread': inv.spread or '',
+                    'floor_rate': inv.floor_rate or '',
+                    'pik_rate': inv.pik_rate or '',
+                    'shares_units': inv.shares_units or '',
+                    'percent_net_assets': inv.percent_net_assets or '',
+                    'currency': inv.currency or 'USD',
+                    'commitment_limit': inv.commitment_limit or '',
+                    'undrawn_commitment': inv.undrawn_commitment or '',
                 })
 
         logger.info(f"Saved to {out_file}")

@@ -26,10 +26,8 @@ import requests
 import csv
 from collections import defaultdict
 
-from xbrl_typed_extractor import BDCExtractionResult
 from sec_api_client import SECAPIClient
 from standardization import standardize_investment_type, standardize_industry, standardize_reference_rate
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -41,39 +39,35 @@ class KBDCCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "KBDC") -> BDCExtractionResult:
+    def extract_from_ticker(self, ticker: str = "KBDC", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from KBDC's latest 10-Q filing."""
         logger.info(f"Extracting investments for {ticker}")
         
         cik = self.sec_client.get_cik(ticker)
         if not cik:
-            raise RuntimeError("Could not resolve CIK for KBDC")
+            raise ValueError(f"Could not find CIK for ticker {ticker}")
         
         logger.info(f"Found CIK: {cik}")
         
         index_url = self.sec_client.get_filing_index_url(ticker, "10-Q", cik=cik, year=year, min_date=min_date)
         if not index_url:
-            raise RuntimeError("Could not locate latest 10-Q index for KBDC")
+            raise ValueError(f"Could not find 10-Q filing for {ticker}")
         
         logger.info(f"Filing index: {index_url}")
         
-        # Get HTML URL and filing date
+        # Get HTML URL
         documents = self.sec_client.get_documents_from_index(index_url)
         main_html = next((d for d in documents if d.filename.lower().endswith('.htm') and 'index' not in d.filename.lower()), None)
         if not main_html:
-            raise RuntimeError("Could not find HTML document")
+            raise ValueError("Could not find HTML document")
         
         htm_url = main_html.url
         
-        # Get filing date from index page
-        filing_date = self._get_filing_date_from_index(index_url)
-        
         logger.info(f"HTML URL: {htm_url}")
-        logger.info(f"Filing date: {filing_date}")
         
-        return self.extract_from_filing(htm_url, "Kayne Anderson BDC, Inc.", cik, filing_date)
+        return self.extract_from_url(htm_url, "Kayne_Anderson_BDC_Inc", cik)
     
-    def extract_from_filing(self, htm_url: str, company_name: str, cik: str, filing_date: str) -> BDCExtractionResult:
+    def extract_from_url(self, htm_url: str, company_name: str, cik: str) -> Dict:
         """Extract complete KBDC investment data from HTML only."""
         
         logger.info(f"Starting KBDC extraction from HTML...")
@@ -84,7 +78,7 @@ class KBDCCustomExtractor:
         
         # Calculate totals
         total_principal = sum(inv.get('principal_amount') or 0 for inv in investments)
-        total_cost = sum(inv.get('cost_basis') or 0 for inv in investments)
+        total_cost = sum(inv.get('cost') or 0 for inv in investments)
         total_fair_value = sum(inv.get('fair_value') or 0 for inv in investments)
         
         # Create breakdowns
@@ -98,59 +92,21 @@ class KBDCCustomExtractor:
         # Save to CSV
         output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
         os.makedirs(output_dir, exist_ok=True)
-        output_file = os.path.join(output_dir, f'KBDC_Kayne_Anderson_BDC_investments.csv')
+        output_file = os.path.join(output_dir, f'KBDC_Kayne_Anderson_BDC_Inc_investments.csv')
         
         self._save_to_csv(investments, output_file)
         logger.info(f"Saved {len(investments)} investments to {output_file}")
         
-        return BDCExtractionResult(
-            company_name=company_name,
-            cik=cik,
-            filing_date=filing_date,
-            filing_url=htm_url,
-            extraction_date=datetime.now().isoformat(),
-            total_investments=len(investments),
-            total_principal=total_principal,
-            total_cost=total_cost,
-            total_fair_value=total_fair_value,
-            investments=investments,
-            industry_breakdown=dict(industry_breakdown),
-            investment_type_breakdown=dict(investment_type_breakdown)
-        )
-    
-    def _get_filing_date_from_index(self, index_url: str) -> str:
-        """Extract filing date from the index page."""
-        try:
-            resp = requests.get(index_url, headers=self.headers)
-            resp.raise_for_status()
-            soup = BeautifulSoup(resp.text, 'html.parser')
-            
-            # Look for filing date in the page
-            # Usually in a table row with "Filing Date" or "Document Period End Date"
-            for row in soup.find_all('tr'):
-                cells = row.find_all(['td', 'th'])
-                if len(cells) >= 2:
-                    label = cells[0].get_text(strip=True).lower()
-                    if 'filing date' in label or 'filed as of' in label:
-                        date_str = cells[1].get_text(strip=True)
-                        # Try to parse and format
-                        try:
-                            # Common formats: MM/DD/YYYY, YYYY-MM-DD
-                            if '/' in date_str:
-                                parts = date_str.split('/')
-                                if len(parts) == 3:
-                                    return f"{parts[2]}-{parts[0].zfill(2)}-{parts[1].zfill(2)}"
-                            elif '-' in date_str and len(date_str) == 10:
-                                return date_str
-                        except:
-                            pass
-            
-            # Fallback: try to get from URL or use today's date
-            logger.warning("Could not find filing date in index, using today")
-            return datetime.now().strftime('%Y-%m-%d')
-        except Exception as e:
-            logger.warning(f"Error getting filing date: {e}, using today")
-            return datetime.now().strftime('%Y-%m-%d')
+        return {
+            'company_name': company_name,
+            'cik': cik,
+            'total_investments': len(investments),
+            'total_principal': total_principal,
+            'total_cost': total_cost,
+            'total_fair_value': total_fair_value,
+            'industry_breakdown': dict(industry_breakdown),
+            'investment_type_breakdown': dict(investment_type_breakdown)
+        }
     
     def _parse_html_table(self, html_url: str) -> List[Dict]:
         """Parse KBDC's HTML schedule of investments table."""
@@ -556,7 +512,7 @@ class KBDCCustomExtractor:
                 'spread': spread,
                 'pik_rate': pik_rate,
                 'principal_amount': principal,
-                'cost_basis': cost,
+                'cost': cost,
                 'fair_value': fair_value,
                 'percent_net_assets': percent_net_assets
             }
@@ -708,7 +664,7 @@ class KBDCCustomExtractor:
         """Save investments to CSV file."""
         fieldnames = [
             'company_name', 'industry', 'business_description', 'investment_type',
-            'acquisition_date', 'maturity_date', 'principal_amount', 'cost_basis',
+            'acquisition_date', 'maturity_date', 'principal_amount', 'cost',
             'fair_value', 'interest_rate', 'reference_rate', 'spread', 'floor_rate',
             'pik_rate', 'shares_units', 'percent_net_assets', 'currency', 'commitment_limit', 'undrawn_commitment'
         ]
@@ -731,7 +687,7 @@ class KBDCCustomExtractor:
                     'acquisition_date': inv.get('acquisition_date'),
                     'maturity_date': inv.get('maturity_date'),
                     'principal_amount': inv.get('principal_amount'),
-                    'cost_basis': inv.get('cost_basis'),
+                    'cost': inv.get('cost'),
                     'fair_value': inv.get('fair_value'),
                     'interest_rate': inv.get('interest_rate'),
                     'reference_rate': standardized_ref_rate,
@@ -753,10 +709,10 @@ def main():
     extractor = KBDCCustomExtractor()
     try:
         result = extractor.extract_from_ticker("KBDC")
-        print(f"\n✓ Successfully extracted {result.total_investments} investments")
-        print(f"  Total Principal: ${result.total_principal:,.0f}")
-        print(f"  Total Cost: ${result.total_cost:,.0f}")
-        print(f"  Total Fair Value: ${result.total_fair_value:,.0f}")
+        print(f"\n✓ Successfully extracted {result['total_investments']} investments")
+        print(f"  Total Principal: ${result['total_principal']:,.0f}")
+        print(f"  Total Cost: ${result['total_cost']:,.0f}")
+        print(f"  Total Fair Value: ${result['total_fair_value']:,.0f}")
     except Exception as e:
         logger.error(f"Extraction failed: {e}", exc_info=True)
 
