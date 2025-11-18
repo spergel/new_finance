@@ -1,6 +1,0 @@
-Table 60 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment Index Spread Cash Interest Rate (1)(2) PIK Maturity Date Shares Principal Cost Fair Value (3) Notes Access CIG, LLC Diversified Support Services First Lien Term Loan SOFR+ 4.25 % 8.38 % 8/18/2028 $ 1,965 $ 1,940 $ 1,977 ADB Companies, LLC Construction & Engineering First Lien Term Loan SOFR+ 7.50 % 11.06 % 1.00 % 12/18/2025 3,071 3,058 2,964 (4) ADB Companies, LLC Construction & Engineering First Lien Term Loan SOFR+ 7.50 % 11.06 % 1.00 % 12/18/2025 

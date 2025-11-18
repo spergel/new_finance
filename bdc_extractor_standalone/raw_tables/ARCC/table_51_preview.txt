@@ -1,6 +1,0 @@
-Table 51 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets GPM Investments, LLC and ARKO Corp. Convenience store operator Common stock 12/2020 2,088,478 19.8 9.5 (16) Warrant to purchase common stock 12/2020 12/2025 1,088,780 1.6 — (2)(16) 21.4 9.5 Hills Distribution, Inc., Hills Intermediate FT Holdings, LLC and GMP Hills, LP (13) Distributor of HVAC, plumbing, and water heater e

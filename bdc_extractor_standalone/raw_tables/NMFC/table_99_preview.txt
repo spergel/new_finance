@@ -1,6 +1,0 @@
-Table 99 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) Wrench Group LLC Consumer Services SOFR(Q) 4.00 % 8.59 % 10/2028 $ 14,109 $ 14,086 $ 13,597 Xplor T1, LLC Software SOFR(Q) 3.50 % 7.83 % 06/2031 5,587 5,560 5,651 Zest Acquisition Corp. Healthcare SOFR(Q) 5.25 % 9.84 % 02/2028 4,031 3,916 4,082 Total Funded Investments $ 724,965 $ 716,661 $ 715,076 Unfunded Investments - First lien AmSpec Parent, LL

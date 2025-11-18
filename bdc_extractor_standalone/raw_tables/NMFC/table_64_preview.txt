@@ -1,6 +1,0 @@
-Table 64 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Knockout Intermediate Holdings I Inc.(30) Software Preferred shares (3)(13) SOFR(S)* 10.75 %/PIK 15.03 % 06/2022 — 15,150 $ 20,819 $ 21,010 1.55 % ACI Parent Inc.(26) Healthcare Preferred shares (3)(13) FIXED(Q)* 11.75 %/PIK 11.75 % 08/2021 — 12,500 18,444 16,419 1.21 % Project 

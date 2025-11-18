@@ -1,6 +1,0 @@
-Table 25 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Subtotal: Software ( 0.48 %)* $ 11,625 $ 10,444 Space Technologies Loft Orbital Solutions Inc. Warrant 9/10/2025 Common Stock 22,688 185 169 Stoke Space Technologies, Inc. Warrant 6/16/2025 Common Stock 99,497 990 2,208 (6)(15) Subtotal: Space Technologies ( 0.11 %)* 1,175 2,377 Sustainable and Renewable Technology Ampion, PBC Warrant 4/15/2022 Common Stock 18,472 52 85 Electric Hydrogen Co. Warr

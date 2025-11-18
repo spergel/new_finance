@@ -1,6 +1,0 @@
-Table 31 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS (Unaudited) September 30, 2025 Portfolio Company 1,5,18,21 Type of Investment 2 Acquisition Date 14 Cost 12 Fair Value 4 % of Net Assets Equity Investments Units Type Transportation & Logistics GUARDIAN FLEET SERVICES, INC. 2,000,000 Class A Units 2/10/2023 2,000 2,877 (9)(13) Warrants (Expiration - February 10, 2033) 2/10/2023 80 59 (9)(13) Warrants (Expiration - November 30, 2033) 11/30/2023 20 32 (9)(13) Warra

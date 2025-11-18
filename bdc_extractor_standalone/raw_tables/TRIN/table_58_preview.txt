@@ -1,6 +1,0 @@
-Table 58 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Transportation Technology NextCar Holding Company, Inc. Secured Loan December 14, 2021 March 31, 2025 Variable interest rate Prime + 5.8 % or Floor rate 9.0 %; EOT 2.0 % $ 2,927 $ 3,188 $ 926 (8) Secured Loan December 15, 2021 March 31, 2025 Variable interest rate Prime + 5.8 % or Floor rate 9.0 %; EOT 2.0 % 

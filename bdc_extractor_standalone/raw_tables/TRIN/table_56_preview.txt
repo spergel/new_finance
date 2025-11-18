@@ -1,6 +1,0 @@
-Table 56 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Software as a Service ("SaaS") BackBlaze, Inc. Equipment Financing March 29, 2021 April 1, 2025 Fixed interest rate 7.5 %; EOT 11.5% $ 198 $ 518 $ 510 (14) Cpacket Networks, Inc. Secured Loan January 29, 2024 February 1, 2029 Variable interest rate PRIME + 4.8 % or Floor rate 12.0 %+PIK Fixed Interest Rate 1.

@@ -1,6 +1,0 @@
-Table 18 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Star Parent, Inc. Life Sciences Tools & Services First Lien Term Loan SOFR+ 4.00 % 8.30 % 9/27/2030 $ 9,950 $ 9,649 $ 9,865 (6) SumUp Holdings Luxembourg Diversified Financial Services First Lien Term Loan E+ 6.50 % 8.54 % 4/25/2031 € 18,846 20,199 22,122 (6)(11)(15)(19) SVP-Singer Holdings Inc. Home Furnishings Common Stock 418,881 2,463 2,4

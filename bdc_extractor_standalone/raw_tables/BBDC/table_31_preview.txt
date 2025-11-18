@@ -1,6 +1,0 @@
-Table 31 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Aptus 1829. GmbH Preferred Stock 09/21 13 $ 120 $ 66 — % (3)(7)(29) Polymer Solutions Group Holdings, LLC Common Stock 02/22 74 — — — % (7)(28)(29) Subtotal Chemicals, Plastics, & Rubber ( — %)* 220 185 Construction & Building BKF Buyer, Inc. Common Stock 08/24 1,004,467 1,004 1,115 0.1 % (7)(29) MNS Buyer, Inc. Partnership Units 08/21 76,923 77 189 — % (7)(29) Oce

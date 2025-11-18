@@ -37,7 +37,7 @@ class ICMBExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "ICMB"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "ICMB", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
@@ -523,7 +523,7 @@ class ICMBExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "ICMB"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "ICMB", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:

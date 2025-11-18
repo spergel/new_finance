@@ -1,6 +1,0 @@
-Table 30 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Whitcraft Holdings, Inc. LP Units 02/23 63,087.1 $ 631 $ 1,105 0.1 % (7)(29) Subtotal Aerospace & Defense ( 0.4 %)* 2,104 3,090 Automotive Burgess Point Purchaser Corporation LP Units 07/22 455 455 414 — % (7)(29) Randys Holdings, Inc. Common Stock 11/22 5,333 533 704 0.1 % (7)(29) SPATCO Energy Solutions, LLC Common Stock 07/24 277,917 278 195 — % (7)(29) SVI Inte

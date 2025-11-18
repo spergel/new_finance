@@ -1,6 +1,0 @@
-Table 95 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) VT Topco, Inc. Business Services SOFR(M) 3.00 % 7.16 % 08/2030 $ 8,859 $ 8,798 $ 8,602 Xplor T1, LLC Software SOFR(Q) 3.50 % 7.50 % 06/2031 5,545 5,521 5,552 Zelis Cost Management Buyer, Inc. Healthcare SOFR(M) 3.25 % 7.41 % 11/2031 16,388 16,388 16,409 Zest Acquisition Corp. Healthcare SOFR(Q) 5.25 % 9.56 % 02/2028 4,551 4,463 4,551 Total Funded In

@@ -1,6 +1,0 @@
-Table 21 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets PDI TA Holdings, Inc. Software First lien (4)(13) SOFR(Q) 5.50 % 9.81 % 01/2024 02/2031 $ 22,227 $ 22,133 $ 22,227 First lien (3)(13)(16) - Drawn SOFR(Q) 5.50 % 9.81 % 01/2024 02/2031 732 728 732 First lien (3)(11)(13) SOFR(Q) 5.50 % 9.81 % 03/2025 02/2031 510 510 510 23,371 23,

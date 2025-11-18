@@ -30,7 +30,7 @@ class BCSFCustomExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "BCSF"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "BCSF", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SEC filing HTML tables."""
         logger.info(f"Extracting investments for {ticker}")
         
@@ -184,7 +184,7 @@ class BCSFCustomExtractor:
                 text = prev.get_text().lower()
                 context_text += " " + text
                 if len(context_text) > 2000:
-                break
+                    break
         
             # Skip if it's a financial statement
             if any(kw in context_text for kw in financial_statement_keywords):

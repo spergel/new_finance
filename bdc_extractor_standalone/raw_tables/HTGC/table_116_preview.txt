@@ -1,6 +1,0 @@
-Table 116 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-(in thousands) Portfolio Company Industry Type of Investment (1) Maturity Date Interest Rate and Floor Principal or Shares Cost Value (2) Control Investments Majority Owned Control Investments Coronado Aesthetics, LLC Medical Devices & Equipment Preferred Series A Equity 5,000,000 $ 250 $ 69 Medical Devices & Equipment Common Stock 180,000 — — Total Coronado Aesthetics, LLC $ 250 $ 69 Gibraltar Acquisition LLC (3) Diversified Financial Services Unsecured Debt September 2026 FIXED 3.45 %, PIK Int

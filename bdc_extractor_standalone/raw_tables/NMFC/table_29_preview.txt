@@ -1,6 +1,0 @@
-Table 29 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Adelaide Borrower, LLC** Software First lien (3)(11)(13) SOFR(Q)* 3.38 % + 3.38 %/PIK 10.75 % 05/2024 05/2030 $ 4,739 $ 4,701 $ 4,739 0.38 % Total Funded Debt Investments - Australia $ 13,871 $ 13,964 1.11 % Total Funded Debt Investments $ 2,047,235 $ 1,998,646 158.31 % Equity -

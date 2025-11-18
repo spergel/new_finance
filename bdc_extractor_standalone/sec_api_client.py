@@ -291,6 +291,53 @@ class SECAPIClient:
             logger.error(f"Error fetching filing URL for {ticker}: {e}")
             return None
 
+    def get_latest_filing_date(self, ticker: str, filing_types: List[str], 
+                              cik: Optional[str] = None) -> Optional[date]:
+        """
+        Get the date of the most recent filing of the specified types.
+        
+        Args:
+            ticker: Company ticker symbol
+            filing_types: List of filing types to check (e.g., ["10-Q", "10-K"])
+            cik: Optional CIK number to use directly
+            
+        Returns:
+            Date of the most recent filing, or None if not found
+        """
+        if cik is None:
+            cik = self.get_cik(ticker)
+        if not cik:
+            return None
+
+        try:
+            submissions_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
+            response = requests.get(submissions_url, headers=self.headers)
+            response.raise_for_status()
+            submissions = response.json()
+
+            recent_filings = submissions['filings']['recent']
+            
+            latest_date = None
+            
+            for i, form in enumerate(recent_filings['form']):
+                if form in filing_types:
+                    report_date_str = recent_filings.get('reportDate', [None])[i]
+                    if not report_date_str:
+                        continue
+                    
+                    try:
+                        report_date = datetime.strptime(report_date_str, '%Y-%m-%d').date()
+                        if latest_date is None or report_date > latest_date:
+                            latest_date = report_date
+                    except (ValueError, TypeError):
+                        continue
+            
+            return latest_date
+            
+        except Exception as e:
+            logger.error(f"Error fetching latest filing date for {ticker}: {e}")
+            return None
+
     def get_documents_from_index(self, index_url: str) -> List[FilingDocument]:
         """
         Parse a filing's index page to get all document URLs and metadata.

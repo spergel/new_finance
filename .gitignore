@@ -131,7 +131,8 @@ dmypy.json
 
 # Project specific
 data/
-scripts/
+# scripts/ directory is needed (contains generate_profiles). If individual helper scripts
+# should stay ignored, add specific patterns below instead of the entire folder.
 debug_*.py
 test_*.py
 *_test.py

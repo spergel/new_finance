@@ -1,6 +1,0 @@
-Table 42 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Diamond Mezzanine 24 LLC (13) Property and casualty insurance underwriting and distribution platform First lien senior secured revolving loan 9.22 % SOFR (Q) 5.00 % 10/2024 10/2030 0.3 0.3 0.3 (2)(9) First lien senior secured loan 9.31 % SOFR (Q) 5.00 % 10/2024 10/2030 19.4 19.4 19.4 (2)(9) 19.7 19.7 DOXA Insurance Holding

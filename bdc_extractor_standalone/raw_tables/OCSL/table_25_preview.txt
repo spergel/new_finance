@@ -1,6 +1,0 @@
-Table 25 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Delta Leasing SPV II LLC Specialized Finance Subordinated Debt Term Loan 8.00 % 3.00 % 8/31/2029 $ 8,456 $ 8,456 $ 8,456 (11)(15)(19) Delta Leasing SPV II LLC Specialized Finance Subordinated Debt Term Loan 3.00 % 7.00 % 8/31/2029 34,316 34,316 34,316 (11)(15) Delta Leasing SPV II LLC Specialized Finance Preferred Equity 419 419 531 (11)(15) 

@@ -1,6 +1,0 @@
-Table 105 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) Funded Investments - First lien Accelya Lux Finco S.a.r.l. Business Services SOFR(Q) 5.25 % 9.21 % 10/2032 $ 6,782 $ 6,646 $ 6,646 ADG, LLC Healthcare SOFR(Q) 1.00 % + 3.00 %/PIK 8.15 % 09/2026 18,187 18,184 14,777 ADMI Corp. (aka Aspen Dental) Healthcare SOFR(M) 3.75 % 8.03 % 12/2027 1,800 1,796 1,710 AmSpec Parent, LLC Energy SOFR(Q) 3.50 % 7.50 %

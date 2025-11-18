@@ -1,6 +1,0 @@
-Table 11 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS (Unaudited) September 30, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK Commerical Services & Supplies LEHR UPFITTERS, LLC Revolving Loan 9.66 % SOFR (Q) 5.50 % 1.50 % 9/19/2024 9/19/2029 525 483 521 (10) First Lien 9.50 % SOFR (Q) 5.50 % 1.50 % 9/19/2024 9

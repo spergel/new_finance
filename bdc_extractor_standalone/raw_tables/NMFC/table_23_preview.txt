@@ -1,6 +1,0 @@
-Table 23 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Viper Bidco. Inc. Software First lien (3)(11)(13)(14) SONIA(D) 4.75 % 8.72 % 11/2024 11/2031 £ 11,940 $ 15,066 $ 15,979 1.27 % Digicert, Inc. Software First lien (2)(12)(13) SOFR(M) 5.75 % 9.91 % 07/2025 07/2030 $ 15,500 15,387 15,384 1.22 % Bonterra LLC Software First lien (3)(

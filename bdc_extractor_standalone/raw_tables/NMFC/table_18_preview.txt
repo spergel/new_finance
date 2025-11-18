@@ -1,6 +1,0 @@
-Table 18 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets MRI Software LLC Software First lien (5)(13) SOFR(Q) 4.75 % 8.75 % 01/2020 02/2027 $ 21,261 $ 21,240 $ 21,261 First lien (3)(11)(13) SOFR(Q) 4.75 % 8.75 % 03/2021 02/2027 7,532 7,524 7,532 First lien (2)(12)(13) SOFR(Q) 4.75 % 8.75 % 03/2021 02/2027 4,486 4,483 4,486 First lien 

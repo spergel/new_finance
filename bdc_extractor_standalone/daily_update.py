@@ -14,7 +14,8 @@ import sys
 import logging
 import glob
 import importlib
-from datetime import datetime, timedelta
+import json
+from datetime import datetime, timedelta, date
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 
@@ -90,25 +91,37 @@ def get_extractor_class(module, ticker: str):
 
 
 def check_for_new_filing(ticker: str, sec_client: SECAPIClient, 
-                         days_back: int = 7) -> Optional[str]:
-    """Check if there's a new filing in the last N days."""
+                         last_update_date: Optional[date] = None) -> Optional[date]:
+    """
+    Check if there's a new filing more recent than the last update date.
+    
+    Args:
+        ticker: Company ticker symbol
+        sec_client: SEC API client instance
+        last_update_date: Date of last update (if None, will return latest filing date)
+        
+    Returns:
+        Date of the latest filing if it's newer than last_update_date, None otherwise
+    """
     try:
         cik = sec_client.get_cik(ticker)
         if not cik:
             logger.warning(f"Could not find CIK for {ticker}")
             return None
         
-        # Check for 10-Q first (more frequent)
-        index_url = sec_client.get_filing_index_url(ticker, "10-Q", cik=cik)
-        if index_url:
-            # Extract date from URL or check filing date
-            # For now, we'll just try to get the latest and compare
-            return index_url
+        # Get the latest filing date for 10-Q and 10-K
+        latest_filing_date = sec_client.get_latest_filing_date(ticker, ["10-Q", "10-K"], cik=cik)
         
-        # Check for 10-K
-        index_url = sec_client.get_filing_index_url(ticker, "10-K", cik=cik)
-        if index_url:
-            return index_url
+        if not latest_filing_date:
+            return None
+        
+        # If no last update date, return the latest filing date
+        if last_update_date is None:
+            return latest_filing_date
+        
+        # Return the filing date if it's newer than the last update
+        if latest_filing_date > last_update_date:
+            return latest_filing_date
         
         return None
     except Exception as e:
@@ -182,6 +195,40 @@ def run_parser(ticker: str, parser_file: str) -> Dict:
     return result
 
 
+def get_company_name_from_ticker(ticker: str) -> str:
+    """Get company name from ticker by reading the CSV filename."""
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
+    csv_files = glob.glob(os.path.join(output_dir, f'{ticker}_*_investments.csv'))
+    if csv_files:
+        # Extract company name from filename: TICKER_Company_Name_investments.csv
+        basename = os.path.basename(csv_files[0])
+        parts = basename.replace('_investments.csv', '').split('_', 1)
+        if len(parts) > 1:
+            return parts[1].replace('_', ' ')
+    return ticker
+
+def save_filing_dates(filing_dates: Dict[str, Dict], output_dir: str):
+    """Save latest filing dates to JSON file for frontend."""
+    filing_info_file = os.path.join(output_dir, 'bdc_filing_dates.json')
+    
+    # Read existing data if it exists
+    existing_data = {}
+    if os.path.exists(filing_info_file):
+        try:
+            with open(filing_info_file, 'r', encoding='utf-8') as f:
+                existing_data = json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not read existing filing dates: {e}")
+    
+    # Update with new data
+    existing_data.update(filing_dates)
+    
+    # Write back to file
+    with open(filing_info_file, 'w', encoding='utf-8') as f:
+        json.dump(existing_data, f, indent=2, ensure_ascii=False)
+    
+    logger.info(f"Saved filing dates to {filing_info_file}")
+
 def main(force_all: bool = False, days_back: int = 7):
     """Main function to check for updates and run parsers."""
     logger.info("=" * 80)
@@ -207,6 +254,9 @@ def main(force_all: bool = False, days_back: int = 7):
     logger.info(f"Found {len(parsers)} parser files")
     logger.info("")
     
+    # Track latest filing dates for all BDCs
+    filing_dates = {}
+    
     # Determine which parsers to run
     parsers_to_run = []
     
@@ -214,29 +264,108 @@ def main(force_all: bool = False, days_back: int = 7):
         logger.info("Force mode: Running all parsers")
         parsers_to_run = parsers
     else:
-        logger.info("Checking for new filings...")
-        cutoff_date = datetime.now() - timedelta(days=days_back)
+        logger.info("Checking for new 10-Q filings...")
         
         for ticker, parser_file in parsers:
             should_run = False
             
-            # Check if we have a last update time
+            # Always check for new 10-Q filings, regardless of CSV age
             if ticker in last_updates:
                 last_update = last_updates[ticker]
-                if last_update < cutoff_date:
-                    logger.info(f"{ticker}: Last updated {last_update.strftime('%Y-%m-%d')}, checking for new filing...")
-                    filing_url = check_for_new_filing(ticker, sec_client, days_back)
-                    if filing_url:
-                        logger.info(f"{ticker}: New filing found!")
-                        should_run = True
-                    else:
-                        logger.info(f"{ticker}: No new filing found")
+                last_update_date = last_update.date()
+                
+                logger.info(f"{ticker}: Last updated {last_update.strftime('%Y-%m-%d')}, checking for new 10-Q filing...")
+                new_filing_date = check_for_new_filing(ticker, sec_client, last_update_date)
+                
+                # Track latest filing date for this BDC
+                if new_filing_date:
+                    # Determine actual filing type (10-Q or 10-K)
+                    filing_type = '10-Q'
+                    q_date = sec_client.get_latest_filing_date(ticker, ["10-Q"])
+                    k_date = sec_client.get_latest_filing_date(ticker, ["10-K"])
+                    if k_date and (not q_date or k_date > q_date):
+                        filing_type = '10-K'
+                    elif q_date:
+                        filing_type = '10-Q'
+                    
+                    filing_dates[ticker] = {
+                        'ticker': ticker,
+                        'company_name': get_company_name_from_ticker(ticker),
+                        'latest_filing_date': new_filing_date.isoformat(),
+                        'filing_type': filing_type,
+                        'last_updated': last_update.isoformat()
+                    }
+                    logger.info(f"{ticker}: New {filing_type} filing found (date: {new_filing_date}), updating.")
+                    should_run = True
                 else:
-                    logger.info(f"{ticker}: Recently updated ({last_update.strftime('%Y-%m-%d')}), skipping")
+                    # Still track the latest filing date even if no update needed
+                    q_date = sec_client.get_latest_filing_date(ticker, ["10-Q"])
+                    k_date = sec_client.get_latest_filing_date(ticker, ["10-K"])
+                    latest_filing_date = None
+                    filing_type = '10-Q'
+                    if k_date and (not q_date or k_date > q_date):
+                        latest_filing_date = k_date
+                        filing_type = '10-K'
+                    elif q_date:
+                        latest_filing_date = q_date
+                        filing_type = '10-Q'
+                    
+                    if latest_filing_date:
+                        filing_dates[ticker] = {
+                            'ticker': ticker,
+                            'company_name': get_company_name_from_ticker(ticker),
+                            'latest_filing_date': latest_filing_date.isoformat(),
+                            'filing_type': filing_type,
+                            'last_updated': last_update.isoformat()
+                        }
+                    logger.info(f"{ticker}: No new 10-Q filings (latest filing date is not newer than {last_update_date})")
             else:
-                # No previous update, run it
-                logger.info(f"{ticker}: No previous update found, running parser...")
-                should_run = True
+                # No previous update, check if there's any filing available
+                logger.info(f"{ticker}: No previous update found, checking for 10-Q filings...")
+                latest_filing_date = check_for_new_filing(ticker, sec_client, None)
+                if latest_filing_date:
+                    # Determine actual filing type
+                    q_date = sec_client.get_latest_filing_date(ticker, ["10-Q"])
+                    k_date = sec_client.get_latest_filing_date(ticker, ["10-K"])
+                    filing_type = '10-Q'
+                    if k_date and (not q_date or k_date > q_date):
+                        filing_type = '10-K'
+                        latest_filing_date = k_date
+                    elif q_date:
+                        filing_type = '10-Q'
+                        latest_filing_date = q_date
+                    
+                    filing_dates[ticker] = {
+                        'ticker': ticker,
+                        'company_name': get_company_name_from_ticker(ticker),
+                        'latest_filing_date': latest_filing_date.isoformat(),
+                        'filing_type': filing_type,
+                        'last_updated': None
+                    }
+                    logger.info(f"{ticker}: Found {filing_type} filing (date: {latest_filing_date}), running parser...")
+                    should_run = True
+                else:
+                    # Still track if there's any filing available
+                    q_date = sec_client.get_latest_filing_date(ticker, ["10-Q"])
+                    k_date = sec_client.get_latest_filing_date(ticker, ["10-K"])
+                    latest_filing_date = None
+                    filing_type = '10-Q'
+                    if k_date and (not q_date or k_date > q_date):
+                        latest_filing_date = k_date
+                        filing_type = '10-K'
+                    elif q_date:
+                        latest_filing_date = q_date
+                        filing_type = '10-Q'
+                    
+                    if latest_filing_date:
+                        filing_dates[ticker] = {
+                            'ticker': ticker,
+                            'company_name': get_company_name_from_ticker(ticker),
+                            'latest_filing_date': latest_filing_date.isoformat(),
+                            'filing_type': filing_type,
+                            'last_updated': None
+                        }
+                    logger.info(f"{ticker}: No 10-Q filings found, skipping")
             
             if should_run:
                 parsers_to_run.append((ticker, parser_file))
@@ -244,46 +373,73 @@ def main(force_all: bool = False, days_back: int = 7):
         logger.info(f"Found {len(parsers_to_run)} parsers to run")
         logger.info("")
     
-    if not parsers_to_run:
-        logger.info("No parsers to run. All up to date!")
-        return
-    
-    # Run parsers
+    # Run parsers if any need updating
     results = []
-    for ticker, parser_file in parsers_to_run:
-        result = run_parser(ticker, parser_file)
-        results.append(result)
+    if parsers_to_run:
+        for ticker, parser_file in parsers_to_run:
+            result = run_parser(ticker, parser_file)
+            results.append(result)
+            logger.info("")
+        
+        # Summary
+        logger.info("=" * 80)
+        logger.info("UPDATE SUMMARY")
+        logger.info("=" * 80)
+        
+        successful = [r for r in results if r['status'] == 'success']
+        failed = [r for r in results if r['status'] == 'error']
+        skipped = [r for r in results if r['status'] == 'skipped']
+        
+        logger.info(f"[OK] Successful: {len(successful)}")
+        logger.info(f"[ERROR] Failed: {len(failed)}")
+        logger.info(f"[SKIP] Skipped: {len(skipped)}")
         logger.info("")
+        
+        if successful:
+            logger.info("Successful updates:")
+            for r in successful:
+                logger.info(f"  [OK] {r['ticker']}: {r['investments_count']} investments")
+            logger.info("")
+        
+        if failed:
+            logger.info("Failed updates:")
+            for r in failed:
+                logger.info(f"  [ERROR] {r['ticker']}: {r['error']}")
+            logger.info("")
+        
+        total_investments = sum(r['investments_count'] for r in successful)
+        logger.info(f"Total investments updated: {total_investments}")
+        logger.info("=" * 80)
+    else:
+        logger.info("No parsers to run. All up to date!")
     
-    # Summary
-    logger.info("=" * 80)
-    logger.info("UPDATE SUMMARY")
-    logger.info("=" * 80)
+    # Also collect filing dates for BDCs that were updated during this run
+    for result in results:
+        if result['status'] == 'success' and result['ticker'] not in filing_dates:
+            ticker = result['ticker']
+            q_date = sec_client.get_latest_filing_date(ticker, ["10-Q"])
+            k_date = sec_client.get_latest_filing_date(ticker, ["10-K"])
+            latest_filing_date = None
+            filing_type = '10-Q'
+            if k_date and (not q_date or k_date > q_date):
+                latest_filing_date = k_date
+                filing_type = '10-K'
+            elif q_date:
+                latest_filing_date = q_date
+                filing_type = '10-Q'
+            
+            if latest_filing_date:
+                filing_dates[ticker] = {
+                    'ticker': ticker,
+                    'company_name': get_company_name_from_ticker(ticker),
+                    'latest_filing_date': latest_filing_date.isoformat(),
+                    'filing_type': filing_type,
+                    'last_updated': datetime.now().isoformat()
+                }
     
-    successful = [r for r in results if r['status'] == 'success']
-    failed = [r for r in results if r['status'] == 'error']
-    skipped = [r for r in results if r['status'] == 'skipped']
-    
-    logger.info(f"[OK] Successful: {len(successful)}")
-    logger.info(f"[ERROR] Failed: {len(failed)}")
-    logger.info(f"[SKIP] Skipped: {len(skipped)}")
-    logger.info("")
-    
-    if successful:
-        logger.info("Successful updates:")
-        for r in successful:
-            logger.info(f"  [OK] {r['ticker']}: {r['investments_count']} investments")
-        logger.info("")
-    
-    if failed:
-        logger.info("Failed updates:")
-        for r in failed:
-            logger.info(f"  [ERROR] {r['ticker']}: {r['error']}")
-        logger.info("")
-    
-    total_investments = sum(r['investments_count'] for r in successful)
-    logger.info(f"Total investments updated: {total_investments}")
-    logger.info("=" * 80)
+    # Save filing dates for frontend (always save to track all BDCs)
+    save_filing_dates(filing_dates, output_dir)
+    logger.info(f"Updated filing dates for {len(filing_dates)} BDCs")
 
 
 if __name__ == '__main__':

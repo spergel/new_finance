@@ -1,6 +1,0 @@
-Table 31 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Tipalti Solutions Ltd. Senior Secured April 2027 Prime + 0.45 %, Floor rate 6.45 %, PIK Interest 2.00 %, 3.75 % Exit Fee $ 42,670 $ 42,379 $ 43,448 (5)(10)(14) Zappi, Inc. Senior Secured December 2027 3-month SOFR + 8.03 %, Floor rate 9.03 % $ 12,729 12,522 12,756 (5)(10)(13)(17)(18) Zimperium, Inc. Senior Secured May 2027 3-month SOFR + 8.31 %, Floor rate 9.31 % $ 14,790 14,6

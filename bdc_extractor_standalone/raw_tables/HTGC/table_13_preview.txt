@@ -1,6 +1,0 @@
-Table 13 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Total Gibraltar Acquisition, LLC $ 38,224 $ 38,006 $ 38,006 Subtotal: Diversified Financial Services ( 1.74 %)* 38,006 38,006 Drug Discovery & Development Aldeyra Therapeutics, Inc. Senior Secured April 2026 Prime + 3.10 %, Floor rate 11.10 %, 8.90 % Exit Fee $ 15,000 15,194 15,193 (11) Alector, Inc. Senior Secured December 2028 Prime + 1.05 %, Floor rate 8.05 %, 4.75 % Exit F

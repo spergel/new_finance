@@ -719,7 +719,8 @@ class PSECCustomExtractor:
             'company_name', 'industry', 'business_description', 'investment_type',
             'acquisition_date', 'maturity_date', 'principal_amount', 'cost',
             'fair_value', 'interest_rate', 'reference_rate', 'spread', 'floor_rate',
-            'pik_rate'
+            'pik_rate', 'shares_units', 'percent_net_assets', 'currency',
+            'commitment_limit', 'undrawn_commitment'
         ]
         
         with open(output_file, 'w', newline='', encoding='utf-8') as f:

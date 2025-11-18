@@ -1,6 +1,0 @@
-Table 56 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Cascade Residential Services LLC First Lien Senior Secured Term Loan SOFR + 6.00 %, 10.6 % Cash 10/23 10/29 $ 4,011 $ 3,918 $ 3,742 0.3 % (7)(8)(13)(30) Cascade Residential Services LLC Revolver SOFR + 6.00 %, 10.6 % Cash 10/23 10/29 331 324 312 — % (7)(8)(13) Express Wash Acquisition Company, LLC First Lien Senior Secured Term Loan SOFR + 6.50 %, 11.4 % Cash 07/

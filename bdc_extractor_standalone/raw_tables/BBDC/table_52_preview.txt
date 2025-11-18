@@ -1,6 +1,0 @@
-Table 52 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes CM Acquisitions Holdings Inc. First Lien Senior Secured Term Loan SOFR + 6.00 %, 7.8 % Cash, 2.5 % PIK 05/19 05/26 $ 12,477 $ 12,462 $ 12,140 1.0 % (7)(8)(13) Footco 40 Limited First Lien Senior Secured Term Loan EURIBOR + 6.50 %, 10.2 % Cash 04/22 04/29 218 223 217 — % (3)(7)(8)(10) Footco 40 Limited First Lien Senior Secured Term Loan SONIA + 6.50 %, 11.5 % Cas

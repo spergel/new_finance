@@ -1,6 +1,0 @@
-Table 38 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Tela Bio, Inc. Warrant 3/31/2017 Common Stock 15,712 $ 61 $ — (4) Subtotal: Medical Devices & Equipment ( 0.03 %)* 1,281 507 Semiconductors Achronix Semiconductor Corporation Warrant 6/26/2015 Preferred Series D-2 750,000 99 494 Subtotal: Semiconductors ( 0.02 %)* 99 494 Software Aria Systems, Inc. Warrant 5/22/2015 Preferred Series G 231,535 74 — Automation Anywhere, Inc. Warrant 9/23/2022 Commo

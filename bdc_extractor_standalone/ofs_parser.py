@@ -37,7 +37,7 @@ class OFSExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "OFS"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "OFS", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
         if not cik:
@@ -98,7 +98,7 @@ class OFSExtractor:
         out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output'); os.makedirs(out_dir, exist_ok=True)
         out_file = os.path.join(out_dir, 'OFS_OFS_Capital_Corp_investments.csv')
         with open(out_file, 'w', newline='', encoding='utf-8') as f:
-            w = csv.DictWriter(f, fieldnames=['company_name','industry','business_description','investment_type','acquisition_date','maturity_date','principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate'])
+            w = csv.DictWriter(f, fieldnames=['company_name','industry','business_description','investment_type','acquisition_date','maturity_date','principal_amount','cost','fair_value','interest_rate','reference_rate','spread','floor_rate','pik_rate','shares_units','percent_net_assets','currency','commitment_limit','undrawn_commitment'])
             w.writeheader()
             for x in invs:
                 # Apply standardization
@@ -106,7 +106,7 @@ class OFSExtractor:
                 standardized_industry = standardize_industry(x.industry)
                 standardized_ref_rate = standardize_reference_rate(x.reference_rate)
                 
-                w.writerow({'company_name':x.company_name,'industry':standardized_industry,'business_description':x.business_description,'investment_type':standardized_inv_type,'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardized_ref_rate,'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate})
+                w.writerow({'company_name':x.company_name,'industry':standardized_industry,'business_description':x.business_description or '','investment_type':standardized_inv_type,'acquisition_date':x.acquisition_date or '','maturity_date':x.maturity_date or '','principal_amount':x.principal_amount or '','cost':x.cost or '','fair_value':x.fair_value or '','interest_rate':x.interest_rate or '','reference_rate':standardized_ref_rate or '','spread':x.spread or '','floor_rate':x.floor_rate or '','pik_rate':x.pik_rate or '','shares_units':x.shares_units or '','percent_net_assets':x.percent_net_assets or '','currency':x.currency or 'USD','commitment_limit':x.commitment_limit or '','undrawn_commitment':x.undrawn_commitment or ''})
         logger.info(f"Saved to {out_file}")
         inv_dicts = [{'company_name':x.company_name,'industry':standardize_industry(x.industry),'business_description':x.business_description,'investment_type':standardize_investment_type(x.investment_type),'acquisition_date':x.acquisition_date,'maturity_date':x.maturity_date,'principal_amount':x.principal_amount,'cost':x.cost,'fair_value':x.fair_value,'interest_rate':x.interest_rate,'reference_rate':standardize_reference_rate(x.reference_rate),'spread':x.spread,'floor_rate':x.floor_rate,'pik_rate':x.pik_rate} for x in invs]
         return {'company_name':company_name,'cik':cik,'total_investments':len(invs),'investments':inv_dicts,'total_principal':total_principal,'total_cost':total_cost,'total_fair_value':total_fair_value,'industry_breakdown':dict(ind),'investment_type_breakdown':dict(ty)}

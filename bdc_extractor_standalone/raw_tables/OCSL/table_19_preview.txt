@@ -1,6 +1,0 @@
-Table 19 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes WP CPP Holdings, LLC Aerospace & Defense First Lien Term Loan SOFR+ 7.25 % 11.57 % 11/29/2029 $ 1,468 $ 1,468 $ 1,468 (6)(15) WP CPP Holdings, LLC Aerospace & Defense First Lien Revolver SOFR+ 7.25 % 11/28/2029 — ( 60 ) — (6)(15)(19) X Holdings Corp. Interactive Media & Services First Lien Term Loan SOFR+ 6.50 % 10.93 % 10/26/2029 6,252 6,206

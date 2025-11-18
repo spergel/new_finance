@@ -1,6 +1,0 @@
-Table 36 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Equity Investments Automotive MVC Automotive Group GmbH Common Equity Interest 12/20 18,000 $ 19,173 $ 9,713 0.8 % (3)(7)(27)(29) Subtotal Automotive ( 0.8 %)* 19,173 9,713 Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Capital Equipment Security Holdings B.V. Common Stock Series 

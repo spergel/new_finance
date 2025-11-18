@@ -1,6 +1,0 @@
-Table 15 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets iCapital, Inc. Provider of platform solutions that increase access to alternative investments for institutional investors and wealth managers Common stock 04/2025 71,430 1.0 1.0 (2) Icefall Parent, Inc. (13) Provider of customer engagement software and integrated payments solutions First lien senior secured loan 8.81 % SOF

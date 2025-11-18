@@ -1,6 +1,0 @@
-Table 47 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,18,21 Type of Investment 2 Acquisition Date 14 Cost 12,17 Fair Value 4 % of Net Assets Equity Investments Units Type Consumer Services AIR CONDITIONING SPECIALIST, INC. 1,006,045.85 Preferred Units 11/9/2021 1,344 2,941 (6)(9)(13) APPLE ROOFING ADMINISTRATIVE SERVICES, LLC (FKA ROOF OPCO, LLC) 535,714.29 Class A Units 9/23/2022 750 664 (9)(13) 250,000 Class B Units 4/13/2023 2

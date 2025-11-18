@@ -1,6 +1,0 @@
-Table 21 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Durare Bidco, LLC First Lien Senior Secured Term Loan SOFR + 4.75 %, 9.0 % Cash 08/25 08/32 $ 1,413 $ 1,390 $ 1,389 0.1 % (7)(8)(13)(30) Durare Bidco, LLC Revolver SOFR + 4.75 %, 9.0 % Cash 08/25 08/32 — ( 9 ) ( 10 ) — % (7)(8)(13)(30) Dwyer Instruments, Inc. First Lien Senior Secured Term Loan SOFR + 4.75 %, 8.8 % Cash 07/21 07/29 14,478 14,311 14,478 1.2 % (7)(

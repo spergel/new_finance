@@ -1,6 +1,0 @@
-Table 33 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Media: Diversified & Production BrightSign LLC LLC Units 10/21 1,107,492.71 $ 1,107 $ 1,318 0.1 % (7) Rock Labor LLC LLC Units 09/23 233,871 1,252 1,368 0.1 % (7) Solo Buyer, L.P. Common Equity 12/22 516,399 516 300 — % (7) Vital Buyer, LLC Partnership Units 06/21 16,442.9 164 433 — % (7) Subtotal Media: Diversified & Production ( 0.3 %)* 3,039 3,419 Services: Busi

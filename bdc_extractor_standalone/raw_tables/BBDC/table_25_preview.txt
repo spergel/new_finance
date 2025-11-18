@@ -1,6 +1,0 @@
-Table 25 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Expert Institute Group Inc. First Lien Senior Secured Term Loan SOFR + 4.25 %, 8.1 % Cash 03/25 03/32 $ 1,096 $ 1,068 $ 1,071 0.1 % (7)(8)(13)(30) Expert Institute Group Inc. Revolver SOFR + 4.25 %, 8.1 % Cash 03/25 03/32 — ( 6 ) ( 6 ) — % (7)(8)(13)(30) Greenhill II BV First Lien Senior Secured Term Loan EURIBOR + 5.10 %, 7.1 % Cash 07/22 07/29 1,763 1,577 1,763

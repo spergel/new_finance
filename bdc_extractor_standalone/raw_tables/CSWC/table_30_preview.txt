@@ -1,6 +1,0 @@
-Table 30 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS (Unaudited) September 30, 2025 Portfolio Company 1,5,18,21 Type of Investment 2 Acquisition Date 14 Cost 12 Fair Value 4 % of Net Assets Equity Investments Units Type Research & Consulting Services ENSTOA, INC. 103,054 Class A Units 5/1/2025 1,031 774 (9)(13) FS VECTOR LLC 1,280.58 Common Units 4/26/2023 1,333 1,857 (9)(11)(13) THE GOBEL GROUP, LLC 500,000 Class A-1 Preferred Units 10/29/2024 500 500 (9)(13) 500,

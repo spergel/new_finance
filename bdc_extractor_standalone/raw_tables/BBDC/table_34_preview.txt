@@ -1,6 +1,0 @@
-Table 34 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Echo Global Logistics, Inc. Partnership Equity 11/21 530.92 $ 531 $ 265 — % (7)(29) FragilePak LLC Partnership Units 05/21 937.5 938 735 0.1 % (7)(29) ITI Intermodal, Inc. Common Stock 01/22 7,500.4 750 984 0.1 % (7)(29) REP SEKO MERGER SUB LLC Common Stock 11/24 1,231 5,403 — — % (7)(29) Subtotal Transportation: Cargo ( 0.2 %)* 7,971 2,649 Subtotal Equity Investme

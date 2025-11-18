@@ -18,9 +18,39 @@ from bs4 import BeautifulSoup
 import requests
 
 from sec_api_client import SECAPIClient, FilingDocument
-from flexible_table_parser import FlexibleTableParser
+# from flexible_table_parser import FlexibleTableParser  # Removed - module doesn't exist
 from standardization import standardize_investment_type, standardize_industry, standardize_reference_rate
-from rate_normalization import parse_interest_text, clean_percentage
+# from rate_normalization import parse_interest_text, clean_percentage  # Removed - module doesn't exist
+
+def clean_percentage(value):
+    """Format a percentage value as a string with % sign."""
+    if value is None:
+        return ''
+    try:
+        num = float(value)
+        return f"{num:.2f}%"
+    except (ValueError, TypeError):
+        return f"{value}%" if value else ''
+
+class ParsedInterest:
+    """Simple class to hold parsed interest rate data."""
+    def __init__(self):
+        self.spread = None
+        self.reference_rate = None
+
+def parse_interest_text(text):
+    """Parse interest rate text to extract spread and reference rate."""
+    result = ParsedInterest()
+    if not text:
+        return result
+    
+    # Pattern: "SOFR + 2.5%" or "LIBOR + 3.0%"
+    match = re.search(r'(\w+)\s*\+\s*([\d\.]+)\s*%', text, re.IGNORECASE)
+    if match:
+        result.reference_rate = match.group(1).upper()
+        result.spread = clean_percentage(match.group(2))
+    
+    return result
 
 logger = logging.getLogger(__name__)
 
@@ -390,7 +420,7 @@ def extract_bxsl_investments(user_agent: str = "BDC-Extractor/1.0 contact@exampl
         return None
 
     documents = client.get_documents_from_index(index_url)
-    parser = FlexibleTableParser(user_agent=user_agent)
+    # parser = FlexibleTableParser(user_agent=user_agent)  # Removed - module doesn't exist
 
     # Try main HTML first
     selected_doc = _select_main_html_document(documents)
@@ -398,10 +428,7 @@ def extract_bxsl_investments(user_agent: str = "BDC-Extractor/1.0 contact@exampl
 
     def try_parse(doc: FilingDocument) -> Tuple[List[dict], FilingDocument]:
         parsed: List[dict] = []
-        try:
-            parsed = parser.parse_html_filing(doc.url)
-        except Exception as e:
-            logger.warning(f"Parse failed for {doc.filename}: {e}")
+        # FlexibleTableParser removed - skip this strategy
         return parsed, doc
 
     if selected_doc:
@@ -441,11 +468,11 @@ def extract_bxsl_investments(user_agent: str = "BDC-Extractor/1.0 contact@exampl
                 table_text = table.get_text().lower()
                 if 'portfolio investments' in table_text or 'schedule of investments' in table_text:
                     logger.info(f"Found potential schedule table with {len(table.find_all('tr'))} rows")
-                    # Try parsing this specific table
-                    investments = parser._parse_table(table, is_first=True)
-                    if investments:
-                        logger.info(f"Successfully parsed {len(investments)} investments from schedule table")
-                        break
+                    # FlexibleTableParser removed - skip this strategy
+                    # investments = parser._parse_table(table, is_first=True)
+                    # if investments:
+                    #     logger.info(f"Successfully parsed {len(investments)} investments from schedule table")
+                    #     break
         except Exception as e:
             logger.warning(f"Direct table extraction failed: {e}")
 
@@ -583,7 +610,7 @@ class BXSLExtractor:
         self.user_agent = user_agent
         self.sec_client = SECAPIClient(user_agent=user_agent)
     
-    def extract_from_ticker(self, ticker: str = "BXSL"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "BXSL", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from ticker symbol."""
         logger.info(f"Extracting investments for {ticker}")
         cik = self.sec_client.get_cik(ticker)
@@ -677,51 +704,9 @@ class BXSLExtractor:
     
     def extract_from_html_url(self, html_url: str, company_name: str, cik: str) -> Dict:
         """Extract from HTML URL with multiple fallback strategies."""
-        parser = FlexibleTableParser(user_agent=self.user_agent)
         investments = []
         
-        # Strategy 1: Try FlexibleTableParser directly
-        try:
-            investments = parser.parse_html_filing(html_url)
-            if investments:
-                logger.info(f"FlexibleTableParser extracted {len(investments)} investments from {html_url}")
-                return {
-                    'investments': investments,
-                    'company_name': company_name,
-                    'cik': cik,
-                    'total_investments': len(investments) if investments else 0
-                }
-        except Exception as e:
-            logger.warning(f"FlexibleTableParser failed: {e}")
-        
-        # Strategy 2: Try to get index URL and use document selection logic
-        try:
-            # Extract index URL from HTML URL
-            index_url = html_url.replace('.htm', '-index.html').replace('.html', '-index.html')
-            if not index_url.endswith('-index.html'):
-                # Try to construct from URL pattern
-                match = re.search(r'/edgar/data/(\d+)/(\d+)/([^/]+)\.htm', html_url)
-                if match:
-                    accession_no_hyphens = match.group(2)
-                    index_url = f"https://www.sec.gov/Archives/edgar/data/{match.group(1)}/{accession_no_hyphens}/{match.group(3).replace('.htm', '')}-index.html"
-            
-            documents = self.sec_client.get_documents_from_index(index_url)
-            selected_doc = _select_main_html_document(documents)
-            
-            if selected_doc:
-                investments = parser.parse_html_filing(selected_doc.url)
-                if investments:
-                    logger.info(f"Extracted {len(investments)} investments from selected document")
-                    return {
-                        'investments': investments,
-                        'company_name': company_name,
-                        'cik': cik,
-                        'total_investments': len(investments)
-                    }
-        except Exception as e:
-            logger.warning(f"Document selection strategy failed: {e}")
-        
-        # Strategy 3: Use the original extract_bxsl_investments function logic
+        # Strategy 1: Use the original extract_bxsl_investments function logic
         # This function has proven to work for BXSL
         try:
             # Call the original function which has all the fallback logic
@@ -742,30 +727,9 @@ class BXSLExtractor:
         except Exception as e:
             logger.warning(f"Original extract_bxsl_investments failed: {e}")
         
-        # Strategy 4: Direct HTML table extraction (from original extract_bxsl_investments)
-        try:
-            response = requests.get(html_url, headers=self.headers)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            all_tables = soup.find_all('table')
-            logger.info(f"Found {len(all_tables)} tables in document")
-            
-            for table in all_tables:
-                table_text = table.get_text().lower()
-                if 'portfolio investments' in table_text or 'schedule of investments' in table_text:
-                    logger.info(f"Found potential schedule table with {len(table.find_all('tr'))} rows")
-                    investments = parser._parse_table(table, is_first=True)
-                    if investments:
-                        logger.info(f"Successfully parsed {len(investments)} investments from schedule table")
-                        return {
-                            'investments': investments,
-                            'company_name': company_name,
-                            'cik': cik,
-                            'total_investments': len(investments) if investments else 0
-                        }
-        except Exception as e:
-            logger.warning(f"Direct table extraction failed: {e}")
+        # Strategy 2: Direct HTML table extraction (from original extract_bxsl_investments)
+        # Note: FlexibleTableParser removed, so this strategy is disabled
+        # The extract_bxsl_investments function should handle all parsing
         
         logger.warning(f"All extraction strategies failed for {html_url}")
         return {

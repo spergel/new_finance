@@ -1,6 +1,0 @@
-Table 34 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Marketing, Media, and Entertainment Angel Studios, Inc. Warrant September 8, 2025 September 11, 2030 Common Stock 561,670 $ 7.29 $ 3,645 $ 1,720 (19) Drone Racing League, Inc. Warrant October 17, 2022 October 17, 2032 Common Stock 253,824 $ 6.76 $ 375 $ — Firefly Systems, Inc. Warrant January 29, 2020 January 29, 2

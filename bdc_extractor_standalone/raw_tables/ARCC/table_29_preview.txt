@@ -1,6 +1,0 @@
-Table 29 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 9.67 % SOFR (M) 5.50 % 08/2025 08/2032 379.5 379.5 375.7 (2)(9) Series A units 8.00 % PIK 08/2025 540,800 5.5 5.4 (2) 385.0 381.1 Divisions Holding Corporation, Divisions, Inc. and RC V Tecmo Investor LLC (13) Technology based aggregator for facility maintenance services First lien senior sec

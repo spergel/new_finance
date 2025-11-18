@@ -1,6 +1,0 @@
-Table 64 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Green Technology Bolb, Inc. Warrant October 12, 2021 October 12, 2031 Common Stock 181,784 $ 0.07 $ 35 $ — Edeniq, Inc. Warrant January 16, 2020 December 23, 2026 Preferred Series B 2,685,501 $ 0.22 $ — $ 506 (11)(17)(21) Warrant January 16, 2020 December 23, 2026 Preferred Series B 2,184,672 $ 0.01 — 855 (11)(17)(

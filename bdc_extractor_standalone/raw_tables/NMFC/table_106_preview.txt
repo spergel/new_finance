@@ -1,6 +1,0 @@
-Table 106 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) HP PHRG Borrower, LLC Consumer Services SOFR(Q) 4.00 % 8.00 % 02/2032 $ 10,623 $ 10,551 $ 10,615 Inizio Group Limited Healthcare SOFR(Q) 4.25 % 8.35 % 08/2028 9,702 9,586 9,666 JSG II, Inc. Manufacturing P(Q) 3.50 % 10.75 % 06/2026 253 253 253 JSG II, Inc. Manufacturing P(Q) 3.50 % 10.75 % 06/2026 5,194 5,185 5,194 Kaseya Inc. Software SOFR(M) 3.25 

@@ -1,6 +1,0 @@
-Table 11 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Cloud Software Group, Inc., Picard Parent, Inc., Cloud Software Group Holdings, Inc., Picard HoldCo, LLC and Elliott Alto Co-Investor Aggregator L.P. (13) Provider of server, application and desktop virtualization, networking, software as a service, and cloud computing technologies Second lien senior secured notes 9.00 % 0

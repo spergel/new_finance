@@ -1,6 +1,0 @@
-Table 50 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Electrical Components International, Inc. First Lien Senior Secured Term Loan SOFR + 6.50 %, 11.3 % Cash 05/24 05/29 $ 10,612 $ 10,419 $ 10,410 0.9 % (7)(8)(14)(30) Eurofins Digital Testing International LUX Holding SARL First Lien Senior Secured Term Loan EURIBOR + 7.00 %, 9.6 % PIK 12/22 12/29 1,676 1,497 831 0.1 % (3)(7)(8)(11)(26) Eurofins Digital Testing Int

@@ -1,6 +1,0 @@
-Table 46 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 9.76 % SOFR (Q) 5.50 % 06/2024 04/2026 7.4 7.4 7.3 (2)(9) First lien senior secured loan 10.07 % SOFR (Q) 5.50 % 05/2025 04/2026 5.0 5.0 4.9 (2)(9) Series A preferred stock 10/2014 1,272 0.7 0.8 (2) 52.8 52.3 Flint OpCo, LLC (13) Provider of residential HVAC and plumbing services First lien s

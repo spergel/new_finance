@@ -1,6 +1,0 @@
-Table 23 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Ruffalo Noel Levitz, LLC Revolver SOFR + 7.00 %, 11.3 % Cash 04/25 12/26 $ — $ ( 3 ) $ — — % (7)(8)(12)(30) Superjet Buyer, LLC First Lien Senior Secured Term Loan SOFR + 5.00 %, 9.2 % Cash 12/21 05/30 7,310 7,173 7,171 0.6 % (7)(8)(13)(30) Superjet Buyer, LLC Revolver SOFR + 5.00 %, 9.2 % Cash 12/21 05/30 — ( 15 ) ( 18 ) — % (7)(8)(13)(30) Subtotal Media: Advert

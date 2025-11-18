@@ -1,6 +1,0 @@
-Table 23 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Electronics & Computer Hardware 908 Devices, Inc. Warrant 3/15/2017 Common Stock 49,078 $ 101 $ 107 (4) Locus Robotics Corp. Warrant 6/21/2022 Common Stock 8,503 34 59 Skydio, Inc. Warrant 11/8/2021 Common Stock 622,255 557 355 Subtotal: Electronics & Computer Hardware ( 0.02 %)* 692 521 Healthcare Services, Other Curana Health Holdings, LLC Warrant 1/4/2024 Common Units 447,410 156 659 Modern Li

@@ -1,6 +1,0 @@
-Table 27 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Maturity Date Interest Rate (4) Principal Amount (5) Cost Fair Value (6) Footnotes Debt Securities- United States, Continued Uveye, Inc. Equipment Financing December 26, 2024 January 1, 2028 Fixed interest rate 11.9 %; EOT 1.0 % $ 15,689 $ 15,654 $ 15,754 (14) Equipment Financing March 28, 2025 April 1, 2028 Fixed interest rate 11.9 %; EOT 1.0 % 4,310 4,289 4,314 (14) Equipment Financing May 15, 2025 June 1, 2028 Fixed interest rat

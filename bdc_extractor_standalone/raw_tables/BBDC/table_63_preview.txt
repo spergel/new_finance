@@ -1,6 +1,0 @@
-Table 63 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Units / Shares Cost Fair Value % of Net Assets * Notes Chemicals, Plastics, & Rubber Celebration Bidco, LLC Common Stock 12/23 1,243,071 $ 12,177 $ 11,262 0.9 % (7)(29) Subtotal Chemicals, Plastics, & Rubber ( 0.9 %)* 12,177 11,262 Hotel, Gaming, & Leisure Coastal Marina Holdings, LLC LLC Units 11/21 3,518,097 16,495 16,852 1.4 % (7)(29) Subtotal Hotel, Gaming, & Leisure ( 1.4 %)* 16,495 16,852 Investment Funds & Vehic

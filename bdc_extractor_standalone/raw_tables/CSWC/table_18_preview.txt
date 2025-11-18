@@ -1,6 +1,0 @@
-Table 18 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS (Unaudited) September 30, 2025 Portfolio Company 1,5,21 Type of Investment 2 Current Interest Rate 3 Acquisition Date 14 Maturity Principal Cost 12,17 Fair Value 4 % of Net Assets Debt Investments Coupon Reference Spread Floor PIK MID-FLORIDA ENDODONTICS MANAGEMENT COMPANY, LLC Revolving Loan 10.51 % SOFR (Q) 6.50 % 2.00 % 12/11/2024 12/11/2029 100 75 99 (10) First Lien - Term Loan A 9.79 % SOFR (Q) 5.50 % 2.00 %

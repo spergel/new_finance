@@ -1,6 +1,0 @@
-Table 24 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Bitsight Technologies, Inc. Warrant 11/18/2020 Common Stock 29,691 $ 284 $ 449 Brain Corporation Warrant 10/4/2021 Common Stock 435,396 215 155 Carbyne, Inc. Warrant 2/24/2025 Ordinary Shares 11,408 24 36 CloudBolt Software, Inc. Warrant 9/30/2020 Common Stock 211,342 117 1 Cloudian, Inc. Warrant 11/6/2018 Common Stock 477,454 71 — Cloudpay, Inc. Warrant 4/10/2018 Preferred Series B 6,763 54 810 

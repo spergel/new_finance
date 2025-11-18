@@ -1,6 +1,0 @@
-Table 40 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Eagle Infrastructure Super HoldCo, LLC (30) Eagle Infrastructure Services, LLC (fka FR Arsenal Holdings II Corp.) Business Services First lien (2)(12)(13) SOFR(Q) 7.50 % 11.65 % 03/2023 04/2028 $ 10,628 $ 10,628 $ 10,628 First lien (3)(13) SOFR(Q) 7.50 % 11.65 % 03/2023 04/2028 

@@ -1,6 +1,0 @@
-Table 40 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Steward Partners Global Advisory, LLC and Steward Partners Investment Advisory, LLC (13) Wealth management platform First lien senior secured revolving loan 8.91 % SOFR (S) 4.75 % 06/2025 10/2028 0.1 0.1 0.1 (2)(6)(9) First lien senior secured loan 8.92 % SOFR (M) 4.75 % 12/2023 10/2028 4.9 4.8 4.9 (2)(6)(9) First lien sen

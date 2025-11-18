@@ -23,7 +23,7 @@ class SCMExtractor:
         self.headers = {'User-Agent': user_agent}
         self.sec_client = SECAPIClient(user_agent=user_agent)
 
-    def extract_from_ticker(self, ticker: str = "SCM"), year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
+    def extract_from_ticker(self, ticker: str = "SCM", year: Optional[int] = 2025, min_date: Optional[str] = None) -> Dict:
         """Extract investments from SCM's latest 10-Q filing using HTML tables."""
         logger.info(f"Extracting investments for {ticker}")
         

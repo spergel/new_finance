@@ -1,6 +1,0 @@
-Table 58 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Spatial Business Systems LLC First Lien Senior Secured Term Loan SOFR + 5.50 %, 10.0 % Cash 10/22 10/28 $ 14,930 $ 14,695 $ 14,706 1.2 % (7)(8)(13) Spatial Business Systems LLC Revolver SOFR + 5.50 %, 10.0 % Cash 10/22 10/28 — ( 22 ) ( 21 ) — % (7)(8)(13)(30) Subtotal Utilities: Electric ( 1.5 %)* 18,670 18,131 18,380 Subtotal Debt Investments ( 155.9 %)* 1,996,5

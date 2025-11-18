@@ -1,6 +1,0 @@
-Table 23 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes A.T. Holdings II Ltd. Biotechnology First Lien Term Loan 14.25 % 9/13/2029 $ 21,870 $ 21,024 $ 21,979 (11)(15)(21) A.T. Holdings II SÀRL Biotechnology First Lien Term Loan 22.50 % 4/30/2024 7,835 7,028 7,796 (11)(15)(20) Access CIG, LLC Diversified Support Services First Lien Term Loan SOFR+ 5.00 % 10.25 % 8/18/2028 1,985 1,975 1,996 (6) Acce

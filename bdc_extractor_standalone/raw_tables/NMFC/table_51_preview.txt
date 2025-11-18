@@ -1,6 +1,0 @@
-Table 51 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Non-Controlled/Non-Affiliated Investments Funded Debt Investments - United States Paw Midco, Inc. AAH Topco, LLC Consumer Services First lien (2)(12)(13) SOFR(M) 5.25 % 9.71 % 12/2021 12/2027 $ 22,733 $ 22,583 $ 22,734 First lien (3)(11)(13) SOFR(M) 5.25 % 9.71 % 12/2021 12/2027

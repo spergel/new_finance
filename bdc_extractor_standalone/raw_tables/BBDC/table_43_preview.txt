@@ -1,6 +1,0 @@
-Table 43 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Non–Control / Non–Affiliate Investments: Debt Investments Aerospace & Defense Accurus Aerospace Corporation First Lien Senior Secured Term Loan SOFR + 5.75 %, 10.3 % Cash 04/22 04/28 $ 12,008 $ 11,900 $ 11,612 1.0 % (7)(8)(13) Accurus Aerospace Corporation Revolver SOFR + 5.75 %, 10.3 % Cash 04/22 04/28 1,844 1,825 1,768 0.1 % (7)(8)(13)(30) ADB Safegate Second L

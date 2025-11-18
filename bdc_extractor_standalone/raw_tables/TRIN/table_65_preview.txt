@@ -1,6 +1,0 @@
-Table 65 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Human Resource Technology BetterLeap, Inc. Warrant April 20, 2022 April 20, 2032 Common Stock 88,435 $ 2.26 $ 38 $ 6 Qwick, Inc. Warrant December 31, 2021 December 31, 2031 Common Stock 16,964 $ 2.79 $ 48 $ 9 Warrant August 8, 2022 August 8, 2032 Common Stock 16,964 $ 2.79 48 8 Total Qwick, Inc. 96 17 Sub-Total: Hu

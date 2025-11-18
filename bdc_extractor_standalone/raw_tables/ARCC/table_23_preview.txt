@@ -1,6 +1,0 @@
-Table 23 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Bayou Intermediate II, LLC (13) Developer and manufacturer of  vascular medical devices First lien senior secured loan 8.75 % SOFR (Q) 4.75 % 09/2025 09/2032 25.7 25.7 25.4 (2)(9) BrightStar Group Holdings, Inc. (13) Provider of private-pay home care services for patients First lien senior secured revolving loan 9.00 % SOF

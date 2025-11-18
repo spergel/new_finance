@@ -1,6 +1,0 @@
-Table 18 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Fabletics, Inc. Equity 4/30/2010 Common Stock 42,989 $ 128 $ 17 Equity 7/16/2013 Preferred Series B 130,191 1,101 140 Total Fabletics, Inc. 173,180 1,229 157 Grove Collaborative, Inc. Equity 4/30/2021 Common Stock 12,260 433 18 (4) Savage X Holding, LLC Equity 4/30/2010 Class A Units 172,328 13 163 Subtotal: Consumer & Business Products ( 0.02 %)* 1,675 338 Consumer & Business Services Carwow LTD

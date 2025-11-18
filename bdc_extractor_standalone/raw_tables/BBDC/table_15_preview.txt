@@ -1,6 +1,0 @@
-Table 15 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Banking, Finance, Insurance, & Real Estate Aegros Holdco 2 Ltd Second Lien Senior Secured Term Loan SONIA + 8.5 %, 13.0 % PIK 05/25 05/32 $ 6,180 $ 5,980 $ 5,309 0.5 % (3)(7)(15) Apus Bidco Limited First Lien Senior Secured Term Loan SONIA + 5.00 %, 9.2 % Cash 02/21 03/28 3,878 3,924 3,878 0.3 % (3)(7)(8)(17) Beyond Risk Management, Inc. First Lien Senior Secured

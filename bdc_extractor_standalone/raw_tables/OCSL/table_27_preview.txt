@@ -1,6 +1,0 @@
-Table 27 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes Legends Hospitality Holding Company, LLC Specialized Consumer Services First Lien Revolver SOFR+ 5.00 % 8/22/2030 $ — $ ( 61 ) $ ( 60 ) (6)(15)(19) Lightbox Intermediate, L.P. Real Estate Services First Lien Term Loan SOFR+ 5.00 % 9.96 % 5/9/2026 55,873 55,220 54,197 (6)(15) Liquid Environmental Solutions Corporation Environmental & Facilitie

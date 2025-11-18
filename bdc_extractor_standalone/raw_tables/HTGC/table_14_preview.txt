@@ -1,6 +1,0 @@
-Table 14 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Senior Secured February 2028 Prime + 3.10 %, Floor rate 8.10 % $ 577 $ 577 $ 533 (8) Total Carbon Health Technologies, Inc. $ 41,068 41,583 38,438 ChenMed, LLC Senior Secured May 2030 Prime + 2.45 %, Floor rate 9.45 %, 3.75 % Exit Fee $ 130,000 127,795 127,795 (16)(17) Curana Health Holdings, LLC Senior Secured January 2028 Prime + 1.45 %, Floor rate 9.20 %, 4.95 % Exit Fee $ 

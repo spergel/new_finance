@@ -1,6 +1,0 @@
-Table 11 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes 1261229 BC LTD Pharmaceuticals Fixed Rate Bond 10.00 % 4/15/2032 $ 9,100 $ 9,100 $ 9,186 (11) A.T. Holdings II Ltd. Biotechnology First Lien Term Loan 5.97 % 8.28 % 9/13/2029 23,083 22,365 22,621 (11)(15)(21) A.T. Holdings II SÀRL Biotechnology First Lien Term Loan 22.50 % 4/30/2024 7,152 5,400 7,116 (11)(15)(20) Accession Risk Management Gro

@@ -1,6 +1,0 @@
-Table 22 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Provi Warrant 12/22/2022 Common Stock 117,042 $ 166 $ — (15) Rhino Labs, Inc. Warrant 3/12/2021 Common Stock 13,106 470 — (15) SeatGeek, Inc. Warrant 6/12/2019 Common Stock 1,604,724 1,242 5,692 (12)(16) Skyword, Inc. Warrant 11/14/2022 Common Stock 1,607,143 57 15 Warrant 8/23/2019 Preferred Series B 444,444 83 1 Total Skyword, Inc. 2,051,587 140 16 Snagajob.com, Inc. Warrant 4/20/2020 Common St

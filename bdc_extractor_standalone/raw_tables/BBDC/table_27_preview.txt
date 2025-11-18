@@ -1,6 +1,0 @@
-Table 27 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes UHY Advisors, Inc. Revolver SOFR + 4.75 %, 8.9 % Cash 11/24 11/31 $ 273 $ 248 $ 273 — % (7)(8)(13)(30) USLS Acquisition, Inc. (f/k/a US Legal Support, Inc.) First Lien Senior Secured Term Loan SOFR + 5.50 %, 10.0 % Cash 11/18 05/26 17,957 17,893 17,921 1.5 % (7)(8)(13) Utac Ceram First Lien Senior Secured Term Loan EURIBOR + 6.15 %, 8.2 % Cash, 2.4 % PIK 09/20 09

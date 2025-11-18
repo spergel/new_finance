@@ -1,6 +1,0 @@
-Table 30 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets 17.4 17.4 FlyWheel Acquireco, Inc. (13) Professional employer organization offering human resources, compliance and risk management services First lien senior secured revolving loan 10.66 % SOFR (M) 6.50 % 05/2023 05/2028 2.2 2.2 2.2 (2)(9) First lien senior secured loan 10.66 % SOFR (M) 6.50 % 05/2023 05/2030 51.6 51.6 51

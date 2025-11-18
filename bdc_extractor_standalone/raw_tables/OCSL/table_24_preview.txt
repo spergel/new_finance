@@ -1,6 +1,0 @@
-Table 24 from OCSL
-Filing: 2025-08-05
-URL: https://www.sec.gov/Archives/edgar/data/1414932/000141493225000016/ocsl-20250630.htm
-
-Preview (first 500 chars):
-Portfolio Company Industry Type of Investment (1)(2)(3)(4) Index Spread Cash Interest Rate (5) PIK Maturity Date Shares Principal (7) Cost Fair Value Notes athenahealth Group Inc. Health Care Technology Preferred Equity 21,523 $ 20,789 $ 24,326 (15) ATNX SPV, LLC Pharmaceuticals First Lien Term Loan 15.89 % 5/31/2031 $ 12,989 13,013 12,892 (11)(15)(21) Aurelia Netherlands Midco 2 B.V. Interactive Media & Services First Lien Term Loan E+ 5.75 % 9.55 % 5/29/2031 € 28,022 29,727 30,698 (6)(11)(15) 

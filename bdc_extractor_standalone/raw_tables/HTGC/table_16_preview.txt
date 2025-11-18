@@ -1,6 +1,0 @@
-Table 16 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Reveleer Senior Secured February 2027 Prime + 0.65 %, Floor rate 9.15 %, PIK Interest 2.00 %, 5.05 % Exit Fee $ 49,800 $ 50,493 $ 50,657 (6)(14)(15) Scylla DB Ltd. Senior Secured July 2029 Prime + 3.00 %, Floor rate 10.50 % $ 10,114 9,975 9,975 (5)(10)(17) Semperis Technologies Inc. Senior Secured April 2028 Prime - 1.75 %, Floor rate 6.75 %, PIK Interest 3.25 % $ 23,319 23,08

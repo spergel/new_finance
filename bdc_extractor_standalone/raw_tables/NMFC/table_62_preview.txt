@@ -1,6 +1,0 @@
-Table 62 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets Michael Baker International, LLC Business Services First lien (3)(11) SOFR(M) 4.75 % 9.11 % 05/2024 12/2028 $ 4,892 $ 4,869 $ 4,910 0.36 % Adelaide Borrower, LLC** Software First lien (3)(11)(13) SOFR(Q) 6.25 % 10.58 % 05/2024 05/2030 4,698 4,656 4,698 0.35 % Logrhythm, Inc. Sof

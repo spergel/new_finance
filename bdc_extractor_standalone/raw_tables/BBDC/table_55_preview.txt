@@ -1,6 +1,0 @@
-Table 55 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Tanqueray Bidco Limited First Lien Senior Secured Term Loan SONIA + 5.25 %, 10.0 % Cash 11/22 11/29 $ 1,699 $ 1,518 $ 1,643 0.1 % (3)(7)(8)(16)(30) Technology Service Stream BidCo Pty Ltd First Lien Senior Secured Term Loan BBSY + 5.50 %, 10.3 % Cash 06/24 07/30 698 725 677 0.1 % (3)(7)(8)(20)(30) Techone B.V. First Lien Senior Secured Term Loan EURIBOR + 5.40 %,

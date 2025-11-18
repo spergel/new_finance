@@ -1,6 +1,0 @@
-Table 21 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Acquisition Date (4) Series (3) Shares Cost (2) Value Footnotes Equity 8/12/2021 Preferred Series F 52,956 $ 280 $ 280 Total SingleStore, Inc. 633,939 2,280 2,628 SirionLabs Pte. Ltd. Equity 6/30/2024 Preferred Series F1 152,250 1,791 1,711 (5)(10) Verana Health, Inc. Equity 7/8/2021 Common Stock 23,814 2,000 — Subtotal: Software ( 1.10 %)* 28,140 24,154 Space Technologies Stoke Space Technologies, Inc. Equity 9/23/2025 Preferred Series D 43,867 1,406 1,385 S

@@ -1,6 +1,0 @@
-Table 61 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Consumer Products & Services BaubleBar, Inc. Warrant January 16, 2020 March 29, 2027 Preferred Series C 531,806 $ 1.96 $ 638 $ 33 (17) Warrant January 16, 2020 April 20, 2028 Preferred Series C 60,000 $ 1.96 72 4 (17) Total BaubleBar, Inc. 710 37 Boosted eCommerce, Inc. Warrant December 14, 2020 December 14, 2030 P

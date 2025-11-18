@@ -1,6 +1,0 @@
-Table 16 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets First lien senior secured loan 8.47 % SONIA (Q) 4.50 % 05/2022 05/2029 37.7 34.6 37.7 (2)(6)(9) First lien senior secured loan 8.66 % SOFR (M) 4.50 % 03/2024 05/2029 5.1 5.1 5.1 (2)(6)(9) Limited partnership interest 05/2022 3,975 39.8 45.5 (2)(6) 93.7 102.5 Ministry Brands Holdings, LLC and RCP MB Investments B, L.P. (13)

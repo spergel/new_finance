@@ -1,6 +1,0 @@
-Table 65 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets GEDC Equity, LLC Healthcare Participation Interest(3)(13) — — — 06/2023 — 190,000 $ 190 $ 50 0.00 % Ancora Acquisition LLC Education Preferred shares (7)(13) — — — 08/2013 — 372 83 — — % AAC Lender Holdings, LLC(24) Education Ordinary shares (3)(13) — — — 03/2021 — 758 — — — % T

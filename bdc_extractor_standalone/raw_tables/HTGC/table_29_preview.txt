@@ -1,6 +1,0 @@
-Table 29 from HTGC
-Filing: 2025-10-30
-URL: https://www.sec.gov/Archives/edgar/data/1280784/000128078425000041/htgc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company Type of Investment Maturity Date Interest Rate and Floor (1) Principal Amount Cost (2) Value Footnotes Marathon Health, LLC Senior Secured February 2029 Prime - 0.90 %, Floor rate 7.10 %, PIK Interest 4.00 %, 3.00 % Exit Fee $ 159,176 $ 158,410 $ 161,882 (14)(16)(17) Senior Secured February 2029 Prime + 3.00 %, Floor rate 11.00 % $ 5,000 5,000 5,000 (16)(17) Total Marathon Health, LLC $ 164,176 163,410 166,882 Modern Life, Inc. Senior Secured February 2027 Prime + 2.75 %, Floor

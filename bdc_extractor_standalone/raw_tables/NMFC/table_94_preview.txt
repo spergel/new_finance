@@ -1,6 +1,0 @@
-Table 94 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company and Type of Investment Industry Reference Spread Interest Rate (1) Maturity Date Principal Amount or Par Value Cost Fair Value (2) HP PHRG Borrower, LLC Consumer Services SOFR(Q) 4.00 % 8.00 % 02/2032 $ 16,683 $ 16,572 $ 16,669 Inizio Group Limited Healthcare SOFR(Q) 4.25 % 8.35 % 08/2028 12,747 12,662 12,699 Kaseya Inc. Software SOFR(M) 3.25 % 7.41 % 03/2032 9,045 9,026 9,068 Kestra Advisor Services Holdings A, Inc. Financial Services SOFR(M) 3.00 % 7.16 % 03/2031 3,759 3,752 

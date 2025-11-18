@@ -1,6 +1,0 @@
-Table 49 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,18,21 Type of Investment 2 Acquisition Date 14 Cost 12,17 Fair Value 4 % of Net Assets Equity Investments Units Type Healthcare Equipment & Supplies CENTRAL MEDICAL SUPPLY LLC 2,620,670 Preferred Units 5/22/2020 1,224 3,163 (6)(9)(13) COMMAND GROUP ACQUISITION, LLC 1,250,000 Preferred Units 2/15/2024 1,250 1,038 (6)(9)(13) LKC TECHNOLOGIES, INC. 1,000,000 Class A Units 6/7/202

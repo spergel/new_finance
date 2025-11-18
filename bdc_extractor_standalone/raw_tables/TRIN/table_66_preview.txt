@@ -1,6 +1,0 @@
-Table 66 from TRIN
-Filing: 2025-11-05
-URL: https://www.sec.gov/Archives/edgar/data/1786108/000119312525265807/trin-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (1) Type of Investment (2) Investment Date (3) Expiration Date Series Shares Strike Price Cost Fair Value (6) Footnotes Warrant Investments- United States, Continued Real Estate Technology Homelight Lending, Inc. Warrant June 23, 2022 June 23, 2032 Common Stock 5,434 $ 18.40 $ 1 $ 16 Knockaway, Inc. Warrant January 16, 2020 May 24, 2029 Common Stock 880 $ 85.27 $ 209 $ — (21) Warrant November 10, 2021 November 10, 2031 Common Stock 16,350 $ 2.20 265 — (21) Warrant September 29,

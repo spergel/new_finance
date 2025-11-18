@@ -1,6 +1,0 @@
-Table 70 from NMFC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/1496099/000149609925000035/nmfc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company, Location and Industry(1) Type of Investment Reference Spread Total Coupon (17) Acquisition Date Maturity/Expiration Date Principal Amount, Par Value or Shares (15) Cost Fair Value Percent of Net Assets OEConnection LLC Software First lien (3)(13)(16) - Undrawn — — — 04/2024 04/2026 $ 8,101 $ — $ — First lien (3)(13)(16) - Undrawn — — — 04/2024 04/2031 5,063 ( 25 ) — ( 25 ) — — % Pioneer Topco I, L.P.(28) Pioneer Buyer I, LLC Software First lien (3)(13)(16) - Undrawn — — — 11/2

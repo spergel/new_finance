@@ -1,6 +1,0 @@
-Table 54 from BBDC
-Filing: 2025-11-06
-URL: https://www.sec.gov/Archives/edgar/data/1379785/000137978525000050/bbdc-20250930.htm
-
-Preview (first 500 chars):
-Portfolio Company (6) Investment Type (1)(2) Interest Acq. Date Maturity Date Principal Amount Cost Fair Value % of Net Assets * Notes Legal Solutions Holdings Senior Subordinated Loan 6.0 % PIK 12/20 03/25 $ 12,319 $ 10,128 $ — — % (7)(26)(27) Long Term Care Group, Inc. First Lien Senior Secured Term Loan SOFR + 3.27 %, 8.1 % Cash, 3.7 % PIK 04/22 09/27 8,769 8,676 7,839 0.7 % (7)(8)(13) MB Purchaser, LLC First Lien Senior Secured Term Loan SOFR + 4.75 %, 9.4 % Cash 01/24 01/30 2,608 2,550 2,59

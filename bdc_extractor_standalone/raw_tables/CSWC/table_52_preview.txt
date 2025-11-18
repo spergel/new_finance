@@ -1,6 +1,0 @@
-Table 52 from CSWC
-Filing: 2025-11-03
-URL: https://www.sec.gov/Archives/edgar/data/17313/000001731325000146/cswc-20250930.htm
-
-Preview (first 500 chars):
-CAPITAL SOUTHWEST CORPORATION AND SUBSIDIARIES CONSOLIDATED SCHEDULE OF INVESTMENTS March 31, 2025 Portfolio Company 1,5,18,21 Type of Investment 2 Acquisition Date 14 Cost 12,17 Fair Value 4 % of Net Assets Equity Investments Units Type Technology Products & Components FLIP ELECTRONICS, LLC 2,446,170 Common Units 1/4/2021 2,892 1,761 (9)(13) TRAFERA, LLC (FKA TRINITY 3, LLC) 896.43 Class A Units 11/15/2019 1,205 539 (9)(13) Subtotal: Technology Products & Components 4,097 2,300 0.26 % Telecommu

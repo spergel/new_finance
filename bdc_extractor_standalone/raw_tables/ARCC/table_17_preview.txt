@@ -1,6 +1,0 @@
-Table 17 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets PCMI Parent, LLC and PCMI Ultimate Holdings, LP (13) Developer and provider of administration software for managing service contracts and extended warranty products First lien senior secured loan 9.52 % SOFR (Q) 5.50 % 03/2025 03/2032 21.1 21.1 21.1 (2)(9) Class A units 9.00 % PIK 03/2025 1,014 1.1 1.2 (2) Class B units 03

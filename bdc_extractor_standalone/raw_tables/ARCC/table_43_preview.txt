@@ -1,6 +1,0 @@
-Table 43 from ARCC
-Filing: 2025-10-28
-URL: https://www.sec.gov/Archives/edgar/data/1287750/000128775025000046/arcc-20250930.htm
-
-Preview (first 500 chars):
-Company (1) Business Description Investment Coupon (3) Reference (7) Spread (3) Acquisition Date Maturity Date Shares/Units Principal Amortized Cost Fair Value % of Net Assets Series C common units 10.00 % PIK 04/2021 10,043,368 3.6 31.9 (2) 353.3 389.6 Inszone Mid, LLC and INSZ Holdings, LLC (13) Insurance brokerage firm First lien senior secured loan 9.27 % SOFR (Q) 5.25 % 12/2023 11/2029 26.8 26.8 26.8 (2)(9) First lien senior secured loan 9.25 % SOFR (Q) 5.25 % 07/2024 11/2029 24.7 24.7 24.7
